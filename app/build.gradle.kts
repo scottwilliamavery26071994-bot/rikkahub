@@ -59,6 +59,7 @@ android {
     tasks.withType<KotlinCompile>().configureEach {
         compilerOptions.optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
         compilerOptions.optIn.add("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
+        compilerOptions.optIn.add("androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi")
         compilerOptions.optIn.add("androidx.compose.animation.ExperimentalAnimationApi")
         compilerOptions.optIn.add("androidx.compose.animation.ExperimentalSharedTransitionApi")
         compilerOptions.optIn.add("androidx.compose.foundation.ExperimentalFoundationApi")
@@ -191,6 +192,9 @@ dependencies {
     implementation(libs.auth0.jwt)
     implementation(libs.cron.utils)
     implementation(libs.jsch)
+
+    // ===== SQLite (FTS 分词扩展, libsimple) =====
+    implementation(libs.sqlite.android)
 
     // ===== 测试 =====
     testImplementation(libs.junit)
