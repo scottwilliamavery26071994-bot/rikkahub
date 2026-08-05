@@ -161,43 +161,27 @@ class RikkaHubApp : Application() {
                 val defaultAssistant = settings.assistants.firstOrNull {
                     it.id == me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
                 }
+                // 确保有默认工作区 (已关联的复用, 否则复用第一个或新建)
                 val linkedWsId = defaultAssistant?.workspaceId?.toString()
-                val ws = if (linkedWsId != null) {
-                    // 已关联工作区: 若 rootfs 缺失/损坏则自动重新下载安装
-                    val existing = workspaceRepo.getById(linkedWsId)
-                    if (existing != null &&
-                        existing.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name
-                    ) {
-                        Log.w(TAG, "default workspace ${existing.id} status=${existing.shellStatus}, reinstalling rootfs...")
-                        notifyWorkspace("环境未就绪, 正在自动下载安装 Ubuntu 系统 (约30MB)...")
-                        runCatching {
-                            workspaceRepo.installDefaultRootfs(existing.id) { p ->
-                                val mb = (p.bytesRead / 1024 / 1024).toString()
-                                notifyWorkspace("正在下载安装 Ubuntu 环境... $mb MB")
-                            }
-                        }.onFailure { e ->
-                            Log.w(TAG, "rootfs reinstall failed", e)
-                            notifyWorkspace("环境安装失败: ${e.message?.take(60)}", ongoing = false)
-                        }
-                        workspaceRepo.getById(existing.id)
-                    } else existing
+                val existingWs = if (linkedWsId != null) {
+                    workspaceRepo.getById(linkedWsId)
                 } else {
-                    // 未关联: 创建默认工作区并自动下载安装 rootfs
-                    val created = workspaceRepo.listFlow().first().firstOrNull()
-                        ?: workspaceRepo.create("默认工作区")
-                    if (created.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name) {
-                        notifyWorkspace("正在自动下载安装 Ubuntu 环境 (约30MB)...")
-                        runCatching {
-                            workspaceRepo.installDefaultRootfs(created.id) { p ->
-                                val mb = (p.bytesRead / 1024 / 1024).toString()
-                                notifyWorkspace("正在下载安装 Ubuntu 环境... $mb MB")
-                            }
-                        }.onFailure { e ->
-                            Log.w(TAG, "rootfs download install failed", e)
-                            notifyWorkspace("环境安装失败: ${e.message?.take(60)}", ongoing = false)
+                    workspaceRepo.listFlow().first().firstOrNull()
+                }
+                val ws = existingWs ?: workspaceRepo.create("默认工作区")
+                // 只要不是 READY (未装/损坏/未初始化), 一律自动下载安装 rootfs
+                if (ws.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name) {
+                    Log.i(TAG, "auto-installing rootfs for workspace ${ws.id}, status=${ws.shellStatus}")
+                    notifyWorkspace("正在自动下载安装 Ubuntu 环境 (约30MB)...")
+                    runCatching {
+                        workspaceRepo.installDefaultRootfs(ws.id) { p ->
+                            val mb = (p.bytesRead / 1024 / 1024).toString()
+                            notifyWorkspace("正在下载安装 Ubuntu 环境... $mb MB")
                         }
+                    }.onFailure { e ->
+                        Log.w(TAG, "rootfs auto install failed", e)
+                        notifyWorkspace("环境安装失败: ${e.message?.take(60)}", ongoing = false)
                     }
-                    created
                 }
                 // 自动安装编程环境与反编译工具 (失败不阻塞)
                 if (ws != null) {
