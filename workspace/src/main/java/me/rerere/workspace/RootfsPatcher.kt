@@ -21,7 +21,8 @@ class RootfsPatcher {
         ensureHosts(etcDir, options.hostname)
         ensureHostname(etcDir, options.hostname)
         ensureLocale(etcDir, options.locale)
-        ensureGroupNames(etcDir, options.groupIds.ifEmpty { currentSupplementaryGroupIds() })
+        ensureGroupNames(etcDir, options.groupIds.ifEmpty { currentGroupIds() })
+        ensurePasswd(etcDir)
         ensureTempDirs(linuxDir)
     }
 
@@ -160,15 +161,49 @@ class RootfsPatcher {
         }
     }
 
-    private fun currentSupplementaryGroupIds(): List<Long> {
+    /** 当前进程的真实 UID (Android 应用 UID, 如 10698) */
+    private fun currentUid(): Long? {
+        val status = File("/proc/self/status")
+        if (!status.isFile) return null
+        return status.readLines()
+            .firstOrNull { it.startsWith("Uid:") }
+            ?.removePrefix("Uid:")?.trim()?.split(WHITESPACE_REGEX)
+            ?.firstOrNull()?.toLongOrNull()
+    }
+
+    /** 主 GID + supplementary groups (确保 /etc/group 覆盖 proot 环境所有组) */
+    private fun currentGroupIds(): List<Long> {
         val status = File("/proc/self/status")
         if (!status.isFile) return emptyList()
-        val groups = status.readLines().firstOrNull { it.startsWith("Groups:") } ?: return emptyList()
-        return groups
-            .removePrefix("Groups:")
-            .trim()
-            .split(WHITESPACE_REGEX)
-            .mapNotNull { it.toLongOrNull() }
+        val lines = status.readLines()
+        val primaryGid = lines.firstOrNull { it.startsWith("Gid:") }
+            ?.removePrefix("Gid:")?.trim()?.split(WHITESPACE_REGEX)
+            ?.firstOrNull()?.toLongOrNull()
+        val supplementary = lines.firstOrNull { it.startsWith("Groups:") }
+            ?.removePrefix("Groups:")?.trim()?.split(WHITESPACE_REGEX)
+            ?.mapNotNull { it.toLongOrNull() }
+            ?: emptyList()
+        return buildList {
+            if (primaryGid != null && primaryGid > 0) add(primaryGid)
+            addAll(supplementary.filter { it > 0 })
+        }.distinct()
+    }
+
+    /**
+     * 确保 /etc/passwd 里有当前 UID 的用户名, 否则 proot 显示
+     * "I have no name!" 且 groups 报 "cannot find name for group ID xxx"。
+     */
+    private fun ensurePasswd(etcDir: File) {
+        val uid = currentUid() ?: return
+        if (uid <= 0) return
+        val passwd = File(etcDir, "passwd")
+        val already = passwd.isFile && passwd.readText()
+            .split('\n')
+            .any { it.split(':').getOrNull(2) == uid.toString() }
+        if (already) return
+        passwd.parentFile?.mkdirs()
+        // android_uid_<uid>:x:<uid>:<uid>::/root:/bin/sh
+        passwd.appendText("android_uid_$uid:x:$uid:$uid::/root:/bin/sh\n")
     }
 
     private companion object {
