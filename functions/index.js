@@ -1,5 +1,5 @@
 /**
- * 橘瓣 OrangeChat — 公告推送 Cloud Functions
+ * 灵犀 Lingxi — 公告推送 Cloud Functions
  *
  * 功能：通过 HTTP 触发，向所有已注册设备广播公告通知。
  *
@@ -28,7 +28,7 @@ const AUTH_TOKEN = "CHANGE_ME_TO_A_RANDOM_SECRET";
 /**
  * 发送公告（HTTP 触发）
  *
- * - title: 通知标题（可选，默认"橘瓣公告"）
+ * - title: 通知标题（可选，默认"灵犀公告"）
  * - body:  通知正文（必填）
  * - url:   点击跳转链接（可选）
  * - topic: 推送主题，默认 "announcement"（App 端订阅该主题即可收到）
@@ -41,7 +41,7 @@ exports.sendAnnouncement = functions.onCall(async (request) => {
   }
 
   const data = request.data || {};
-  const title = data.title || "橘瓣公告";
+  const title = data.title || "灵犀公告";
   const body = data.body;
   const url = data.url || null;
   const topic = data.topic || "announcement";
