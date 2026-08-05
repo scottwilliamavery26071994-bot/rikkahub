@@ -849,15 +849,23 @@ internal val DEFAULT_ASSISTANTS = listOf(
         id = DEFAULT_ASSISTANT_ID,
         name = "",
         systemPrompt = "",
-        // 内置 AI 默认开启常用工具: 时间/网页抓取/剪贴板/JS引擎/问答/跳过回复
+        // 内置 AI 默认开启全部工具: AI 直接调用, 无需在助手设置中手动启用
         localTools = listOf(
-            LocalToolOption.TimeInfo,
-            LocalToolOption.WebFetch,
-            LocalToolOption.Clipboard,
             LocalToolOption.JavascriptEngine,
-            LocalToolOption.ListZipContents,
+            LocalToolOption.TimeInfo,
+            LocalToolOption.Clipboard,
+            LocalToolOption.Tts,
+            LocalToolOption.RequestVoiceCall,
             LocalToolOption.AskUser,
+            LocalToolOption.Sms,
+            LocalToolOption.Calendar,
+            LocalToolOption.WebFetch,
+            LocalToolOption.ListZipContents,
+            LocalToolOption.CheckTokenUsage,
             LocalToolOption.AllowSkipReply,
+            LocalToolOption.Workflows,
+            LocalToolOption.ScreenAutomation,
+            LocalToolOption.Ssh,
         )
     ),
     Assistant(

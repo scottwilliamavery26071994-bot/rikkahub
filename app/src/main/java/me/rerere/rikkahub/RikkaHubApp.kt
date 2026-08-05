@@ -129,6 +129,38 @@ class RikkaHubApp : Application() {
         // Start App Lock guard (intercepts locked apps when opened) if any app is locked
         startAppLockGuardIfEnabled()
 
+        // 内置 AI: 自动创建默认工作区并关联默认助手
+        // 使 workspace 工具(读/写/改代码/Shell)直接出现在 AI 工具列表, 无需手动配置。
+        // rootfs 环境由用户在"工作区"页面一键初始化(URL 已预填)。
+        CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
+            runCatching {
+                val workspaceRepo: me.rerere.rikkahub.data.repository.WorkspaceRepository = get()
+                val prefs: me.rerere.rikkahub.data.datastore.PreferencesStore = get()
+                val settings = prefs.settingsFlow.first()
+                val defaultAssistant = settings.assistants.firstOrNull {
+                    it.id == me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
+                }
+                if (defaultAssistant != null && defaultAssistant.workspaceId == null) {
+                    val existing = workspaceRepo.listFlow().first().firstOrNull()
+                    val ws = existing ?: workspaceRepo.create("默认工作区")
+                    prefs.update { s ->
+                        s.copy(
+                            assistants = s.assistants.map {
+                                if (it.id == me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID) {
+                                    it.copy(workspaceId = kotlin.uuid.Uuid.parse(ws.id))
+                                } else {
+                                    it
+                                }
+                            }
+                        )
+                    }
+                    Log.i(TAG, "auto-created default workspace ${ws.id} and linked to default assistant")
+                }
+            }.onFailure { e ->
+                Log.w(TAG, "auto-init default workspace failed", e)
+            }
+        }
+
         // Start aggressive mode (device event AI trigger) if enabled
         startAggressiveModeIfEnabled()
 
