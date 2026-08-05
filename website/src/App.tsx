@@ -5,8 +5,8 @@ function Navbar() {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-neutral-100">
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <img src="/icon.png" alt="橘瓣" className="w-8 h-8 rounded-xl" />
-          <span className="font-bold text-lg text-neutral-900">橘瓣</span>
+          <img src="/icon.png" alt="灵犀" className="w-8 h-8 rounded-xl" />
+          <span className="font-bold text-lg text-neutral-900">灵犀</span>
         </div>
         <div className="hidden md:flex items-center gap-8 text-sm text-neutral-600">
           <a href="#features" className="hover:text-brand transition-colors">独有功能</a>
@@ -45,7 +45,7 @@ function Hero() {
         <div className="animate-fade-in-up">
           <img
             src="/icon.png"
-            alt="橘瓣"
+            alt="灵犀"
             className="w-28 h-28 rounded-3xl mx-auto mb-8 animate-pulse-glow"
           />
         </div>
@@ -53,7 +53,7 @@ function Hero() {
           className="text-5xl md:text-7xl font-extrabold text-neutral-900 mb-4 animate-fade-in-up"
           style={{ animationDelay: '0.1s' }}
         >
-          橘瓣 <span className="text-brand">OrangeChat</span>
+          灵犀 <span className="text-brand">OrangeChat</span>
         </h1>
         <p
           className="text-xl md:text-2xl text-neutral-600 mb-6 animate-fade-in-up"
@@ -80,7 +80,7 @@ function Hero() {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            下载橘瓣
+            下载灵犀
           </a>
           <a
             href="https://play.google.com/store/apps/details?id=me.rerere.rikkahub"
@@ -117,7 +117,7 @@ function Philosophy() {
       <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
         <div className="reveal">
           <span className="inline-block px-4 py-1.5 bg-brand/10 text-brand rounded-full text-sm font-medium mb-8">
-            🍊 为什么做橘瓣
+            🍊 为什么做灵犀
           </span>
         </div>
         <blockquote className="reveal text-2xl md:text-3xl leading-relaxed font-light text-neutral-200">
@@ -137,7 +137,7 @@ function Philosophy() {
             在你需要的时候主动出现。
           </p>
           <p className="text-brand font-semibold text-xl">
-            橘瓣就是这样一个尝试。
+            灵犀就是这样一个尝试。
           </p>
         </blockquote>
       </div>
@@ -197,7 +197,7 @@ function UniqueFeatures() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16 reveal">
           <span className="inline-block px-4 py-1.5 bg-brand/10 text-brand rounded-full text-sm font-medium mb-4">
-            ✨ 橘瓣独有
+            ✨ 灵犀独有
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
             与 RikkaHub 不一样的地方
@@ -396,7 +396,7 @@ function ToolsSection() {
             <div className="h-full bg-neutral-400 rounded-full" style={{ width: '27%' }}></div>
           </div>
           <div className="flex items-center justify-between mb-3 text-sm">
-            <span className="text-brand font-medium">橘瓣 OrangeChat</span>
+            <span className="text-brand font-medium">灵犀 OrangeChat</span>
             <span className="font-bold text-brand">15 个工具 (+11)</span>
           </div>
           <div className="h-4 bg-orange-100 rounded-full overflow-hidden">
@@ -436,7 +436,7 @@ function ArchitectureComparison() {
             架构对比
           </h2>
           <p className="text-neutral-500 max-w-2xl mx-auto">
-            与原版 RikkaHub 的代码差异，橘瓣做了大量扩展
+            与原版 RikkaHub 的代码差异，灵犀做了大量扩展
           </p>
         </div>
 
@@ -480,9 +480,9 @@ function ArchitectureComparison() {
           {/* OrangeChat */}
           <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-8 border border-brand/20 shadow-lg shadow-brand/5">
             <div className="flex items-center gap-3 mb-6">
-              <img src="/icon.png" alt="橘瓣" className="w-10 h-10 rounded-xl" />
+              <img src="/icon.png" alt="灵犀" className="w-10 h-10 rounded-xl" />
               <div>
-                <h3 className="font-bold text-neutral-900">橘瓣 OrangeChat</h3>
+                <h3 className="font-bold text-neutral-900">灵犀 OrangeChat</h3>
                 <p className="text-xs text-brand">增强版</p>
               </div>
             </div>
@@ -534,9 +534,9 @@ function DownloadSection() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(255,107,0,0.15)_0%,_transparent_60%)]" />
       <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
         <div className="reveal">
-          <img src="/icon.png" alt="橘瓣" className="w-20 h-20 rounded-2xl mx-auto mb-8 animate-pulse-glow" />
+          <img src="/icon.png" alt="灵犀" className="w-20 h-20 rounded-2xl mx-auto mb-8 animate-pulse-glow" />
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            开始使用<span className="text-brand">橘瓣</span>
+            开始使用<span className="text-brand">灵犀</span>
           </h2>
           <p className="text-neutral-400 mb-10 text-lg">
             让 AI 不止活在对话框里
@@ -597,9 +597,9 @@ function Footer() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <img src="/icon.png" alt="橘瓣" className="w-8 h-8 rounded-lg" />
+            <img src="/icon.png" alt="灵犀" className="w-8 h-8 rounded-lg" />
             <div>
-              <span className="text-white font-semibold">橘瓣 OrangeChat</span>
+              <span className="text-white font-semibold">灵犀 OrangeChat</span>
               <p className="text-xs text-neutral-500">让 AI 不止活在对话框里</p>
             </div>
           </div>
@@ -634,7 +634,7 @@ function Footer() {
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-neutral-800 text-center text-xs text-neutral-600">
-          <p>橘瓣 OrangeChat · 基于 Apache License 2.0 开源 · 致谢 RikkaHub</p>
+          <p>灵犀 OrangeChat · 基于 Apache License 2.0 开源 · 致谢 RikkaHub</p>
         </div>
       </div>
     </footer>
