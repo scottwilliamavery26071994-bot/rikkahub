@@ -244,13 +244,13 @@ class SettingsStore(
                     JsonInstant.decodeFromString(it)
                 } ?: emptyList(),
                 chatModelId = preferences[SELECT_MODEL]?.let { Uuid.parse(it) }
-                    ?: DEFAULT_AUTO_MODEL_ID,
+                    ?: DEFAULT_BUILTIN_AI_MODEL_ID,
                 titleModelId = preferences[TITLE_MODEL]?.let { Uuid.parse(it) }
-                    ?: DEFAULT_AUTO_MODEL_ID,
+                    ?: DEFAULT_BUILTIN_AI_MODEL_ID,
                 translateModeId = preferences[TRANSLATE_MODEL]?.let { Uuid.parse(it) }
-                    ?: DEFAULT_AUTO_MODEL_ID,
+                    ?: DEFAULT_BUILTIN_AI_MODEL_ID,
                 suggestionModelId = preferences[SUGGESTION_MODEL]?.let { Uuid.parse(it) }
-                    ?: DEFAULT_AUTO_MODEL_ID,
+                    ?: DEFAULT_BUILTIN_AI_MODEL_ID,
                 imageGenerationModelId = preferences[IMAGE_GENERATION_MODEL]?.let { Uuid.parse(it) } ?: Uuid.random(),
                 titlePrompt = preferences[TITLE_PROMPT] ?: DEFAULT_TITLE_PROMPT,
                 translatePrompt = preferences[TRANSLATION_PROMPT] ?: DEFAULT_TRANSLATION_PROMPT,
@@ -258,7 +258,7 @@ class SettingsStore(
                 suggestionPrompt = preferences[SUGGESTION_PROMPT] ?: DEFAULT_SUGGESTION_PROMPT,
                 ocrModelId = preferences[OCR_MODEL]?.let { Uuid.parse(it) } ?: Uuid.random(),
                 ocrPrompt = preferences[OCR_PROMPT] ?: DEFAULT_OCR_PROMPT,
-                compressModelId = preferences[COMPRESS_MODEL]?.let { Uuid.parse(it) } ?: DEFAULT_AUTO_MODEL_ID,
+                compressModelId = preferences[COMPRESS_MODEL]?.let { Uuid.parse(it) } ?: DEFAULT_BUILTIN_AI_MODEL_ID,
                 compressPrompt = preferences[COMPRESS_PROMPT] ?: DEFAULT_COMPRESS_PROMPT,
                 assistantId = preferences[SELECT_ASSISTANT]?.let { Uuid.parse(it) }
                     ?: DEFAULT_ASSISTANT_ID,
