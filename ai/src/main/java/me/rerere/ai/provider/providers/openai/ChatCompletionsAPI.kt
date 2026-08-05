@@ -29,10 +29,6 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlin.uuid.Uuid
-
-/** 提示词式工具调用: 免Key免费服务对请求大小敏感, 限制消息条数与单条长度 */
-private const val MAX_PROMPT_TOOLCALLING_MESSAGES = 8
-private const val MAX_PROMPT_MESSAGE_LENGTH = 1500
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
@@ -75,6 +71,10 @@ import okhttp3.sse.EventSource
 import okhttp3.sse.EventSourceListener
 import okhttp3.sse.EventSources
 import kotlin.time.Clock
+
+/** 提示词式工具调用: 免Key免费服务对请求大小敏感, 限制消息条数与单条长度 */
+private const val MAX_PROMPT_TOOLCALLING_MESSAGES = 8
+private const val MAX_PROMPT_MESSAGE_LENGTH = 1500
 
 private const val TAG = "ChatCompletionsAPI"
 
