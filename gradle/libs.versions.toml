@@ -192,7 +192,6 @@ diffutils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref 
 androidx-localbroadcastmanager = { group = "androidx.localbroadcastmanager", name = "localbroadcastmanager", version = "1.1.0" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
-ktor-client-sse = { module = "io.ktor:ktor-client-sse", version.ref = "ktor" }
 play-services-location = { module = "com.google.android.gms:play-services-location", version = "21.3.0" }
 auth0-jwt = { module = "com.auth0:java-jwt", version = "4.4.0" }
 cron-utils = { module = "com.cronutils:cron-utils", version = "9.2.1" }
