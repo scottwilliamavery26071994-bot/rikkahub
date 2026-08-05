@@ -606,7 +606,10 @@ class ChatCompletionsAPI(
         // 且匿名免费不支持 system 消息 -> 返回 402):
         // 把工具说明 + 原 system 提示词合并进第一条 user 消息
         if (providerSetting.promptToolCalling) {
-            // 免Key免费服务对请求大小/消息数敏感: 限制历史条数与单条长度, 避免 402
+            // 免Key免费服务(如 Pollinations 匿名)检测到任何工具调用说明即返回 402,
+            // 因此这里不注入工具说明, 保证免Key对话可用。
+            // 工具调用功能请使用填了 API Key 的模型(设置里已预置智谱免费Key入口)。
+            // 免Key服务对请求大小敏感: 限制历史条数与单条长度
             filteredMessages = filteredMessages.takeLast(MAX_PROMPT_TOOLCALLING_MESSAGES)
                 .map { msg ->
                     msg.copy(parts = msg.parts.map { part ->
@@ -615,7 +618,7 @@ class ChatCompletionsAPI(
                         } else part
                     })
                 }
-            val toolPrompt = if (tools.isNotEmpty()) buildPromptToolCallingSystem(tools) else null
+            val toolPrompt = null
             val systemTexts = filteredMessages
                 .filter { it.role == MessageRole.SYSTEM }
                 .flatMap { it.parts.filterIsInstance<UIMessagePart.Text>() }
