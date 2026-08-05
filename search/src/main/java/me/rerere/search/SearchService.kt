@@ -143,6 +143,31 @@ sealed class SearchServiceOptions {
     companion object {
         val DEFAULT = BingLocalOptions()
 
+        /**
+         * 全部搜索引擎的默认实例列表。
+         * 开箱即用：安装后设置里直接列出所有引擎，每个可单独配置 API Key，
+         * AI 搜索时使用列表中选择的那一个（不是全部同时调用）。
+         */
+        fun allDefaults(): List<SearchServiceOptions> = listOf(
+            BingLocalOptions(),
+            RikkaHubOptions(),
+            ZhipuOptions(),
+            TavilyOptions(),
+            ExaOptions(),
+            SearXNGOptions(),
+            LinkUpOptions(),
+            BraveOptions(),
+            MetasoOptions(),
+            OllamaOptions(),
+            PerplexityOptions(),
+            FirecrawlOptions(),
+            JinaOptions(),
+            BochaOptions(),
+            GrokOptions(),
+            TinyfishOptions(),
+            CustomJsOptions(),
+        )
+
         val TYPES = mapOf(
             BingLocalOptions::class to "Bing",
             RikkaHubOptions::class to "RikkaHub",
