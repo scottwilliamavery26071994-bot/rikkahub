@@ -56,6 +56,14 @@ android {
         buildConfig = true
     }
 
+    packaging {
+        jniLibs {
+            // libsimple.so 通过 Requery 的 dlopen(nativeLibraryDir + "/libsimple.so")
+            // 直接加载, 必须解压到 nativeLibraryDir, 不能只打包在 APK 内
+            useLegacyPackaging = true
+        }
+    }
+
     tasks.withType<KotlinCompile>().configureEach {
         compilerOptions.optIn.add("androidx.compose.material3.ExperimentalMaterial3Api")
         compilerOptions.optIn.add("androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")

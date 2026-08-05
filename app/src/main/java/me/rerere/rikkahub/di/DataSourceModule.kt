@@ -104,7 +104,7 @@ val dataSourceModule = module {
                 RequerySQLiteOpenHelperFactory.ConfigurationOptions { options ->
                     options.customExtensions.add(
                         SQLiteCustomExtension(
-                            context.applicationInfo.nativeLibraryDir + "/libsimple",
+                            context.applicationInfo.nativeLibraryDir + "/libsimple.so",
                             null
                         )
                     )
