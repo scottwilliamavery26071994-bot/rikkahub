@@ -322,6 +322,53 @@ class WorkspaceRepository(
         }
     }
 
+    /**
+     * 自动安装 APK 反编译工具链: Java 运行时 + apktool + jadx。
+     * 需 shell 已 READY。后台调用, 失败抛异常由调用方容错。
+     */
+    suspend fun installReverseTools(
+        id: String,
+        onProgress: (String) -> Unit = {},
+    ) {
+        val workspace = dao.getById(id) ?: return
+        if (workspace.shellStatus != WorkspaceShellStatus.READY.name) return
+
+        onProgress("安装 Java 运行时 (openjdk-17)...")
+        val java = executeCommand(
+            id,
+            "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openjdk-17-jre-headless",
+            timeoutMillis = 1_200_000,
+        )
+        if (java.exitCode != 0) {
+            throw RuntimeException("java install failed: ${java.stderr.take(200)}")
+        }
+
+        onProgress("安装 apktool (资源/smali 反编译)...")
+        val apktool = executeCommand(
+            id,
+            "curl -sL -o /usr/local/bin/apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar && " +
+                "printf '#!/bin/bash\\nexec java -jar /usr/local/bin/apktool.jar \"\\$@\"\\n' > /usr/local/bin/apktool && " +
+                "chmod +x /usr/local/bin/apktool",
+            timeoutMillis = 600_000,
+        )
+        if (apktool.exitCode != 0) {
+            throw RuntimeException("apktool install failed: ${apktool.stderr.take(200)}")
+        }
+
+        onProgress("安装 jadx (Java 源码反编译)...")
+        val jadx = executeCommand(
+            id,
+            "mkdir -p /opt && curl -sL -o /tmp/jadx.zip https://github.com/skylot/jadx/releases/download/v1.5.1/jadx-1.5.1.zip && " +
+                "unzip -q -o /tmp/jadx.zip -d /opt/ && rm -f /tmp/jadx.zip && " +
+                "ln -sf /opt/jadx-1.5.1/bin/jadx /usr/local/bin/jadx && " +
+                "ln -sf /opt/jadx-1.5.1/bin/jadx-gui /usr/local/bin/jadx-gui",
+            timeoutMillis = 600_000,
+        )
+        if (jadx.exitCode != 0) {
+            throw RuntimeException("jadx install failed: ${jadx.stderr.take(200)}")
+        }
+    }
+
     suspend fun delete(id: String): Boolean {
         val workspace = dao.getById(id) ?: return false
         dao.deleteById(id)

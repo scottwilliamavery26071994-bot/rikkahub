@@ -158,6 +158,14 @@ class RikkaHubApp : Application() {
                     }.onFailure { e ->
                         Log.w(TAG, "programming tools install failed (可稍后手动安装): ${e.message}")
                     }
+                    // 自动安装 APK 反编译工具链 (Java + apktool + jadx), 失败不阻塞
+                    runCatching {
+                        workspaceRepo.installReverseTools(ws.id) {
+                            Log.i(TAG, "installing reverse tools: $it")
+                        }
+                    }.onFailure { e ->
+                        Log.w(TAG, "reverse tools install failed (可稍后手动安装): ${e.message}")
+                    }
                     prefs.update { s ->
                         s.copy(
                             assistants = s.assistants.map {
