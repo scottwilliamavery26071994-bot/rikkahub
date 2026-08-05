@@ -55,6 +55,11 @@ interface SearchService<T : SearchServiceOptions> {
                 is SearchServiceOptions.ExaOptions -> ExaSearchService
                 is SearchServiceOptions.ZhipuOptions -> ZhipuSearchService
                 is SearchServiceOptions.BingLocalOptions -> BingSearchService
+                is SearchServiceOptions.DuckDuckGoOptions -> DuckDuckGoSearchService
+                is SearchServiceOptions.GoogleOptions -> GoogleSearchService
+                is SearchServiceOptions.BaiduOptions -> BaiduSearchService
+                is SearchServiceOptions.SogouOptions -> SogouSearchService
+                is SearchServiceOptions.So360Options -> So360SearchService
                 is SearchServiceOptions.SearXNGOptions -> SearXNGService
                 is SearchServiceOptions.LinkUpOptions -> LinkUpService
                 is SearchServiceOptions.BraveOptions -> BraveSearchService
@@ -144,32 +149,27 @@ sealed class SearchServiceOptions {
         val DEFAULT = BingLocalOptions()
 
         /**
-         * 全部搜索引擎的默认实例列表。
-         * 开箱即用：安装后设置里直接列出所有引擎，每个可单独配置 API Key，
+         * 全部"免 API Key、直接调用"搜索引擎的默认实例列表。
+         * 安装后开箱即用：全部无需配置 Key，直接像浏览器一样搜索。
          * AI 搜索时使用列表中选择的那一个（不是全部同时调用）。
          */
         fun allDefaults(): List<SearchServiceOptions> = listOf(
             BingLocalOptions(),
-            RikkaHubOptions(),
-            ZhipuOptions(),
-            TavilyOptions(),
-            ExaOptions(),
-            SearXNGOptions(),
-            LinkUpOptions(),
-            BraveOptions(),
-            MetasoOptions(),
-            OllamaOptions(),
-            PerplexityOptions(),
-            FirecrawlOptions(),
-            JinaOptions(),
-            BochaOptions(),
-            GrokOptions(),
-            TinyfishOptions(),
+            DuckDuckGoOptions(),
+            GoogleOptions(),
+            BaiduOptions(),
+            SogouOptions(),
+            So360Options(),
             CustomJsOptions(),
         )
 
         val TYPES = mapOf(
             BingLocalOptions::class to "Bing",
+            DuckDuckGoOptions::class to "DuckDuckGo",
+            GoogleOptions::class to "Google",
+            BaiduOptions::class to "百度",
+            SogouOptions::class to "搜狗",
+            So360Options::class to "360",
             RikkaHubOptions::class to "RikkaHub",
             ZhipuOptions::class to "智谱",
             TavilyOptions::class to "Tavily",
@@ -192,6 +192,36 @@ sealed class SearchServiceOptions {
     @Serializable
     @SerialName("bing_local")
     class BingLocalOptions(
+        override val id: Uuid = Uuid.random()
+    ) : SearchServiceOptions()
+
+    @Serializable
+    @SerialName("duckduckgo")
+    class DuckDuckGoOptions(
+        override val id: Uuid = Uuid.random()
+    ) : SearchServiceOptions()
+
+    @Serializable
+    @SerialName("google")
+    class GoogleOptions(
+        override val id: Uuid = Uuid.random()
+    ) : SearchServiceOptions()
+
+    @Serializable
+    @SerialName("baidu")
+    class BaiduOptions(
+        override val id: Uuid = Uuid.random()
+    ) : SearchServiceOptions()
+
+    @Serializable
+    @SerialName("sogou")
+    class SogouOptions(
+        override val id: Uuid = Uuid.random()
+    ) : SearchServiceOptions()
+
+    @Serializable
+    @SerialName("so360")
+    class So360Options(
         override val id: Uuid = Uuid.random()
     ) : SearchServiceOptions()
 

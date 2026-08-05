@@ -206,6 +206,11 @@ private fun SearchServiceOptionsEditor(
             PerplexityOptions(options) { onUpdateOptions(it) }
         }
         is SearchServiceOptions.BingLocalOptions -> {}
+        is SearchServiceOptions.DuckDuckGoOptions -> {}
+        is SearchServiceOptions.GoogleOptions -> {}
+        is SearchServiceOptions.BaiduOptions -> {}
+        is SearchServiceOptions.SogouOptions -> {}
+        is SearchServiceOptions.So360Options -> {}
         is SearchServiceOptions.FirecrawlOptions -> {
             FirecrawlOptions(options) { onUpdateOptions(it) }
         }
