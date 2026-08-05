@@ -309,6 +309,15 @@ class WorkspaceRepository(
                 if (install.exitCode != 0) {
                     throw RuntimeException("apt install failed: ${install.stderr.take(300)}")
                 }
+                // 验证核心工具已装上, 否则视为失败重试
+                val verify = executeCommand(
+                    id,
+                    "which git && which python3 && which gcc && which make",
+                    timeoutMillis = 30_000,
+                )
+                if (verify.exitCode != 0) {
+                    throw RuntimeException("programming tools verification failed: ${verify.stdout.take(100)} ${verify.stderr.take(100)}")
+                }
                 return
             } catch (e: Throwable) {
                 if (attempt == 1) throw e
@@ -376,6 +385,15 @@ class WorkspaceRepository(
                 )
                 if (jadx.exitCode != 0) {
                     throw RuntimeException("jadx install failed: ${jadx.stderr.take(200)}")
+                }
+                // 验证 Java/apktool/jadx 已可用, 否则重试
+                val verify = executeCommand(
+                    id,
+                    "java -version 2>&1 && which apktool && which jadx",
+                    timeoutMillis = 30_000,
+                )
+                if (verify.exitCode != 0) {
+                    throw RuntimeException("reverse tools verification failed: ${verify.stdout.take(150)} ${verify.stderr.take(150)}")
                 }
                 return
             } catch (e: Throwable) {
