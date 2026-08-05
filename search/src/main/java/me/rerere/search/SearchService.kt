@@ -57,7 +57,6 @@ interface SearchService<T : SearchServiceOptions> {
                 is SearchServiceOptions.BingLocalOptions -> BingSearchService
                 is SearchServiceOptions.DuckDuckGoOptions -> DuckDuckGoSearchService
                 is SearchServiceOptions.GoogleOptions -> GoogleSearchService
-                is SearchServiceOptions.BaiduOptions -> BaiduSearchService
                 is SearchServiceOptions.SogouOptions -> SogouSearchService
                 is SearchServiceOptions.So360Options -> So360SearchService
                 is SearchServiceOptions.SearXNGOptions -> SearXNGService
@@ -181,7 +180,6 @@ sealed class SearchServiceOptions {
             BingLocalOptions::class to "Bing",
             DuckDuckGoOptions::class to "DuckDuckGo",
             GoogleOptions::class to "Google",
-            BaiduOptions::class to "百度",
             SogouOptions::class to "搜狗",
             So360Options::class to "360",
             RikkaHubOptions::class to "RikkaHub",
@@ -218,12 +216,6 @@ sealed class SearchServiceOptions {
     @Serializable
     @SerialName("google")
     class GoogleOptions(
-        override val id: Uuid = Uuid.random()
-    ) : SearchServiceOptions()
-
-    @Serializable
-    @SerialName("baidu")
-    class BaiduOptions(
         override val id: Uuid = Uuid.random()
     ) : SearchServiceOptions()
 
