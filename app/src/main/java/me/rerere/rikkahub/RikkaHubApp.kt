@@ -134,29 +134,11 @@ class RikkaHubApp : Application() {
         startAppLockGuardIfEnabled()
 
         // 内置 AI: 自动创建默认工作区、自动下载安装 rootfs 并关联默认助手
-        // 安装过程通过通知展示进度, 用户可见。
+        // 全部静默后台安装, 不打扰用户。
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             runCatching {
                 val workspaceRepo: me.rerere.rikkahub.data.repository.WorkspaceRepository = get()
                 val prefs: me.rerere.rikkahub.data.datastore.SettingsStore = get()
-                val nm = NotificationManagerCompat.from(this@RikkaHubApp)
-                fun notifyWorkspace(text: String, ongoing: Boolean = true) {
-                    runCatching {
-                        nm.notify(
-                            WORKSPACE_INSTALL_NOTIFICATION_ID,
-                            NotificationCompat.Builder(
-                                this@RikkaHubApp,
-                                CHAT_LIVE_UPDATE_NOTIFICATION_CHANNEL_ID
-                            )
-                                .setSmallIcon(R.drawable.small_icon)
-                                .setContentTitle("工作区环境")
-                                .setContentText(text)
-                                .setOngoing(ongoing)
-                                .setOnlyAlertOnce(true)
-                                .build()
-                        )
-                    }
-                }
                 val settings = prefs.settingsFlow.first()
                 val defaultAssistant = settings.assistants.firstOrNull {
                     it.id == me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
@@ -172,18 +154,15 @@ class RikkaHubApp : Application() {
                 // 只要不是 READY (未装/损坏/未初始化), 一律自动下载安装 rootfs
                 if (ws.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name) {
                     Log.i(TAG, "auto-installing rootfs for workspace ${ws.id}, status=${ws.shellStatus}")
-                    notifyWorkspace("正在自动下载安装 Ubuntu 环境 (约30MB)...")
                     runCatching {
                         workspaceRepo.installDefaultRootfs(ws.id) { p ->
-                            val mb = (p.bytesRead / 1024 / 1024).toString()
-                            notifyWorkspace("正在下载安装 Ubuntu 环境... $mb MB")
+                            Log.i(TAG, "rootfs install progress: ${p.bytesRead} bytes")
                         }
                     }.onFailure { e ->
                         Log.w(TAG, "rootfs auto install failed", e)
-                        notifyWorkspace("环境安装失败: ${e.message?.take(60)}", ongoing = false)
                     }
                 }
-                // 自动安装编程环境与反编译工具 (失败通知用户, 不阻塞)
+                // 自动安装编程环境与反编译工具 (静默, 失败只记日志)
                 if (ws != null) {
                     // 已就绪的 rootfs 也补打 patch (修复 passwd/group, 版本升级后生效)
                     workspaceRepo.patchRootfs(ws.id)
@@ -192,22 +171,18 @@ class RikkaHubApp : Application() {
                     runCatching {
                         workspaceRepo.installProgrammingTools(ws.id) { step ->
                             Log.i(TAG, "installing programming tools: $step")
-                            notifyWorkspace("正在安装编程工具: $step", ongoing = true)
                         }
                     }.onFailure { e ->
                         Log.w(TAG, "programming tools install failed", e)
-                        notifyWorkspace("编程工具安装失败: ${e.message?.take(60)}", ongoing = false)
                     }
 
                     // 反编译工具 (Java + apktool + jadx)
                     runCatching {
                         workspaceRepo.installReverseTools(ws.id) { step ->
                             Log.i(TAG, "installing reverse tools: $step")
-                            notifyWorkspace("正在安装反编译工具: $step", ongoing = true)
                         }
                     }.onFailure { e ->
                         Log.w(TAG, "reverse tools install failed", e)
-                        notifyWorkspace("反编译工具安装失败: ${e.message?.take(60)}", ongoing = false)
                     }
 
                     prefs.update { s ->
@@ -221,8 +196,6 @@ class RikkaHubApp : Application() {
                             }
                         )
                     }
-                    notifyWorkspace("工作区环境已就绪 ✓", ongoing = false)
-                    runCatching { nm.cancel(WORKSPACE_INSTALL_NOTIFICATION_ID) }
                 }
                 Log.i(TAG, "default workspace ready: ${ws?.id}")
             }.onFailure { e ->
