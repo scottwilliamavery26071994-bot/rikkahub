@@ -148,6 +148,19 @@ sealed class SearchServiceOptions {
     companion object {
         val DEFAULT = BingLocalOptions()
 
+        /** 免 API Key、开箱即用的搜索引擎 (可直接用, 不需要配置) */
+        val NO_KEY_TYPES: Set<kotlin.reflect.KClass<out SearchServiceOptions>> = setOf(
+            BingLocalOptions::class,
+            DuckDuckGoOptions::class,
+            GoogleOptions::class,
+            BaiduOptions::class,
+            SogouOptions::class,
+            So360Options::class,
+            CustomJsOptions::class,
+        )
+
+        fun isNoKey(type: kotlin.reflect.KClass<*>): Boolean = type in NO_KEY_TYPES
+
         /**
          * 全部"免 API Key、直接调用"搜索引擎的默认实例列表。
          * 安装后开箱即用：全部无需配置 Key，直接像浏览器一样搜索。
