@@ -25,34 +25,7 @@ import kotlin.uuid.Uuid
 
 val DEFAULT_AUTO_MODEL_ID = Uuid.parse("b7055fb4-39f9-4042-a88a-0d80ed76cf08")
 
-/** 内置 AI 免费模型 ID (智谱 GLM-4-Flash) */
-val DEFAULT_BUILTIN_AI_MODEL_ID = Uuid.parse("7c0f5a2e-9d4b-4e6a-b8c1-2a9f0d3e5b71")
-
 val DEFAULT_PROVIDERS = listOf(
-    // ===== 内置 AI: Pollinations.ai 免 Key 免费服务 =====
-    // 无需任何 API Key, 直接可用。通过提示词式工具调用 <tool_call> 支持工具/改代码。
-    ProviderSetting.OpenAI(
-        id = Uuid.parse("2f8a1b3c-5e7d-4a9f-b0c2-d3e4f5a6b7c8"),
-        name = "内置AI(免费)",
-        baseUrl = "https://text.pollinations.ai/openai",
-        apiKey = "",
-        enabled = true,
-        builtIn = true,
-        promptToolCalling = true,
-        description = {
-            Text("内置免费 AI：Pollinations.ai 匿名免 Key 直接可用。通过提示词方式调用工具（搜索/文件/系统等），关联 Workspace 后可读写改代码。")
-        },
-        models = listOf(
-            Model(
-                id = DEFAULT_BUILTIN_AI_MODEL_ID,
-                modelId = "openai",
-                displayName = "Pollinations (免费)",
-                inputModalities = listOf(Modality.TEXT),
-                outputModalities = listOf(Modality.TEXT),
-                abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
-            )
-        )
-    ),
     ProviderSetting.OpenAI(
         id = Uuid.parse("a8d2d463-e8c0-41f2-b89e-f5eb8e716cce"),
         name = "RikkaHub",
