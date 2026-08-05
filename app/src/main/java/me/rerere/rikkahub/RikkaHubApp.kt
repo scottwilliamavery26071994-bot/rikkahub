@@ -185,6 +185,8 @@ class RikkaHubApp : Application() {
                 }
                 // 自动安装编程环境与反编译工具 (失败不阻塞)
                 if (ws != null) {
+                    // 已就绪的 rootfs 也补打 patch (修复 passwd/group, 版本升级后生效)
+                    workspaceRepo.patchRootfs(ws.id)
                     runCatching {
                         workspaceRepo.installProgrammingTools(ws.id) {
                             Log.i(TAG, "installing programming tools: $it")

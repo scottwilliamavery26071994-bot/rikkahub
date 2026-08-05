@@ -53,6 +53,15 @@ class RootfsInstaller(
     }
 
     /**
+     * 对已安装的 rootfs 重新执行 patch (补 /etc/passwd 用户、/etc/group 主GID等)。
+     * 用于版本升级后修复已存在的环境, 轻量快速。
+     */
+    fun patchExisting(root: String) {
+        manager.ensureWorkspace(root)
+        patcher.patch(manager.linuxDir(root))
+    }
+
+    /**
      * 从本地归档文件安装 rootfs (免下载, 用于内置 assets 中的预置 rootfs)。
      */
     fun installFromFile(

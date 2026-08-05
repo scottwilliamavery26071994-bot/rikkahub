@@ -152,6 +152,16 @@ class WorkspaceRepository(
         onProgress: (RootfsInstallProgress) -> Unit = {},
     ): Boolean = installRootfs(id, DEFAULT_ROOTFS_URL, onProgress)
 
+    /** 对已就绪的 rootfs 重新执行 patch (修复 passwd/group 等, 版本升级用) */
+    suspend fun patchRootfs(id: String) = withContext(Dispatchers.IO) {
+        val workspace = dao.getById(id) ?: return@withContext
+        runCatching {
+            rootfsInstaller.patchExisting(workspace.root)
+        }.onFailure { e ->
+            Log.w(TAG, "patchRootfs failed: workspace=${workspace.id}", e)
+        }
+    }
+
     suspend fun listFiles(
         id: String,
         area: WorkspaceStorageArea,
