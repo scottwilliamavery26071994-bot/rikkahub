@@ -53,23 +53,35 @@ object BaiduSearchService : SearchService<SearchServiceOptions.BaiduOptions> {
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                 .header("Accept-Language", "zh-CN,zh;q=0.9")
-                .header("Referer", "https://www.baidu.com/")
-                .timeout(8000)
+                .header("Sec-Fetch-Dest", "document")
+                .header("Sec-Fetch-Mode", "navigate")
+                .header("Sec-Fetch-Site", "same-origin")
+                .header("Upgrade-Insecure-Requests", "1")
+                .referrer("https://www.baidu.com/")
+                .cookie("BAIDUID", java.util.UUID.randomUUID().toString().replace("-", "") + ":FG=1")
+                .timeout(10000)
                 .get()
 
-            val results = doc.select(".result, .c-container, .result-op").mapNotNull { element ->
+            val results = doc.select(".result, .c-container, .result-op, div[class*=result]").mapNotNull { element ->
                 val titleEl = element.selectFirst("h3 > a, h3 a") ?: return@mapNotNull null
                 val title = titleEl.text().ifBlank { return@mapNotNull null }
                 val link = titleEl.attr("href")
+                    .let { h ->
+                        if (h.startsWith("http")) h
+                        else if (h.startsWith("//")) "https:$h"
+                        else if (h.startsWith("/link")) "https://www.baidu.com$h"
+                        else h
+                    }
                     .takeIf { it.startsWith("http") }
                     ?: return@mapNotNull null
-                val snippet = element.selectFirst(".c-abstract, .content-right_2s-H4, .c-span-last, span[class*=content]")?.text()
-                    ?: element.selectFirst(".c-color-text, .c-line-clamp-2")?.text()
+                val snippet = element.selectFirst(".c-abstract, .c-span-last, .c-color-text, .c-line-clamp, .content-right_8Zs40, .content-right_2s-H4, span[class*=content]")?.text()
                     ?: ""
                 SearchResultItem(title = title, url = link, text = snippet)
             }
 
-            require(results.isNotEmpty()) { "Search failed: no results found" }
+            if (results.isEmpty()) {
+                error("Search failed: no results found")
+            }
             SearchResult(items = results)
         }
     }
