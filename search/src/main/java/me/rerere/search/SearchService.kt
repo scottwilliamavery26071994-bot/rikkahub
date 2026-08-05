@@ -158,7 +158,6 @@ sealed class SearchServiceOptions {
             BingLocalOptions::class,
             DuckDuckGoOptions::class,
             GoogleOptions::class,
-            BaiduOptions::class,
             SogouOptions::class,
             So360Options::class,
         )
@@ -174,7 +173,6 @@ sealed class SearchServiceOptions {
             BingLocalOptions(),
             DuckDuckGoOptions(),
             GoogleOptions(),
-            BaiduOptions(),
             SogouOptions(),
             So360Options(),
         )
