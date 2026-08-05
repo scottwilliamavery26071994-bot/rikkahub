@@ -75,6 +75,8 @@ class RikkaHubApp : Application() {
     override fun onCreate() {
         super.onCreate()
         INSTANCE = this
+        // 注入搜索服务的 Context (百度等引擎读取 CookieManager 会话 cookie 过验证用)
+        me.rerere.search.SearchService.appContext = this
         startKoin {
             androidLogger()
             androidContext(this@RikkaHubApp)

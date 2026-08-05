@@ -57,7 +57,7 @@ object BaiduSearchService : SearchService<SearchServiceOptions.BaiduOptions> {
                 val baiduid = session.cookie("BAIDUID")?.takeIf { it.isNotBlank() }
                     ?: (java.util.UUID.randomUUID().toString().replace("-", "") + ":FG=1")
                 val url = "https://www.baidu.com/s?wd=" + URLEncoder.encode(query, "UTF-8") + "&rn=10"
-                return Jsoup.connect(url)
+                val conn = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
                     .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                     .header("Accept-Language", "zh-CN,zh;q=0.9")
@@ -69,7 +69,17 @@ object BaiduSearchService : SearchService<SearchServiceOptions.BaiduOptions> {
                     .cookie("BAIDUID", baiduid)
                     .cookie("BIDUPSID", baiduid)
                     .timeout(10000)
-                    .get()
+                // 若用户在应用内 WebView/浏览器过过百度验证, CookieManager 里有 BDUSS 等会话,
+                // 带上后可直接通过验证
+                val sessionCookie = SearchService.appContext?.let { ctx ->
+                    runCatching {
+                        android.webkit.CookieManager.getInstance().getCookie("https://www.baidu.com")
+                    }.getOrNull()
+                } ?: ""
+                if (sessionCookie.isNotBlank()) {
+                    conn.header("Cookie", sessionCookie)
+                }
+                return conn.get()
             }
 
             fun parse(doc: org.jsoup.nodes.Document): List<SearchResultItem> =
@@ -98,7 +108,7 @@ object BaiduSearchService : SearchService<SearchServiceOptions.BaiduOptions> {
                 results = parse(doc)
             }
             if (results.isEmpty()) {
-                error("Search failed: no results found")
+                error("百度触发安全验证: 请在应用内打开网页 www.baidu.com 搜索一次并完成滑块验证, 之后百度搜索即可正常使用")
             }
             SearchResult(items = results)
         }

@@ -146,6 +146,10 @@ sealed class SearchServiceOptions {
         get() = TYPES[this::class] ?: "Unknown"
 
     companion object {
+        /** 应用 Context (由 App 启动时注入, 用于 CookieManager 读取浏览器会话 cookie) */
+        @Volatile
+        internal var appContext: android.content.Context? = null
+
         /** 默认搜索服务 (免Key且实测可用: DuckDuckGo) */
         val DEFAULT = DuckDuckGoOptions()
 
