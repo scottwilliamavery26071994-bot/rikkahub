@@ -1,6 +1,6 @@
 {
   "name": "orangechat-functions",
-  "description": "橘瓣 OrangeChat 公告推送 Cloud Functions",
+  "description": "灵犀 Lingxi 公告推送 Cloud Functions",
   "scripts": {
     "deploy": "firebase deploy --only functions"
   },
