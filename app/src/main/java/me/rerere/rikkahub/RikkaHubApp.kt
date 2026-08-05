@@ -140,17 +140,30 @@ class RikkaHubApp : Application() {
                 val defaultAssistant = settings.assistants.firstOrNull {
                     it.id == me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
                 }
-                if (defaultAssistant != null && defaultAssistant.workspaceId == null) {
-                    val existing = workspaceRepo.listFlow().first().firstOrNull()
-                    val ws = existing ?: workspaceRepo.create("默认工作区")
-                    // 内置 rootfs 自动安装 (免下载, 后台执行)
-                    if (ws.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name) {
-                        runCatching { workspaceRepo.installBundledRootfs(ws.id) }
-                            .onFailure { e ->
-                                Log.w(TAG, "bundled rootfs install failed", e)
-                            }
+                val linkedWsId = defaultAssistant?.workspaceId?.toString()
+                val ws = if (linkedWsId != null) {
+                    // 已关联工作区: 若 rootfs 缺失/损坏则自动重装 (修复版代码)
+                    val existing = workspaceRepo.getById(linkedWsId)
+                    if (existing != null &&
+                        existing.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name
+                    ) {
+                        Log.w(TAG, "default workspace ${existing.id} status=${existing.shellStatus}, reinstalling bundled rootfs...")
+                        runCatching { workspaceRepo.installBundledRootfs(existing.id) }
+                            .onFailure { e -> Log.w(TAG, "rootfs reinstall failed", e) }
+                        workspaceRepo.getById(existing.id)
+                    } else existing
+                } else {
+                    // 未关联: 创建默认工作区并安装内置 rootfs
+                    val created = workspaceRepo.listFlow().first().firstOrNull()
+                        ?: workspaceRepo.create("默认工作区")
+                    if (created.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name) {
+                        runCatching { workspaceRepo.installBundledRootfs(created.id) }
+                            .onFailure { e -> Log.w(TAG, "bundled rootfs install failed", e) }
                     }
-                    // 自动安装编程环境与常用工具 (git/python3/gcc/make 等), 失败不阻塞
+                    created
+                }
+                // 自动安装编程环境与反编译工具 (失败不阻塞)
+                if (ws != null) {
                     runCatching {
                         workspaceRepo.installProgrammingTools(ws.id) {
                             Log.i(TAG, "installing programming tools: $it")
@@ -158,7 +171,6 @@ class RikkaHubApp : Application() {
                     }.onFailure { e ->
                         Log.w(TAG, "programming tools install failed (可稍后手动安装): ${e.message}")
                     }
-                    // 自动安装 APK 反编译工具链 (Java + apktool + jadx), 失败不阻塞
                     runCatching {
                         workspaceRepo.installReverseTools(ws.id) {
                             Log.i(TAG, "installing reverse tools: $it")
@@ -177,8 +189,8 @@ class RikkaHubApp : Application() {
                             }
                         )
                     }
-                    Log.i(TAG, "auto-created default workspace ${ws.id}, rootfs ready, linked to default assistant")
                 }
+                Log.i(TAG, "default workspace ready: ${ws?.id}")
             }.onFailure { e ->
                 Log.w(TAG, "auto-init default workspace failed", e)
             }
