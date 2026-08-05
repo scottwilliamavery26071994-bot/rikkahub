@@ -97,6 +97,56 @@ interface SearchService<T : SearchServiceOptions> {
                 explicitNulls = false
             }
         }
+
+        /** 应用 Context (由 App 启动时注入, 用于 CookieManager 读取浏览器会话 cookie) */
+        @Volatile
+        var appContext: android.content.Context? = null
+
+        /** 默认搜索服务 (免Key且实测可用: DuckDuckGo) */
+        val DEFAULT = DuckDuckGoOptions()
+
+        /** 免 API Key、实测可直接用的搜索引擎 */
+        val NO_KEY_TYPES: Set<kotlin.reflect.KClass<out SearchServiceOptions>> = setOf(
+            BingLocalOptions::class,
+            DuckDuckGoOptions::class,
+            GoogleOptions::class,
+            SogouOptions::class,
+            So360Options::class,
+        )
+
+        fun isNoKey(type: kotlin.reflect.KClass<*>): Boolean = type in NO_KEY_TYPES
+
+        fun allDefaults(): List<SearchServiceOptions> = listOf(
+            BingLocalOptions(),
+            DuckDuckGoOptions(),
+            GoogleOptions(),
+            SogouOptions(),
+            So360Options(),
+        )
+
+        val TYPES = mapOf(
+            BingLocalOptions::class to "Bing",
+            DuckDuckGoOptions::class to "DuckDuckGo",
+            GoogleOptions::class to "Google",
+            SogouOptions::class to "搜狗",
+            So360Options::class to "360",
+            RikkaHubOptions::class to "RikkaHub",
+            ZhipuOptions::class to "智谱",
+            TavilyOptions::class to "Tavily",
+            ExaOptions::class to "Exa",
+            SearXNGOptions::class to "SearXNG",
+            LinkUpOptions::class to "LinkUp",
+            BraveOptions::class to "Brave",
+            MetasoOptions::class to "秘塔",
+            OllamaOptions::class to "Ollama",
+            PerplexityOptions::class to "Perplexity",
+            FirecrawlOptions::class to "Firecrawl",
+            JinaOptions::class to "Jina",
+            BochaOptions::class to "博查",
+            GrokOptions::class to "Grok",
+            TinyfishOptions::class to "Tinyfish",
+            CustomJsOptions::class to "Custom JS",
+        )
     }
 }
 
@@ -143,63 +193,6 @@ sealed class SearchServiceOptions {
 
     open val displayName: String
         get() = TYPES[this::class] ?: "Unknown"
-
-    companion object {
-        /** 应用 Context (由 App 启动时注入, 用于 CookieManager 读取浏览器会话 cookie) */
-        @Volatile
-        var appContext: android.content.Context? = null
-
-        /** 默认搜索服务 (免Key且实测可用: DuckDuckGo) */
-        val DEFAULT = DuckDuckGoOptions()
-
-        /** 免 API Key、实测可直接用的搜索引擎 */
-        val NO_KEY_TYPES: Set<kotlin.reflect.KClass<out SearchServiceOptions>> = setOf(
-            BingLocalOptions::class,
-            DuckDuckGoOptions::class,
-            GoogleOptions::class,
-            SogouOptions::class,
-            So360Options::class,
-        )
-
-        fun isNoKey(type: kotlin.reflect.KClass<*>): Boolean = type in NO_KEY_TYPES
-
-        /**
-         * 全部"免 API Key、直接调用"搜索引擎的默认实例列表。
-         * 只保留实测可用的: DuckDuckGo / 百度 / 360
-         * (Bing/Google/搜狗 被反爬, CustomJS 需用户自写脚本, 已从默认移除)
-         */
-        fun allDefaults(): List<SearchServiceOptions> = listOf(
-            BingLocalOptions(),
-            DuckDuckGoOptions(),
-            GoogleOptions(),
-            SogouOptions(),
-            So360Options(),
-        )
-
-        val TYPES = mapOf(
-            BingLocalOptions::class to "Bing",
-            DuckDuckGoOptions::class to "DuckDuckGo",
-            GoogleOptions::class to "Google",
-            SogouOptions::class to "搜狗",
-            So360Options::class to "360",
-            RikkaHubOptions::class to "RikkaHub",
-            ZhipuOptions::class to "智谱",
-            TavilyOptions::class to "Tavily",
-            ExaOptions::class to "Exa",
-            SearXNGOptions::class to "SearXNG",
-            LinkUpOptions::class to "LinkUp",
-            BraveOptions::class to "Brave",
-            MetasoOptions::class to "秘塔",
-            OllamaOptions::class to "Ollama",
-            PerplexityOptions::class to "Perplexity",
-            FirecrawlOptions::class to "Firecrawl",
-            JinaOptions::class to "Jina",
-            BochaOptions::class to "博查",
-            GrokOptions::class to "Grok",
-            TinyfishOptions::class to "Tinyfish",
-            CustomJsOptions::class to "Custom JS",
-        )
-    }
 
     @Serializable
     @SerialName("bing_local")
