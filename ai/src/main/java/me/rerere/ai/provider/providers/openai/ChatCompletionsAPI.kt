@@ -595,18 +595,44 @@ class ChatCompletionsAPI(
         providerSetting: ProviderSetting.OpenAI = ProviderSetting.OpenAI(),
         tools: List<Tool> = emptyList()
     ) = buildJsonArray {
-        // 提示词式工具调用: 在消息最前面注入一条 system, 描述可用工具与 <tool_call> 输出格式
-        if (providerSetting.promptToolCalling && tools.isNotEmpty()) {
-            add(buildJsonObject {
-                put("role", "system")
-                put("content", buildPromptToolCallingSystem(tools))
-            })
-        }
-        val filteredMessages = messages.filter { it.isValidToUpload() }
-        // 纯文本模型 (如 GLM-5.2) 不接受 image_url, 收到会报 \"Model only support text input\"。
-        // OcrTransformer 只覆盖 file: 图片, http/base64 图片会漏网; 这里在序列化层兜底,
-        // 模型不支持 IMAGE 时直接跳过 Image part, 不再发给 API。
         val supportsImage = model.inputModalities.contains(Modality.IMAGE)
+        var filteredMessages = messages.filter { it.isValidToUpload() }
+
+        // 提示词式工具调用 (免 Key 服务如 Pollinations 不支持原生 tools 参数,
+        // 且匿名免费不支持 system 消息 -> 返回 402):
+        // 把工具说明 + 原 system 提示词合并进第一条 user 消息
+        if (providerSetting.promptToolCalling) {
+            val toolPrompt = if (tools.isNotEmpty()) buildPromptToolCallingSystem(tools) else null
+            val systemTexts = filteredMessages
+                .filter { it.role == MessageRole.SYSTEM }
+                .flatMap { it.parts.filterIsInstance<UIMessagePart.Text>() }
+                .map { it.text }
+            val extra = (listOfNotNull(toolPrompt) + systemTexts)
+                .filter { it.isNotBlank() }
+                .joinToString("\n\n")
+            filteredMessages = filteredMessages.filter { it.role != MessageRole.SYSTEM }
+            if (extra.isNotBlank()) {
+                val firstUserIdx = filteredMessages.indexOfFirst { it.role == MessageRole.USER }
+                if (firstUserIdx >= 0) {
+                    val msg = filteredMessages[firstUserIdx]
+                    val firstText = msg.parts.filterIsInstance<UIMessagePart.Text>().firstOrNull()
+                    val newParts = if (firstText == null) {
+                        listOf(UIMessagePart.Text(extra)) + msg.parts
+                    } else {
+                        msg.parts.map { part ->
+                            if (part === firstText) UIMessagePart.Text(extra + "\n\n" + firstText.text) else part
+                        }
+                    }
+                    filteredMessages = filteredMessages.toMutableList().apply {
+                        this[firstUserIdx] = msg.copy(parts = newParts)
+                    }
+                } else {
+                    filteredMessages = listOf(
+                        UIMessage(role = MessageRole.USER, parts = listOf(UIMessagePart.Text(extra)))
+                    ) + filteredMessages
+                }
+            }
+        }
 
         filteredMessages.forEach { message ->
             if (message.role == MessageRole.ASSISTANT) {

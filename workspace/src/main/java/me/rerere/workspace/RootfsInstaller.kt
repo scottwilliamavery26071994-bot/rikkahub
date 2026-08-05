@@ -226,7 +226,20 @@ class RootfsInstaller(
             (target.parentFile ?: root).toPath().relativize(resolved.toPath()).toFile()
         }
         target.delete()
-        Files.createSymbolicLink(target.toPath(), linkTarget.toPath())
+        try {
+            Files.createSymbolicLink(target.toPath(), linkTarget.toPath())
+        } catch (e: Exception) {
+            // Android 部分文件系统不支持符号链接, 降级: 源是文件则复制, 目录则建目录, 避免中断安装
+            runCatching {
+                val src = if (linkTarget.isAbsolute) linkTarget
+                else File(target.parentFile ?: root, linkTarget.path)
+                if (src.exists() && src.isFile) {
+                    src.copyTo(target, overwrite = true)
+                } else if (src.exists() && src.isDirectory) {
+                    target.mkdirs()
+                }
+            }
+        }
     }
 
     private fun createHardLink(root: File, target: File, linkName: String) {
