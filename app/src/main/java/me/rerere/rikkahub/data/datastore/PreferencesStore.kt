@@ -6,6 +6,15 @@
 
 package me.rerere.rikkahub.data.datastore
 
+import androidx.compose.runtime.Composable
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import me.rerere.rikkahub.data.ai.tools.LocalToolOption
+
 import android.content.Context
 import android.util.Log
 import androidx.datastore.core.IOException
@@ -839,7 +848,17 @@ internal val DEFAULT_ASSISTANTS = listOf(
     Assistant(
         id = DEFAULT_ASSISTANT_ID,
         name = "",
-        systemPrompt = ""
+        systemPrompt = "",
+        // 内置 AI 默认开启常用工具: 时间/网页抓取/剪贴板/JS引擎/问答/跳过回复
+        localTools = listOf(
+            LocalToolOption.TimeInfo,
+            LocalToolOption.WebFetch,
+            LocalToolOption.Clipboard,
+            LocalToolOption.JavascriptEngine,
+            LocalToolOption.ListZipContents,
+            LocalToolOption.AskUser,
+            LocalToolOption.AllowSkipReply,
+        )
     ),
     Assistant(
         id = Uuid.parse("3d47790c-c415-4b90-9388-751128adb0a0"),

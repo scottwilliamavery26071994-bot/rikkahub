@@ -25,7 +25,40 @@ import kotlin.uuid.Uuid
 
 val DEFAULT_AUTO_MODEL_ID = Uuid.parse("b7055fb4-39f9-4042-a88a-0d80ed76cf08")
 
+/** 内置 AI 免费模型 ID (智谱 GLM-4-Flash) */
+val DEFAULT_BUILTIN_AI_MODEL_ID = Uuid.parse("7c0f5a2e-9d4b-4e6a-b8c1-2a9f0d3e5b71")
+
 val DEFAULT_PROVIDERS = listOf(
+    // ===== 内置 AI: 智谱 GLM-4-Flash 免费模型, 注册智谱开放平台填 Key 即可用, 支持工具调用 =====
+    ProviderSetting.OpenAI(
+        id = Uuid.parse("2f8a1b3c-5e7d-4a9f-b0c2-d3e4f5a6b7c8"),
+        name = "内置AI(免费)",
+        baseUrl = "https://open.bigmodel.cn/api/paas/v4",
+        apiKey = "",
+        enabled = true,
+        builtIn = true,
+        description = {
+            Text("内置免费 AI：智谱 GLM-4-Flash 免费模型，支持工具调用（搜索/改代码等）。注册智谱开放平台（bigmodel.cn）获取 API Key 填入即可使用，模型本身免费。")
+        },
+        models = listOf(
+            Model(
+                id = DEFAULT_BUILTIN_AI_MODEL_ID,
+                modelId = "glm-4-flash",
+                displayName = "GLM-4-Flash (免费)",
+                inputModalities = listOf(Modality.TEXT),
+                outputModalities = listOf(Modality.TEXT),
+                abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
+            ),
+            Model(
+                id = Uuid.parse("8d1e2f3a-4b5c-6d7e-8f90-1a2b3c4d5e6f"),
+                modelId = "glm-4-flashx",
+                displayName = "GLM-4-FlashX (免费)",
+                inputModalities = listOf(Modality.TEXT),
+                outputModalities = listOf(Modality.TEXT),
+                abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
+            ),
+        )
+    ),
     ProviderSetting.OpenAI(
         id = Uuid.parse("a8d2d463-e8c0-41f2-b89e-f5eb8e716cce"),
         name = "RikkaHub",
