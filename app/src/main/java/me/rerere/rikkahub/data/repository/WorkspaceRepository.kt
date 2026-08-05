@@ -6,7 +6,6 @@
 
 package me.rerere.rikkahub.data.repository
 
-import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -30,11 +29,7 @@ import java.io.OutputStream
 import java.io.File
 import kotlin.uuid.Uuid
 
-/** 内置预置 rootfs 在 assets 中的路径 (ubuntu-base 24.04 arm64, ~30MB) */
-private const val BUNDLED_ROOTFS_ASSET = "rootfs/ubuntu-base-arm64.tar.gz"
-
 class WorkspaceRepository(
-    private val context: Context,
     private val dao: WorkspaceDAO,
     private val manager: WorkspaceManager,
     private val rootfsInstaller: RootfsInstaller,
@@ -148,45 +143,14 @@ class WorkspaceRepository(
         }
     }
 
-    suspend fun installBundledRootfs(
+    /**
+     * 自动下载并安装 rootfs (Ubuntu 24.04 base arm64, 官方源)。
+     * 需 shell 可访问网络。后台调用, 失败抛异常由调用方容错。
+     */
+    suspend fun installDefaultRootfs(
         id: String,
         onProgress: (RootfsInstallProgress) -> Unit = {},
-    ): Boolean {
-        val workspace = dao.getById(id) ?: return false
-        updateShellState(workspace, WorkspaceShellStatus.INSTALLING.name)
-        try {
-            // 从应用内置 assets 安装预置 rootfs (免下载), 完成后 shell 直接 READY
-            runInterruptible(Dispatchers.IO) {
-                val cacheFile = File(context.cacheDir, "bundled-rootfs.tar.gz")
-                try {
-                    context.assets.open(BUNDLED_ROOTFS_ASSET).use { input ->
-                        cacheFile.outputStream().use { output -> input.copyTo(output) }
-                    }
-                    rootfsInstaller.installFromFile(workspace.root, cacheFile, onProgress)
-                } finally {
-                    cacheFile.delete()
-                }
-            }
-            updateShellState(workspace, WorkspaceShellStatus.READY.name)
-            return true
-        } catch (e: CancellationException) {
-            withContext(NonCancellable) { restoreShellState(workspace) }
-            throw e
-        } catch (e: InterruptedException) {
-            withContext(NonCancellable) { restoreShellState(workspace) }
-            throw CancellationException("Rootfs install cancelled").also { it.initCause(e) }
-        } catch (e: Throwable) {
-            Log.e(TAG, "installBundledRootfs failed (内置安装失败), 自动切换网络下载安装: workspace=${workspace.id}", e)
-            // Fallback: 内置安装失败时自动从官方源下载安装
-            return try {
-                installRootfs(id, DEFAULT_ROOTFS_URL, onProgress)
-            } catch (e2: Throwable) {
-                Log.e(TAG, "fallback download rootfs install failed", e2)
-                updateShellState(workspace, WorkspaceShellStatus.BROKEN.name)
-                throw e2
-            }
-        }
-    }
+    ): Boolean = installRootfs(id, DEFAULT_ROOTFS_URL, onProgress)
 
     suspend fun listFiles(
         id: String,
@@ -422,8 +386,8 @@ class WorkspaceRepository(
     companion object {
         private const val TAG = "WorkspaceRepository"
 
-        /** 内置 rootfs 安装失败时的自动下载源 (Ubuntu 24.04 base arm64) */
-        private const val DEFAULT_ROOTFS_URL =
+        /** rootfs 自动下载源 (Ubuntu 24.04 base arm64) */
+        const val DEFAULT_ROOTFS_URL =
             "https://cdimage.ubuntu.com/ubuntu-base/releases/24.04/release/ubuntu-base-24.04.3-base-arm64.tar.gz"
     }
 }

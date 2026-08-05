@@ -147,8 +147,8 @@ class RikkaHubApp : Application() {
                     if (existing != null &&
                         existing.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name
                     ) {
-                        Log.w(TAG, "default workspace ${existing.id} status=${existing.shellStatus}, reinstalling bundled rootfs...")
-                        runCatching { workspaceRepo.installBundledRootfs(existing.id) }
+                        Log.w(TAG, "default workspace ${existing.id} status=${existing.shellStatus}, reinstalling rootfs...")
+                        runCatching { workspaceRepo.installDefaultRootfs(existing.id) }
                             .onFailure { e -> Log.w(TAG, "rootfs reinstall failed", e) }
                         workspaceRepo.getById(existing.id)
                     } else existing
@@ -157,8 +157,8 @@ class RikkaHubApp : Application() {
                     val created = workspaceRepo.listFlow().first().firstOrNull()
                         ?: workspaceRepo.create("默认工作区")
                     if (created.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name) {
-                        runCatching { workspaceRepo.installBundledRootfs(created.id) }
-                            .onFailure { e -> Log.w(TAG, "bundled rootfs install failed", e) }
+                        runCatching { workspaceRepo.installDefaultRootfs(created.id) }
+                            .onFailure { e -> Log.w(TAG, "rootfs download install failed", e) }
                     }
                     created
                 }
