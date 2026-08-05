@@ -21,6 +21,11 @@ android {
 
         buildConfigField("String", "GIT_COMMIT", "\"unknown\"")
         buildConfigField("String", "BUILD_TIME", "\"2026-08-05\"")
+
+        // 最快构建: 只打 arm64-v8a (真机主流架构, 原项目 build_install.bat 亦如此)
+        ndk {
+            abiFilters += listOf("arm64-v8a")
+        }
     }
 
     signingConfigs {
