@@ -23,6 +23,7 @@ import me.rerere.workspace.RootfsInstaller
 import me.rerere.workspace.WorkspaceBindMount
 import me.rerere.workspace.WorkspaceManager
 import org.koin.dsl.module
+import org.koin.android.ext.koin.androidContext
 import java.io.File
 
 val repositoryModule = module {
@@ -75,7 +76,7 @@ val repositoryModule = module {
     }
 
     single {
-        WorkspaceRepository(get(), get(), get(), get())
+        WorkspaceRepository(androidContext(), get(), get(), get(), get())
     }
 
     single {

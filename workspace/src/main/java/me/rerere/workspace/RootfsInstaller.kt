@@ -52,6 +52,36 @@ class RootfsInstaller(
         }
     }
 
+    /**
+     * 从本地归档文件安装 rootfs (免下载, 用于内置 assets 中的预置 rootfs)。
+     */
+    fun installFromFile(
+        root: String,
+        archiveFile: File,
+        onProgress: (RootfsInstallProgress) -> Unit = {},
+    ) {
+        require(archiveFile.exists()) { "Rootfs archive not found: ${archiveFile.path}" }
+        manager.ensureWorkspace(root)
+        val format = ArchiveFormat.fromFile(archiveFile)
+        val tempDir = manager.tempDir(root)
+        val stagingDir = File(tempDir, "rootfs-staging")
+        val linuxDir = manager.linuxDir(root)
+
+        try {
+            stagingDir.deleteRecursively()
+            stagingDir.mkdirs()
+            extractTar(archiveFile, stagingDir, format, onProgress)
+            linuxDir.deleteRecursively()
+            require(stagingDir.renameTo(linuxDir)) {
+                "Failed to move rootfs into workspace"
+            }
+            patcher.patch(linuxDir)
+            onProgress(RootfsInstallProgress(stage = RootfsInstallStage.INSTALLED))
+        } finally {
+            stagingDir.deleteRecursively()
+        }
+    }
+
     private fun download(
         url: String,
         target: File,

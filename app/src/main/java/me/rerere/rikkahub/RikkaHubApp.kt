@@ -129,9 +129,9 @@ class RikkaHubApp : Application() {
         // Start App Lock guard (intercepts locked apps when opened) if any app is locked
         startAppLockGuardIfEnabled()
 
-        // 内置 AI: 自动创建默认工作区并关联默认助手
-        // 使 workspace 工具(读/写/改代码/Shell)直接出现在 AI 工具列表, 无需手动配置。
-        // rootfs 环境由用户在"工作区"页面一键初始化(URL 已预填)。
+        // 内置 AI: 自动创建默认工作区、安装内置 rootfs 并关联默认助手
+        // 内置 ubuntu-base rootfs (~30MB, assets 内) 自动解压安装, 零操作,
+        // 安装完成后 workspace 工具(读/写/改代码/Shell)直接可用。
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             runCatching {
                 val workspaceRepo: me.rerere.rikkahub.data.repository.WorkspaceRepository = get()
@@ -143,6 +143,13 @@ class RikkaHubApp : Application() {
                 if (defaultAssistant != null && defaultAssistant.workspaceId == null) {
                     val existing = workspaceRepo.listFlow().first().firstOrNull()
                     val ws = existing ?: workspaceRepo.create("默认工作区")
+                    // 内置 rootfs 自动安装 (免下载, 后台执行)
+                    if (ws.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name) {
+                        runCatching { workspaceRepo.installBundledRootfs(ws.id) }
+                            .onFailure { e ->
+                                Log.w(TAG, "bundled rootfs install failed", e)
+                            }
+                    }
                     prefs.update { s ->
                         s.copy(
                             assistants = s.assistants.map {
@@ -154,7 +161,7 @@ class RikkaHubApp : Application() {
                             }
                         )
                     }
-                    Log.i(TAG, "auto-created default workspace ${ws.id} and linked to default assistant")
+                    Log.i(TAG, "auto-created default workspace ${ws.id}, rootfs ready, linked to default assistant")
                 }
             }.onFailure { e ->
                 Log.w(TAG, "auto-init default workspace failed", e)

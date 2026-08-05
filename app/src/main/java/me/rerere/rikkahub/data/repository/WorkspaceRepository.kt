@@ -6,6 +6,7 @@
 
 package me.rerere.rikkahub.data.repository
 
+import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -26,9 +27,14 @@ import me.rerere.workspace.WorkspaceShellStatus
 import me.rerere.workspace.WorkspaceStorageArea
 import java.io.InputStream
 import java.io.OutputStream
+import java.io.File
 import kotlin.uuid.Uuid
 
+/** 内置预置 rootfs 在 assets 中的路径 (ubuntu-base 24.04 arm64, ~30MB) */
+private const val BUNDLED_ROOTFS_ASSET = "rootfs/ubuntu-base-arm64.tar.gz"
+
 class WorkspaceRepository(
+    private val context: Context,
     private val dao: WorkspaceDAO,
     private val manager: WorkspaceManager,
     private val rootfsInstaller: RootfsInstaller,
@@ -137,6 +143,40 @@ class WorkspaceRepository(
             throw CancellationException("Rootfs install cancelled").also { it.initCause(e) }
         } catch (e: Throwable) {
             Log.e(TAG, "installRootfs failed: workspace=${workspace.id}, root=${workspace.root}, url=$url", e)
+            updateShellState(workspace, WorkspaceShellStatus.BROKEN.name)
+            throw e
+        }
+    }
+
+    suspend fun installBundledRootfs(
+        id: String,
+        onProgress: (RootfsInstallProgress) -> Unit = {},
+    ): Boolean {
+        val workspace = dao.getById(id) ?: return false
+        updateShellState(workspace, WorkspaceShellStatus.INSTALLING.name)
+        try {
+            // 从应用内置 assets 安装预置 rootfs (免下载), 完成后 shell 直接 READY
+            runInterruptible(Dispatchers.IO) {
+                val cacheFile = File(context.cacheDir, "bundled-rootfs.tar.gz")
+                try {
+                    context.assets.open(BUNDLED_ROOTFS_ASSET).use { input ->
+                        cacheFile.outputStream().use { output -> input.copyTo(output) }
+                    }
+                    rootfsInstaller.installFromFile(workspace.root, cacheFile, onProgress)
+                } finally {
+                    cacheFile.delete()
+                }
+            }
+            updateShellState(workspace, WorkspaceShellStatus.READY.name)
+            return true
+        } catch (e: CancellationException) {
+            withContext(NonCancellable) { restoreShellState(workspace) }
+            throw e
+        } catch (e: InterruptedException) {
+            withContext(NonCancellable) { restoreShellState(workspace) }
+            throw CancellationException("Rootfs install cancelled").also { it.initCause(e) }
+        } catch (e: Throwable) {
+            Log.e(TAG, "installBundledRootfs failed: workspace=${workspace.id}", e)
             updateShellState(workspace, WorkspaceShellStatus.BROKEN.name)
             throw e
         }
