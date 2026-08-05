@@ -1,5 +1,5 @@
 // 天气查询插件 - 使用 wttr.in API 获取真实天气数据
-// fetch 由橘瓣插件沙箱注入，是同步函数（不需要 await）
+// fetch 由灵犀插件沙箱注入，是同步函数（不需要 await）
 
 function get_weather(params) {
   var city = params.city || "Beijing";
