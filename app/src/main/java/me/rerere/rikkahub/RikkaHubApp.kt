@@ -15,6 +15,7 @@ import androidx.compose.foundation.ComposeFoundationFlags
 import androidx.compose.runtime.Composer
 import androidx.compose.runtime.tooling.ComposeStackTraceMode
 import androidx.core.app.NotificationChannelCompat
+import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -60,6 +61,9 @@ const val MUSIC_PLAYER_NOTIFICATION_CHANNEL_ID = "music_player"
 const val DEVICE_EVENT_NOTIFICATION_CHANNEL_ID = "device_event_tracking"
 const val VOICE_CALL_NOTIFICATION_CHANNEL_ID = "voice_call"
 const val ANNOUNCEMENT_NOTIFICATION_CHANNEL_ID = "announcement"
+
+/** 工作区环境自动安装进度通知 ID */
+const val WORKSPACE_INSTALL_NOTIFICATION_ID = 1001
 
 class RikkaHubApp : Application() {
     companion object {
@@ -129,36 +133,69 @@ class RikkaHubApp : Application() {
         // Start App Lock guard (intercepts locked apps when opened) if any app is locked
         startAppLockGuardIfEnabled()
 
-        // 内置 AI: 自动创建默认工作区、安装内置 rootfs 并关联默认助手
-        // 内置 ubuntu-base rootfs (~30MB, assets 内) 自动解压安装, 零操作,
-        // 安装完成后 workspace 工具(读/写/改代码/Shell)直接可用。
+        // 内置 AI: 自动创建默认工作区、自动下载安装 rootfs 并关联默认助手
+        // 安装过程通过通知展示进度, 用户可见。
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             runCatching {
                 val workspaceRepo: me.rerere.rikkahub.data.repository.WorkspaceRepository = get()
                 val prefs: me.rerere.rikkahub.data.datastore.SettingsStore = get()
+                val nm = NotificationManagerCompat.from(this@RikkaHubApp)
+                fun notifyWorkspace(text: String, ongoing: Boolean = true) {
+                    runCatching {
+                        nm.notify(
+                            WORKSPACE_INSTALL_NOTIFICATION_ID,
+                            NotificationCompat.Builder(
+                                this@RikkaHubApp,
+                                CHAT_LIVE_UPDATE_NOTIFICATION_CHANNEL_ID
+                            )
+                                .setSmallIcon(R.drawable.small_icon)
+                                .setContentTitle("工作区环境")
+                                .setContentText(text)
+                                .setOngoing(ongoing)
+                                .setOnlyAlertOnce(true)
+                                .build()
+                        )
+                    }
+                }
                 val settings = prefs.settingsFlow.first()
                 val defaultAssistant = settings.assistants.firstOrNull {
                     it.id == me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
                 }
                 val linkedWsId = defaultAssistant?.workspaceId?.toString()
                 val ws = if (linkedWsId != null) {
-                    // 已关联工作区: 若 rootfs 缺失/损坏则自动重装 (修复版代码)
+                    // 已关联工作区: 若 rootfs 缺失/损坏则自动重新下载安装
                     val existing = workspaceRepo.getById(linkedWsId)
                     if (existing != null &&
                         existing.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name
                     ) {
                         Log.w(TAG, "default workspace ${existing.id} status=${existing.shellStatus}, reinstalling rootfs...")
-                        runCatching { workspaceRepo.installDefaultRootfs(existing.id) }
-                            .onFailure { e -> Log.w(TAG, "rootfs reinstall failed", e) }
+                        notifyWorkspace("环境未就绪, 正在自动下载安装 Ubuntu 系统 (约30MB)...")
+                        runCatching {
+                            workspaceRepo.installDefaultRootfs(existing.id) { p ->
+                                val mb = (p.bytesRead / 1024 / 1024).toString()
+                                notifyWorkspace("正在下载安装 Ubuntu 环境... $mb MB")
+                            }
+                        }.onFailure { e ->
+                            Log.w(TAG, "rootfs reinstall failed", e)
+                            notifyWorkspace("环境安装失败: ${e.message?.take(60)}", ongoing = false)
+                        }
                         workspaceRepo.getById(existing.id)
                     } else existing
                 } else {
-                    // 未关联: 创建默认工作区并安装内置 rootfs
+                    // 未关联: 创建默认工作区并自动下载安装 rootfs
                     val created = workspaceRepo.listFlow().first().firstOrNull()
                         ?: workspaceRepo.create("默认工作区")
                     if (created.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name) {
-                        runCatching { workspaceRepo.installDefaultRootfs(created.id) }
-                            .onFailure { e -> Log.w(TAG, "rootfs download install failed", e) }
+                        notifyWorkspace("正在自动下载安装 Ubuntu 环境 (约30MB)...")
+                        runCatching {
+                            workspaceRepo.installDefaultRootfs(created.id) { p ->
+                                val mb = (p.bytesRead / 1024 / 1024).toString()
+                                notifyWorkspace("正在下载安装 Ubuntu 环境... $mb MB")
+                            }
+                        }.onFailure { e ->
+                            Log.w(TAG, "rootfs download install failed", e)
+                            notifyWorkspace("环境安装失败: ${e.message?.take(60)}", ongoing = false)
+                        }
                     }
                     created
                 }
@@ -189,6 +226,8 @@ class RikkaHubApp : Application() {
                             }
                         )
                     }
+                    notifyWorkspace("工作区环境已就绪 ✓", ongoing = false)
+                    runCatching { nm.cancel(WORKSPACE_INSTALL_NOTIFICATION_ID) }
                 }
                 Log.i(TAG, "default workspace ready: ${ws?.id}")
             }.onFailure { e ->
