@@ -135,7 +135,7 @@ class RikkaHubApp : Application() {
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
             runCatching {
                 val workspaceRepo: me.rerere.rikkahub.data.repository.WorkspaceRepository = get()
-                val prefs: me.rerere.rikkahub.data.datastore.PreferencesStore = get()
+                val prefs: me.rerere.rikkahub.data.datastore.SettingsStore = get()
                 val settings = prefs.settingsFlow.first()
                 val defaultAssistant = settings.assistants.firstOrNull {
                     it.id == me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
