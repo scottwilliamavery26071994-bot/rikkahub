@@ -3,7 +3,7 @@
  * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  *
- * 本文件由 APK 反编译逆向还原（ApkReverse：APK 文件静态分析）
+ * APK 逆向分析: 解包解析 AndroidManifest(AXML) + dex 类名/方法 + 字符串/接口
  */
 
 package me.rerere.rikkahub.data.api
@@ -11,6 +11,7 @@ package me.rerere.rikkahub.data.api
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.RandomAccessFile
 import java.util.zip.ZipFile
 
 /**
@@ -21,65 +22,253 @@ data class ApkReverseResult(
     val fileSize: Long,
     val packageName: String,
     val versionName: String,
+    val versionCode: String,
+    val minSdk: String,
+    val targetSdk: String,
     val permissions: List<String>,
     val activities: List<String>,
     val services: List<String>,
+    val receivers: List<String>,
+    val providers: List<String>,
     val interfaces: List<String>,
+    val classes: List<String>,
+    val dexCount: Int,
     val error: String,
 )
 
 /**
- * APK 逆向分析工具：解包并提取包名/版本/权限/组件/接口等信息.
+ * APK 逆向分析工具: 解析二进制 AndroidManifest(AXML) + dex 类名 + 字符串/接口.
  */
 object ApkReverse {
     private val URL_REGEX = Regex("https?://[a-zA-Z0-9._\\-]+(?:/[a-zA-Z0-9_/\\-]*)?")
     private val PACKAGE_REGEX = Regex("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$")
     private val VERSION_REGEX = Regex("^\\d+(\\.\\d+)+$")
 
+    /** 常见库前缀, 过滤不显示 */
+    private val LIB_PREFIX = listOf(
+        "android.", "androidx.", "java.", "javax.", "kotlin.", "kotlinx.",
+        "okhttp3.", "retrofit2.", "org.json", "org.xml", "com.google.",
+        "com.squareup.", "io.ktor.", "org.jetbrains.", "kotlin.",
+    )
+
     /**
      * 分析 APK 文件.
      */
     suspend fun reverse(file: File): ApkReverseResult = withContext(Dispatchers.IO) {
         try {
+            // 1. 解析二进制 AndroidManifest.xml (AXML)
+            val manifestInfo = parseManifest(file)
+            // 2. 提取 dex 字符串
             val strings = extractStrings(file)
-
-            val packageName = strings.firstOrNull { PACKAGE_REGEX.matches(it) && !it.contains("android.") } ?: ""
-            val versionName = strings.firstOrNull { VERSION_REGEX.matches(it) } ?: ""
-
+            // 3. dex 类名
+            val classes = extractClasses(strings)
+            // 4. 权限
             val permissions = strings.filter { it.startsWith("android.permission.") }.distinct()
-            val activities = strings.filter { it.startsWith("android.intent.action.") || it.endsWith(".MainActivity") }.distinct()
-            val services = strings.filter { it.contains("Service") }.distinct()
+            // 5. 外部接口
             val interfaces = extractInterfaces(file)
 
             ApkReverseResult(
                 fileName = file.name,
                 fileSize = file.length(),
-                packageName = packageName,
-                versionName = versionName,
+                packageName = manifestInfo.packageName.ifBlank {
+                    strings.firstOrNull { PACKAGE_REGEX.matches(it) && !it.contains("android.") } ?: ""
+                },
+                versionName = manifestInfo.versionName.ifBlank {
+                    strings.firstOrNull { VERSION_REGEX.matches(it) } ?: ""
+                },
+                versionCode = manifestInfo.versionCode,
+                minSdk = manifestInfo.minSdk,
+                targetSdk = manifestInfo.targetSdk,
                 permissions = permissions,
-                activities = activities,
-                services = services,
+                activities = manifestInfo.activities.distinct(),
+                services = manifestInfo.services.distinct(),
+                receivers = manifestInfo.receivers.distinct(),
+                providers = manifestInfo.providers.distinct(),
                 interfaces = interfaces,
+                classes = classes,
+                dexCount = countDex(file),
                 error = "",
             )
         } catch (e: Exception) {
             ApkReverseResult(
-                fileName = file.name,
-                fileSize = file.length(),
-                packageName = "",
-                versionName = "",
-                permissions = emptyList(),
-                activities = emptyList(),
-                services = emptyList(),
-                interfaces = emptyList(),
-                error = e.message ?: "未知错误",
+                fileName = file.name, fileSize = file.length(),
+                packageName = "", versionName = "", versionCode = "", minSdk = "", targetSdk = "",
+                permissions = emptyList(), activities = emptyList(), services = emptyList(),
+                receivers = emptyList(), providers = emptyList(), interfaces = emptyList(),
+                classes = emptyList(), dexCount = 0, error = e.message ?: "未知错误",
             )
         }
     }
 
-    /**
-     * 提取 APK 内 .dex/.xml/.arsc 中的全部 ASCII 字符串（长度 >= 6）.
-     */
+    // ==================== AndroidManifest AXML 解析 ====================
+
+    private data class ManifestInfo(
+        val packageName: String,
+        val versionName: String,
+        val versionCode: String,
+        val minSdk: String,
+        val targetSdk: String,
+        val activities: MutableList<String> = mutableListOf(),
+        val services: MutableList<String> = mutableListOf(),
+        val receivers: MutableList<String> = mutableListOf(),
+        val providers: MutableList<String> = mutableListOf(),
+    )
+
+    private fun parseManifest(file: File): ManifestInfo {
+        val info = ManifestInfo("", "", "", "", "")
+        ZipFile(file).use { zip ->
+            val entry = zip.getEntry("AndroidManifest.xml") ?: return info
+            zip.getInputStream(entry).use { input ->
+                val bytes = input.readBytes()
+                parseAXml(bytes, info)
+            }
+        }
+        return info
+    }
+
+    private fun parseAXml(bytes: ByteArray, info: ManifestInfo) {
+        var pos = 0
+        fun u16(p: Int): Int = ((bytes[p].toInt() and 0xFF) shl 8) or (bytes[p + 1].toInt() and 0xFF)
+        fun u32(p: Int): Long =
+            ((bytes[p].toLong() and 0xFF) shl 24) or ((bytes[p + 1].toLong() and 0xFF) shl 16) or
+                ((bytes[p + 2].toLong() and 0xFF) shl 8) or (bytes[p + 3].toLong() and 0xFF)
+
+        if (u32(0) != 0x00080003L) return  // 不是 AXML
+        pos = 8
+        // String pool
+        var stringPoolOff = -1
+        var stringPoolSize = 0
+        var stringCount = 0
+        var stringsStart = 0
+        var isUtf8 = false
+        val chunkType = u16(pos)
+        if (chunkType == 0x0001) {
+            val headerSize = u16(pos + 2)
+            stringPoolSize = u32(pos + 4).toInt()
+            stringCount = u32(pos + 8).toInt()
+            val flags = u32(pos + 16).toInt()
+            stringsStart = u32(pos + 20).toInt()
+            isUtf8 = flags and 0x100 != 0
+            stringPoolOff = pos + headerSize
+            pos += stringPoolSize
+        }
+        // String 读取
+        fun readString(index: Int): String {
+            if (index < 0 || index >= stringCount) return ""
+            val off = stringPoolOff + u32(stringPoolOff + index * 4).toInt()
+            return if (isUtf8) {
+                // UTF-8: 长度(变长) + 实际长度(变长) + 字节
+                var p = off
+                fun readLen(): Int {
+                    val b = bytes[p].toInt() and 0xFF
+                    p++
+                    return if (b and 0x80 != 0) ((b and 0x7F) shl 8) or (bytes[p++].toInt() and 0xFF) else b
+                }
+                readLen()  // char len (ignore)
+                val byteLen = readLen()
+                val str = String(bytes, p, byteLen, Charsets.UTF_8)
+                str
+            } else {
+                // UTF-16LE: 字符数(变长) + 字符
+                var p = off
+                fun readLen(): Int {
+                    val b = bytes[p].toInt() and 0xFF
+                    p++
+                    return if (b and 0x80 != 0) ((b and 0x7F) shl 8) or (bytes[p++].toInt() and 0xFF) else b
+                }
+                readLen()
+                val chars = ByteArray(0)
+                val sb = StringBuilder()
+                while (true) {
+                    val lo = bytes[p++].toInt() and 0xFF
+                    val hi = bytes[p++].toInt() and 0xFF
+                    if (lo == 0 && hi == 0) break
+                    sb.append((hi shl 8 or lo).toChar())
+                }
+                sb.toString()
+            }
+        }
+
+        // 遍历元素
+        val attrNamePool = mutableListOf<String>()
+        while (pos + 8 <= bytes.size) {
+            val type = u16(pos)
+            val size = u32(pos + 4).toInt()
+            if (size <= 0) break
+            when (type) {
+                0x0102 -> {  // StartElement
+                    val nameIdx = u32(pos + 8).toInt()
+                    val attrStart = u32(pos + 12).toInt()
+                    val attrCount = u32(pos + 16).toInt()
+                    val elementName = readString(nameIdx)
+                    val attrs = mutableMapOf<String, String>()
+                    var ap = pos + attrStart
+                    for (i in 0 until attrCount) {
+                        val nsIdx = u32(ap).toInt()
+                        val nameIdx2 = u32(ap + 4).toInt()
+                        val rawIdx = u32(ap + 8).toInt()
+                        val typedSize = u32(ap + 12).toInt()
+                        val data = u32(ap + 16)
+                        val attrName = readString(nameIdx2)
+                        val value = when {
+                            rawIdx >= 0 -> readString(rawIdx)
+                            typedSize == 0x10 && data == 0L -> "true"
+                            typedSize == 0x10 && data == 1L -> "false"
+                            typedSize == 0x10 -> data.toString()
+                            else -> ""
+                        }
+                        attrs[attrName] = value
+                        ap += 20
+                    }
+                    // 收集
+                    when (elementName) {
+                        "manifest" -> {
+                            attrs["package"]?.let { info.packageName = it }
+                            attrs["versionName"]?.let { info.versionName = it }
+                            attrs["versionCode"]?.let { info.versionCode = it }
+                        }
+                        "uses-sdk" -> {
+                            attrs["minSdkVersion"]?.let { info.minSdk = it }
+                            attrs["targetSdkVersion"]?.let { info.targetSdk = it }
+                        }
+                        "activity" -> attrs["name"]?.let { info.activities += it }
+                        "service" -> attrs["name"]?.let { info.services += it }
+                        "receiver" -> attrs["name"]?.let { info.receivers += it }
+                        "provider" -> attrs["name"]?.let { info.providers += it }
+                    }
+                }
+            }
+            pos += size
+        }
+    }
+
+    // ==================== dex 类名提取 ====================
+
+    private fun extractClasses(strings: List<String>): List<String> {
+        // dex 类名格式: Lcom/example/Foo; 或 Lcom/example/Foo$Inner;
+        val classes = strings
+            .mapNotNull { s ->
+                if (s.length < 5 || s[0] != 'L') null
+                else {
+                    val end = s.indexOf(';')
+                    if (end <= 1) null else s.substring(1, end)
+                }
+            }
+            .map { it.replace('/', '.') }
+            .filter { it.length >= 3 && !it.startsWith("L") }
+            .filter { cls ->
+                LIB_PREFIX.none { it in cls } && cls.count { c -> c == '.' } >= 1
+            }
+            .distinct()
+        // 去掉 $ 内部类, 保留顶层类, 按名称排序
+        return classes
+            .filterNot { it.contains('$') }
+            .sorted()
+            .take(200)
+    }
+
+    // ==================== 字符串/接口提取 ====================
+
     private fun extractStrings(file: File): List<String> {
         val result = mutableListOf<String>()
         ZipFile(file).use { zip ->
@@ -97,9 +286,6 @@ object ApkReverse {
         return result
     }
 
-    /**
-     * 从字节数组中提取连续的可打印 ASCII 字符串（最小长度 6）.
-     */
     private fun extractAsciiStrings(bytes: ByteArray): List<String> {
         val result = mutableListOf<String>()
         val sb = StringBuilder()
@@ -116,9 +302,6 @@ object ApkReverse {
         return result
     }
 
-    /**
-     * 提取 APK 内出现的外部 URL/接口地址.
-     */
     private fun extractInterfaces(file: File): List<String> {
         val result = mutableSetOf<String>()
         ZipFile(file).use { zip ->
@@ -135,5 +318,17 @@ object ApkReverse {
             }
         }
         return result.toList()
+    }
+
+    private fun countDex(file: File): Int {
+        var count = 0
+        ZipFile(file).use { zip ->
+            val entries = zip.entries()
+            while (entries.hasMoreElements()) {
+                val name = entries.nextElement().name
+                if (name.startsWith("classes") && name.endsWith(".dex")) count++
+            }
+        }
+        return count
     }
 }

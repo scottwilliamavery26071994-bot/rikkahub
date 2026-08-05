@@ -121,18 +121,29 @@ fun SettingApkReversePage(onBack: () -> Unit = {}) {
                             InfoRow("文件名", r.fileName)
                             InfoRow("大小", "${r.fileSize / 1024 / 1024.0} MB")
                             InfoRow("包名", r.packageName)
-                            InfoRow("版本", r.versionName)
+                            InfoRow("版本", "${r.versionName} (code ${r.versionCode})")
+                            InfoRow("SDK", "min ${r.minSdk} / target ${r.targetSdk}")
+                            InfoRow("DEX 数量", "${r.dexCount}")
                         }
                     }
                     if (r.permissions.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
                         Text("权限 (${r.permissions.size})", style = MaterialTheme.typography.titleSmall)
-                        r.permissions.take(20).forEach { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        r.permissions.take(30).forEach { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
-                    if (r.activities.isNotEmpty()) {
+                    if (r.activities.isNotEmpty() || r.services.isNotEmpty() || r.receivers.isNotEmpty() || r.providers.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
-                        Text("组件 (${r.activities.size})", style = MaterialTheme.typography.titleSmall)
-                        r.activities.take(15).forEach { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        Text("组件", style = MaterialTheme.typography.titleSmall)
+                        r.activities.take(15).forEach { Text("Activity: $it", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        r.services.take(10).forEach { Text("Service: $it", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        r.receivers.take(10).forEach { Text("Receiver: $it", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        r.providers.take(5).forEach { Text("Provider: $it", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    }
+                    if (r.classes.isNotEmpty()) {
+                        Spacer(Modifier.height(8.dp))
+                        HorizontalDivider()
+                        Text("类 (${r.classes.size})", style = MaterialTheme.typography.titleSmall)
+                        r.classes.take(50).forEach { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                     if (r.interfaces.isNotEmpty()) {
                         Spacer(Modifier.height(8.dp))
