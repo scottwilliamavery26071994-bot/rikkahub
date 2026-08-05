@@ -34,6 +34,29 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      # 缓存 Android SDK 组件(platforms/build-tools), 避免每次重新下载 compileSdk 平台
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.ANDROID_HOME }}/platforms
+            ${{ env.ANDROID_HOME }}/build-tools
+            ${{ env.ANDROID_HOME }}/ndk
+          key: android-sdk-${{ runner.os }}-${{ hashFiles('**/build.gradle.kts', '**/gradle/libs.versions.toml') }}
+          restore-keys: |
+            android-sdk-${{ runner.os }}-
+
+      # 缓存 Gradle 依赖与 wrapper (setup-java 已含, 这里显式兜底, 加快后续构建)
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches/modules-2
+            ~/.gradle/wrapper/dists
+          key: gradle-deps-${{ runner.os }}-${{ hashFiles('**/build.gradle.kts', '**/gradle/libs.versions.toml') }}
+          restore-keys: |
+            gradle-deps-${{ runner.os }}-
+
       - name: Generate & Save Keystore
         run: |
           if [ ! -f "app/release-key.jks" ]; then
