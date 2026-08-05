@@ -183,24 +183,33 @@ class RikkaHubApp : Application() {
                         notifyWorkspace("环境安装失败: ${e.message?.take(60)}", ongoing = false)
                     }
                 }
-                // 自动安装编程环境与反编译工具 (失败不阻塞)
+                // 自动安装编程环境与反编译工具 (失败通知用户, 不阻塞)
                 if (ws != null) {
                     // 已就绪的 rootfs 也补打 patch (修复 passwd/group, 版本升级后生效)
                     workspaceRepo.patchRootfs(ws.id)
+
+                    // 编程工具 (git/python3/gcc/make)
                     runCatching {
-                        workspaceRepo.installProgrammingTools(ws.id) {
-                            Log.i(TAG, "installing programming tools: $it")
+                        workspaceRepo.installProgrammingTools(ws.id) { step ->
+                            Log.i(TAG, "installing programming tools: $step")
+                            notifyWorkspace("正在安装编程工具: $step", ongoing = true)
                         }
                     }.onFailure { e ->
-                        Log.w(TAG, "programming tools install failed (可稍后手动安装): ${e.message}")
+                        Log.w(TAG, "programming tools install failed", e)
+                        notifyWorkspace("编程工具安装失败: ${e.message?.take(60)}", ongoing = false)
                     }
+
+                    // 反编译工具 (Java + apktool + jadx)
                     runCatching {
-                        workspaceRepo.installReverseTools(ws.id) {
-                            Log.i(TAG, "installing reverse tools: $it")
+                        workspaceRepo.installReverseTools(ws.id) { step ->
+                            Log.i(TAG, "installing reverse tools: $step")
+                            notifyWorkspace("正在安装反编译工具: $step", ongoing = true)
                         }
                     }.onFailure { e ->
-                        Log.w(TAG, "reverse tools install failed (可稍后手动安装): ${e.message}")
+                        Log.w(TAG, "reverse tools install failed", e)
+                        notifyWorkspace("反编译工具安装失败: ${e.message?.take(60)}", ongoing = false)
                     }
+
                     prefs.update { s ->
                         s.copy(
                             assistants = s.assistants.map {
