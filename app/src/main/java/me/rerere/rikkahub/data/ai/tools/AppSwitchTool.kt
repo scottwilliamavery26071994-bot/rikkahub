@@ -26,7 +26,7 @@ private const val TAG = "AppSwitchTool"
 /**
  * 创建应用切换工具
  * - action: "launch_app" - 启动指定包名的应用
- * - action: "bring_chat_to_front" - 把橘瓣聊天界面拉到屏幕最前面
+ * - action: "bring_chat_to_front" - 把灵犀聊天界面拉到屏幕最前面
  * - action: "open_url" - 用浏览器打开指定URL
  */
 fun createAppSwitchTool(context: Context): Tool = Tool(

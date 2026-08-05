@@ -24,7 +24,7 @@ import me.rerere.rikkahub.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
-// 更新检查源：橘瓣自己的 GitHub Releases
+// 更新检查源：灵犀自己的 GitHub Releases
 private const val GITHUB_OWNER = "sue1231513"
 private const val GITHUB_REPO = "orangechat"
 private const val API_URL = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"

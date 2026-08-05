@@ -176,7 +176,7 @@ class FloatingBubbleService : Service() {
 
     private fun startForegroundCompat() {
         val notification = androidx.core.app.NotificationCompat.Builder(this, CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID)
-            .setContentTitle("橘瓣正在等待你查看…")
+            .setContentTitle("灵犀正在等待你查看…")
             .setSmallIcon(R.drawable.small_icon)
             .setPriority(androidx.core.app.NotificationCompat.PRIORITY_MIN)
             .setOngoing(true)
@@ -486,7 +486,7 @@ class FloatingBubbleService : Service() {
     private fun screenHeight(): Int = Resources.getSystem().displayMetrics.heightPixels
 
     /**
-     * 从当前主题解析强调色作为球背景；解析失败回退到一个固定的橙色调（呼应"橘瓣"品牌）。
+     * 从当前主题解析强调色作为球背景；解析失败回退到一个固定的橙色调（呼应"灵犀"品牌）。
      */
     private fun resolveAccentColor(): Int {
         return runCatching {

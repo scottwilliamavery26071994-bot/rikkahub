@@ -131,7 +131,7 @@ fun SettingAboutPage() {
                         )
 
                         Text(
-                            text = "橘瓣",
+                            text = "灵犀",
                             style = MaterialTheme.typography.displaySmall,
                         )
                     }

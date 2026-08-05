@@ -111,7 +111,7 @@ sealed class LocalToolOption {
     /**
      * 屏幕自动化. 开启后注册 tap/long_press/swipe/scroll/read_window_tree/find_node/
      * click_node/set_text/global_action/take_screenshot 等无障碍服务工具, AI 可控制屏幕.
-     * 需用户在系统设置->无障碍中启用橘瓣.
+     * 需用户在系统设置->无障碍中启用灵犀.
      */
     @Serializable
     @SerialName("screen_automation")

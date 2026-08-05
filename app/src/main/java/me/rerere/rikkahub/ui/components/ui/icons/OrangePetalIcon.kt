@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
 /**
- * 橘瓣 - 自定义"思考中"图标 (替代 HugeIcons.Idea01)
+ * 灵犀 - 自定义"思考中"图标 (替代 HugeIcons.Idea01)
  * 由用户提供的 SVG (viewBox 0 0 739 739) 精确转换而来
  */
 public val OrangePetalIcon: ImageVector
