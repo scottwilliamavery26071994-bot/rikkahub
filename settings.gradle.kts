@@ -15,7 +15,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "rikkahub"
+rootProject.name = "lingxi"
 include(":app")
 include(":common")
 include(":ai")
