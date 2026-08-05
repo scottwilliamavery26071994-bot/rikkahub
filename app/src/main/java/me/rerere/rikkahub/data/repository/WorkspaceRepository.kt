@@ -282,6 +282,46 @@ class WorkspaceRepository(
         }
     }
 
+    /**
+     * 自动安装编程环境与常用工具 (git/curl/wget/python3/pip/build-essential/nano/unzip)。
+     * 需 shell 已 READY (rootfs 已就绪)。后台调用, 失败抛异常由调用方容错。
+     */
+    suspend fun installProgrammingTools(
+        id: String,
+        onProgress: (String) -> Unit = {},
+    ) {
+        val workspace = dao.getById(id) ?: return
+        if (workspace.shellStatus != WorkspaceShellStatus.READY.name) return
+
+        onProgress("配置网络...")
+        // ubuntu-base 的 /etc/resolv.conf 为空, 先写入公共 DNS 才能 apt
+        val dns = executeCommand(
+            id,
+            "printf 'nameserver 8.8.8.8\\nnameserver 223.5.5.5\\n' > /etc/resolv.conf",
+            timeoutMillis = 30_000,
+        )
+        if (dns.exitCode != 0) {
+            Log.w(TAG, "write resolv.conf failed: ${dns.stderr.take(120)}")
+        }
+
+        onProgress("更新软件源...")
+        val update = executeCommand(id, "apt-get update -y", timeoutMillis = 600_000)
+        if (update.exitCode != 0) {
+            throw RuntimeException("apt update failed: ${update.stderr.take(200)}")
+        }
+
+        onProgress("安装编程环境 (git/curl/wget/python3/pip/gcc/make/nano)...")
+        val install = executeCommand(
+            id,
+            "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends " +
+                "git curl wget python3 python3-pip build-essential nano unzip",
+            timeoutMillis = 1_200_000,
+        )
+        if (install.exitCode != 0) {
+            throw RuntimeException("apt install failed: ${install.stderr.take(300)}")
+        }
+    }
+
     suspend fun delete(id: String): Boolean {
         val workspace = dao.getById(id) ?: return false
         dao.deleteById(id)

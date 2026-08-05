@@ -150,6 +150,14 @@ class RikkaHubApp : Application() {
                                 Log.w(TAG, "bundled rootfs install failed", e)
                             }
                     }
+                    // 自动安装编程环境与常用工具 (git/python3/gcc/make 等), 失败不阻塞
+                    runCatching {
+                        workspaceRepo.installProgrammingTools(ws.id) {
+                            Log.i(TAG, "installing programming tools: $it")
+                        }
+                    }.onFailure { e ->
+                        Log.w(TAG, "programming tools install failed (可稍后手动安装): ${e.message}")
+                    }
                     prefs.update { s ->
                         s.copy(
                             assistants = s.assistants.map {
