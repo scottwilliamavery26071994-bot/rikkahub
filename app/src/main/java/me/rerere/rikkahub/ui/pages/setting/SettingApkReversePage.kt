@@ -72,7 +72,7 @@ fun SettingApkReversePage(onBack: () -> Unit = {}) {
                     }
                     ApkReverse.reverse(cacheFile)
                 }.getOrElse {
-                    ApkReverseResult("", 0, "", "", emptyList(), emptyList(), emptyList(), emptyList(), it.message ?: "读取失败")
+                    ApkReverseResult(error = it.message ?: "读取失败")
                 }
             }
             loading = false

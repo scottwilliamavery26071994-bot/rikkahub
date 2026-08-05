@@ -18,22 +18,22 @@ import java.util.zip.ZipFile
  * APK 静态分析结果.
  */
 data class ApkReverseResult(
-    val fileName: String,
-    val fileSize: Long,
-    val packageName: String,
-    val versionName: String,
-    val versionCode: String,
-    val minSdk: String,
-    val targetSdk: String,
-    val permissions: List<String>,
-    val activities: List<String>,
-    val services: List<String>,
-    val receivers: List<String>,
-    val providers: List<String>,
-    val interfaces: List<String>,
-    val classes: List<String>,
-    val dexCount: Int,
-    val error: String,
+    val fileName: String = "",
+    val fileSize: Long = 0,
+    val packageName: String = "",
+    val versionName: String = "",
+    val versionCode: String = "",
+    val minSdk: String = "",
+    val targetSdk: String = "",
+    val permissions: List<String> = emptyList(),
+    val activities: List<String> = emptyList(),
+    val services: List<String> = emptyList(),
+    val receivers: List<String> = emptyList(),
+    val providers: List<String> = emptyList(),
+    val interfaces: List<String> = emptyList(),
+    val classes: List<String> = emptyList(),
+    val dexCount: Int = 0,
+    val error: String = "",
 )
 
 /**
@@ -103,11 +103,11 @@ object ApkReverse {
     // ==================== AndroidManifest AXML 解析 ====================
 
     private data class ManifestInfo(
-        val packageName: String,
-        val versionName: String,
-        val versionCode: String,
-        val minSdk: String,
-        val targetSdk: String,
+        var packageName: String,
+        var versionName: String,
+        var versionCode: String,
+        var minSdk: String,
+        var targetSdk: String,
         val activities: MutableList<String> = mutableListOf(),
         val services: MutableList<String> = mutableListOf(),
         val receivers: MutableList<String> = mutableListOf(),
