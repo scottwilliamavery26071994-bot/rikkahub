@@ -646,24 +646,16 @@ class ChatCompletionsAPI(
     /**
      * 提示词式工具调用: 生成 system 提示词, 描述可用工具并规定 <tool_call> JSON 输出格式。
      * 适用于不支持原生 tool_calls 参数的免 Key 免费服务。
+     * 注意: 免 Key 服务(如 Pollinations 匿名)对长请求敏感, 这里只列工具名+短描述,
+     * 不包含完整 JSON schema, 避免请求过大触发 402。
      */
     private fun buildPromptToolCallingSystem(tools: List<Tool>): String = buildString {
-        appendLine("你可以调用以下工具来帮助用户完成任务。")
-        appendLine("当需要调用工具时，请在回复中**单独一行**输出以下格式（可输出多次）：")
-        appendLine("<tool_call>{\"name\":\"工具名\",\"arguments\":{...JSON参数...}}</tool_call>")
-        appendLine("工具调用后，工具结果会作为新的消息返回给你，请基于结果继续回答。")
-        appendLine("如果没有工具结果或无需调用工具，直接正常回答即可。")
-        appendLine()
-        appendLine("可用工具列表：")
+        appendLine("你可以调用工具来完成任务。需要调用工具时，输出：")
+        appendLine("<tool_call>{\"name\":\"工具名\",\"arguments\":{...}}</tool_call>")
+        appendLine("工具结果会返回给你，请基于结果继续回答。无需调用工具时直接回答。")
+        appendLine("可用工具：")
         tools.forEach { tool ->
-            appendLine("- 工具名: ${tool.name}")
-            appendLine("  描述: ${tool.description.replace('\n', ' ')}")
-            runCatching {
-                val schema = tool.parameters()
-                if (schema != null) {
-                    appendLine("  参数: ${json.encodeToJsonElement(schema).toString()}")
-                }
-            }
+            appendLine("- ${tool.name}: ${tool.description.replace('\n', ' ').take(60)}")
         }
     }
 
