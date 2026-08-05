@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -17,7 +17,7 @@ import kotlin.uuid.Uuid
  * 为什么用 8 位短哈希而不是完整 UUID/pluginId:
  * - Anthropic / OpenAI 兼容接口对 tool name 有 64 字符上限
  * - 完整 UUID(36 字符) + 分隔符会让前缀吃掉 43+ 字符,原始工具名只剩 21 字符,容易超限
- * - pluginId(反向域名,如 com.orangechat.plugin.marketplace)更长且含点号(非法字符)
+ * - pluginId(反向域名,如 com.lingxi.plugin.marketplace)更长且含点号(非法字符)
  * - 8 位十六进制(只含 0-9a-f):前缀固定 13 字符,给原始工具名留 51 字符,且不引入非法字符
  */
 object ToolNaming {
@@ -45,7 +45,7 @@ object ToolNaming {
      *
      * 格式: plg_ + 8位十六进制(pluginId 的 hashCode) + _ + 原始工具名
      *
-     * @param pluginId 插件 id(反向域名格式,如 com.orangechat.plugin.marketplace)
+     * @param pluginId 插件 id(反向域名格式,如 com.lingxi.plugin.marketplace)
      * @param toolName 插件工具原始名字
      */
     fun buildPluginToolName(pluginId: String, toolName: String): String {

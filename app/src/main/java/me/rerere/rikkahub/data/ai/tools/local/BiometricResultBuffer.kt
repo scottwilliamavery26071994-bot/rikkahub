@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
  * 前台 Activity (BiometricPromptActivity) 完成验证后调用 [BiometricResultBuffer.complete] 回填结果,
  * 从而让在后台/IO 协程里挂起等待的工具拿到结果继续执行.
  *
- * 移植自 rikkahub-agent 的 BiometricResultBuffer.kt, 适配 orangechat 的枚举驱动工具架构.
+ * 移植自 rikkahub-agent 的 BiometricResultBuffer.kt, 适配 lingxi 的枚举驱动工具架构.
  */
 sealed class BiometricResult {
     data class Success(val method: String) : BiometricResult()

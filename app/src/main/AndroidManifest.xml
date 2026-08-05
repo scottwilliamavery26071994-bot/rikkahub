@@ -61,7 +61,7 @@
   </queries>
 
   <application
-    android:name=".RikkaHubApp"
+    android:name=".LingxiApp"
     android:largeHeap="true"
     android:allowBackup="true"
     android:appCategory="productivity"
@@ -199,7 +199,7 @@
       android:name=".data.service.ProactiveMessageReceiver"
       android:exported="true">
       <intent-filter>
-        <action android:name="me.rerere.orangechat.PROACTIVE_MESSAGE" />
+        <action android:name="me.rerere.lingxi.PROACTIVE_MESSAGE" />
         <action android:name="android.intent.action.BOOT_COMPLETED" />
       </intent-filter>
     </receiver>
@@ -279,7 +279,7 @@
       android:name=".data.service.SupabaseSyncReceiver"
       android:exported="true">
       <intent-filter>
-        <action android:name="me.rerere.orangechat.SUPABASE_SYNC" />
+        <action android:name="me.rerere.lingxi.SUPABASE_SYNC" />
         <action android:name="android.intent.action.BOOT_COMPLETED" />
       </intent-filter>
     </receiver>
@@ -289,7 +289,7 @@
       android:name=".data.service.DailySummaryReceiver"
       android:exported="true">
       <intent-filter>
-        <action android:name="me.rerere.orangechat.DAILY_CRON" />
+        <action android:name="me.rerere.lingxi.DAILY_CRON" />
         <action android:name="android.intent.action.BOOT_COMPLETED" />
       </intent-filter>
     </receiver>
@@ -383,7 +383,7 @@
       android:name=".service.KeepAliveRestartReceiver"
       android:exported="false">
       <intent-filter>
-        <action android:name="me.rerere.orangechat.RESTART_KEEP_ALIVE" />
+        <action android:name="me.rerere.lingxi.RESTART_KEEP_ALIVE" />
       </intent-filter>
     </receiver>
 

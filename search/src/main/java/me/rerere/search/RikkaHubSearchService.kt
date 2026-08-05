@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -23,16 +23,16 @@ import me.rerere.search.SearchService.Companion.json
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
-private const val TAG = "RikkaHubSearchService"
+private const val TAG = "LingxiSearchService"
 
-object RikkaHubSearchService : SearchService<SearchServiceOptions.RikkaHubOptions> {
-    override val name: String = "RikkaHub"
+object LingxiSearchService : SearchService<SearchServiceOptions.LingxiOptions> {
+    override val name: String = "Lingxi"
 
     @Composable
     override fun Description() {
     }
 
-    override fun parameters(options: SearchServiceOptions.RikkaHubOptions): InputSchema? =
+    override fun parameters(options: SearchServiceOptions.LingxiOptions): InputSchema? =
         InputSchema.Obj(
             properties = buildJsonObject {
                 put("query", buildJsonObject {
@@ -43,13 +43,13 @@ object RikkaHubSearchService : SearchService<SearchServiceOptions.RikkaHubOption
             required = listOf("query")
         )
 
-    override fun scrapingParameters(options: SearchServiceOptions.RikkaHubOptions): InputSchema? =
+    override fun scrapingParameters(options: SearchServiceOptions.LingxiOptions): InputSchema? =
         null
 
     override suspend fun search(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.RikkaHubOptions
+        serviceOptions: SearchServiceOptions.LingxiOptions
     ): Result<SearchResult> = withContext(Dispatchers.IO) {
         runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
@@ -72,7 +72,7 @@ object RikkaHubSearchService : SearchService<SearchServiceOptions.RikkaHubOption
             val response = httpClient.newCall(request).await()
             if (response.isSuccessful) {
                 val responseBody = response.body.string().let {
-                    json.decodeFromString<RikkaHubSearchResponse>(it)
+                    json.decodeFromString<LingxiSearchResponse>(it)
                 }
 
                 return@withContext Result.success(
@@ -96,13 +96,13 @@ object RikkaHubSearchService : SearchService<SearchServiceOptions.RikkaHubOption
     override suspend fun scrape(
         params: JsonObject,
         commonOptions: SearchCommonOptions,
-        serviceOptions: SearchServiceOptions.RikkaHubOptions
+        serviceOptions: SearchServiceOptions.LingxiOptions
     ): Result<ScrapedResult> {
-        error("RikkaHub does not support scraping")
+        error("Lingxi does not support scraping")
     }
 
     @Serializable
-    data class RikkaHubSearchResponse(
+    data class LingxiSearchResponse(
         val answer: String,
         val sources: List<Source>
     )

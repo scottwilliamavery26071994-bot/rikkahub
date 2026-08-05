@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -59,7 +59,7 @@ class AppLockAccessibilityPromptActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(
-                                text = "锁机功能需要无障碍权限才能生效。请在下方开启「RikkaHub」的无障碍服务后返回,锁定会自动继续。",
+                                text = "锁机功能需要无障碍权限才能生效。请在下方开启「Lingxi」的无障碍服务后返回,锁定会自动继续。",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 textAlign = TextAlign.Center,

@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -52,7 +52,7 @@ import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.context.startKoin
 
-private const val TAG = "RikkaHubApp"
+private const val TAG = "LingxiApp"
 
 const val CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID = "chat_completed"
 const val CHAT_LIVE_UPDATE_NOTIFICATION_CHANNEL_ID = "chat_live_update"
@@ -66,9 +66,9 @@ const val ANNOUNCEMENT_NOTIFICATION_CHANNEL_ID = "announcement"
 /** 工作区环境自动安装进度通知 ID */
 const val WORKSPACE_INSTALL_NOTIFICATION_ID = 1001
 
-class RikkaHubApp : Application() {
+class LingxiApp : Application() {
     companion object {
-        var INSTANCE: RikkaHubApp? = null
+        var INSTANCE: LingxiApp? = null
             private set
     }
 
@@ -79,7 +79,7 @@ class RikkaHubApp : Application() {
         me.rerere.search.SearchService.appContext = this
         startKoin {
             androidLogger()
-            androidContext(this@RikkaHubApp)
+            androidContext(this@LingxiApp)
             workManagerFactory()
             modules(appModule, viewModelModule, dataSourceModule, repositoryModule, pluginModule)
         }
@@ -253,7 +253,7 @@ class RikkaHubApp : Application() {
             runCatching {
                 val settings = get<SettingsStore>().settingsFlowRaw.first()
                 if (settings.proactiveMessageSetting.enabled) {
-                    ProactiveMessageService.scheduleNext(this@RikkaHubApp, settings.proactiveMessageSetting)
+                    ProactiveMessageService.scheduleNext(this@LingxiApp, settings.proactiveMessageSetting)
                     Log.i(TAG, "Rescheduled proactive message alarm on app start")
                 }
             }.onFailure {
@@ -321,7 +321,7 @@ class RikkaHubApp : Application() {
                 if (settings.webServerEnabled) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                         ContextCompat.checkSelfPermission(
-                            this@RikkaHubApp,
+                            this@LingxiApp,
                             android.Manifest.permission.POST_NOTIFICATIONS
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
@@ -331,14 +331,14 @@ class RikkaHubApp : Application() {
                     if (Build.VERSION.SDK_INT >= 37 &&
                         !settings.webServerLocalhostOnly &&
                         ContextCompat.checkSelfPermission(
-                            this@RikkaHubApp,
+                            this@LingxiApp,
                             android.Manifest.permission.ACCESS_LOCAL_NETWORK
                         ) != PackageManager.PERMISSION_GRANTED
                     ) {
                         Log.w(TAG, "startWebServerIfEnabled: local network permission not granted, skipping")
                         return@launch
                     }
-                    val intent = Intent(this@RikkaHubApp, WebServerService::class.java).apply {
+                    val intent = Intent(this@LingxiApp, WebServerService::class.java).apply {
                         action = WebServerService.ACTION_START
                         putExtra(WebServerService.EXTRA_PORT, settings.webServerPort)
                         putExtra(WebServerService.EXTRA_LOCALHOST_ONLY, settings.webServerLocalhostOnly)

@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -68,7 +68,7 @@ interface SearchService<T : SearchServiceOptions> {
                 is SearchServiceOptions.FirecrawlOptions -> FirecrawlSearchService
                 is SearchServiceOptions.JinaOptions -> JinaSearchService
                 is SearchServiceOptions.BochaOptions -> BochaSearchService
-                is SearchServiceOptions.RikkaHubOptions -> RikkaHubSearchService
+                is SearchServiceOptions.LingxiOptions -> LingxiSearchService
                 is SearchServiceOptions.GrokOptions -> GrokSearchService
                 is SearchServiceOptions.TinyfishOptions -> TinyfishSearchService
                 is SearchServiceOptions.CustomJsOptions -> CustomJsSearchService
@@ -177,7 +177,7 @@ sealed class SearchServiceOptions {
             GoogleOptions::class to "Google",
             SogouOptions::class to "搜狗",
             So360Options::class to "360",
-            RikkaHubOptions::class to "RikkaHub",
+            LingxiOptions::class to "Lingxi",
             ZhipuOptions::class to "智谱",
             TavilyOptions::class to "Tavily",
             ExaOptions::class to "Exa",
@@ -323,7 +323,7 @@ sealed class SearchServiceOptions {
 
     @Serializable
     @SerialName("rikkahub")
-    data class RikkaHubOptions(
+    data class LingxiOptions(
         override val id: Uuid = Uuid.random(),
         val apiKey: String = "",
         val depth: String = "standard",

@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -417,9 +417,9 @@ internal fun unreachableEnvelope(host: String, port: Int, outcome: ProbeOutcome)
         })
         put("recovery", "Direct TCP to ${outcome.resolvedIp}:$port failed across every available " +
             "network (${outcome.totalMs}ms total). If Termux ssh from the same device reaches " +
-            "this host, RikkaHub's process is being filtered. Check Settings → Network → " +
+            "this host, Lingxi's process is being filtered. Check Settings → Network → " +
             "Private DNS (try Off), any active VPN's per-app routing, and Settings → Apps → " +
-            "RikkaHub → Mobile data & Wi-Fi (enable Background data and Unrestricted data usage).")
+            "Lingxi → Mobile data & Wi-Fi (enable Background data and Unrestricted data usage).")
     }
 
 /** Run a single command on an open session. Returns a JSON object with exit_code/stdout/stderr. */

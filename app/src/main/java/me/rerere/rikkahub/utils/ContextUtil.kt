@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -119,7 +119,7 @@ fun Context.getComponentActivity(): ComponentActivity? {
 fun Context.exportImage(
     activity: Activity,
     bitmap: Bitmap,
-    fileName: String = "RikkaHub_${System.currentTimeMillis()}.png"
+    fileName: String = "Lingxi_${System.currentTimeMillis()}.png"
 ) {
     // 检查存储权限（Android 9及以下需要）
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
@@ -173,7 +173,7 @@ fun Context.exportImage(
 fun Context.exportImageFile(
     activity: Activity,
     file: File,
-    fileName: String = "RikkaHub_${System.currentTimeMillis()}.png"
+    fileName: String = "Lingxi_${System.currentTimeMillis()}.png"
 ) {
     // 检查存储权限（Android 9及以下需要）
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {

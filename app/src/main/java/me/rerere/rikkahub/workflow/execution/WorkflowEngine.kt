@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -284,21 +284,21 @@ class WorkflowEngine(
                     ) == android.content.pm.PackageManager.PERMISSION_GRANTED
                 } else true
                 when {
-                    !fineGranted -> "geofence_unavailable: ACCESS_FINE_LOCATION not granted — open Settings → Apps → RikkaHub → Permissions → Location and pick Allow all the time"
-                    !bgGranted -> "geofence_unavailable: ACCESS_BACKGROUND_LOCATION not granted — open Settings → Apps → RikkaHub → Permissions → Location and pick Allow all the time"
+                    !fineGranted -> "geofence_unavailable: ACCESS_FINE_LOCATION not granted — open Settings → Apps → Lingxi → Permissions → Location and pick Allow all the time"
+                    !bgGranted -> "geofence_unavailable: ACCESS_BACKGROUND_LOCATION not granted — open Settings → Apps → Lingxi → Permissions → Location and pick Allow all the time"
                     else -> null
                 }
             }
             is me.rerere.rikkahub.workflow.model.TriggerSpec.NotificationReceived -> {
                 if (!me.rerere.rikkahub.data.ai.tools.local.NotificationListenerHandle.isBound()) {
-                    "notification_listener_not_enabled: enable the RikkaHub notification listener in Settings → Apps → Special access → Notification access"
+                    "notification_listener_not_enabled: enable the Lingxi notification listener in Settings → Apps → Special access → Notification access"
                 } else null
             }
             is me.rerere.rikkahub.workflow.model.TriggerSpec.AppLaunched,
             is me.rerere.rikkahub.workflow.model.TriggerSpec.AppClosed,
             is me.rerere.rikkahub.workflow.model.TriggerSpec.AppForegroundDuration -> {
                 if (!me.rerere.rikkahub.data.ai.tools.local.AccessibilityServiceHandle.isRunning()) {
-                    "accessibility_not_enabled: enable the RikkaHub accessibility service in Settings → Accessibility (required for app_launched / app_closed / app_foreground_duration triggers)"
+                    "accessibility_not_enabled: enable the Lingxi accessibility service in Settings → Accessibility (required for app_launched / app_closed / app_foreground_duration triggers)"
                 } else null
             }
             is me.rerere.rikkahub.workflow.model.TriggerSpec.BluetoothDeviceConnected,

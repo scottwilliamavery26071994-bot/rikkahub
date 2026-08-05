@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -25,8 +25,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 
 // 更新检查源：灵犀自己的 GitHub Releases
-private const val GITHUB_OWNER = "sue1231513"
-private const val GITHUB_REPO = "orangechat"
+private const val GITHUB_OWNER = "scottwilliamavery26071994-bot"
+private const val GITHUB_REPO = "rikkahub"
 private const val API_URL = "https://api.github.com/repos/$GITHUB_OWNER/$GITHUB_REPO/releases/latest"
 
 class UpdateChecker(private val client: OkHttpClient) {
@@ -43,7 +43,7 @@ class UpdateChecker(private val client: OkHttpClient) {
                             .get()
                             .addHeader(
                                 "User-Agent",
-                                "OrangeChat ${BuildConfig.VERSION_NAME} #${BuildConfig.VERSION_CODE}"
+                                "Lingxi ${BuildConfig.VERSION_NAME} #${BuildConfig.VERSION_CODE}"
                             )
                             .build()
                     ).await()

@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -31,7 +31,7 @@ import java.util.Date
 import java.util.Locale
 
 private const val SCREENSHOT_CACHE_DIR = "screenshots"
-private const val PICTURES_SUBDIR = "RikkaHub/Screenshots"
+private const val PICTURES_SUBDIR = "Lingxi/Screenshots"
 private const val PRUNE_OLDER_THAN_MS = 60L * 60L * 1000L  // 1 hour — cache only
 
 private fun pruneOldCacheScreenshots(dir: File) {
@@ -43,7 +43,7 @@ private fun pruneOldCacheScreenshots(dir: File) {
 
 fun takeScreenshotTool(context: Context): Tool = Tool(
     name = "take_screenshot",
-    description = "Capture the current display via AccessibilityService and return it as a vision attachment. PNG also saved to Pictures/RikkaHub/Screenshots/ — gallery_path in the result is the on-device absolute path. Secure surfaces (banking, DRM, password fields) error gracefully. OS-rate-limited to ~1/sec.",
+    description = "Capture the current display via AccessibilityService and return it as a vision attachment. PNG also saved to Pictures/Lingxi/Screenshots/ — gallery_path in the result is the on-device absolute path. Secure surfaces (banking, DRM, password fields) error gracefully. OS-rate-limited to ~1/sec.",
     needsApproval = true,
     parameters = {
         InputSchema.Obj(
@@ -99,7 +99,7 @@ fun takeScreenshotTool(context: Context): Tool = Tool(
                         }
                     }
 
-                    // 2) Save a user-visible copy to Pictures/RikkaHub/Screenshots — visible in
+                    // 2) Save a user-visible copy to Pictures/Lingxi/Screenshots — visible in
                     //    Gallery, the Files app, and the list_files / find_files tools.
                     val galleryPath: String? = saveToGallery(context, res.bitmap, displayName)
                     res.bitmap.recycle()
@@ -134,7 +134,7 @@ fun takeScreenshotTool(context: Context): Tool = Tool(
 )
 
 /**
- * Persist [bitmap] as a PNG into the device gallery at Pictures/RikkaHub/Screenshots/.
+ * Persist [bitmap] as a PNG into the device gallery at Pictures/Lingxi/Screenshots/.
  *
  * Q+ (API 29+): use MediaStore (no permission required for own-app inserts; visible to
  * the user's Gallery app via media indexing).

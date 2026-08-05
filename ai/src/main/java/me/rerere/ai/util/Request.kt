@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -36,7 +36,7 @@ fun Request.Builder.configureReferHeaders(url: String): Request.Builder {
 
         "openrouter.ai" -> {
             this
-                .addHeader("X-Title", "RikkaHub")
+                .addHeader("X-Title", "Lingxi")
                 .addHeader("HTTP-Referer", "https://rikka-ai.com")
         }
 

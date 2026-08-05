@@ -1,5 +1,5 @@
 {
-  "id": "com.orangechat.plugin.weather",
+  "id": "com.lingxi.plugin.weather",
   "name": "天气查询",
   "description": "查询指定城市的天气信息，包括当前天气和未来天气预报",
   "version": "1.1.0",

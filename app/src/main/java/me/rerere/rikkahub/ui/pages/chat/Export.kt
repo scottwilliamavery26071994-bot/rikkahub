@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -493,7 +493,7 @@ private fun ExportedChatImage(
                                 fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                             )
                             Text(
-                                text = "${LocalDateTime.now().toLocalString()}  orangechat",
+                                text = "${LocalDateTime.now().toLocalString()}  lingxi",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

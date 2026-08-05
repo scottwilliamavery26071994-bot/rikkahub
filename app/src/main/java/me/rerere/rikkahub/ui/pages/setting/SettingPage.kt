@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -419,7 +419,7 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         headlineContent = { Text(stringResource(R.string.setting_page_about)) },
                     )
                     item(
-                        onClick = { context.openUrl("https://github.com/sue1231513/orangechat") },
+                        onClick = { context.openUrl("https://github.com/sue1231513/lingxi") },
                         leadingContent = { Icon(HugeIcons.Book01, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_documentation_desc)) },
                         headlineContent = { Text(stringResource(R.string.setting_page_documentation)) },

@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -83,7 +83,7 @@ fun WorkspaceTerminalPage(id: String) {
                 ),
             )
         },
-        // 终端使用纯黑背景；orangechat 的 RikkahubTheme 不支持 colorMode 参数，这里直接用 Surface 强制深色
+        // 终端使用纯黑背景；lingxi 的 RikkahubTheme 不支持 colorMode 参数，这里直接用 Surface 强制深色
         containerColor = Color.Black,
     ) { innerPadding ->
         WorkspaceTerminalContent(

@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -137,7 +137,7 @@ fun PluginDetailPage(
             PluginInfoSection(plugin)
 
             // Supabase 记忆库插件的数据库初始化说明
-            if (plugin.manifest.id == "com.orangechat.plugin.supabase_memory") {
+            if (plugin.manifest.id == "com.lingxi.plugin.supabase_memory") {
                 Spacer(modifier = Modifier.height(16.dp))
                 SupabaseSetupInstructions()
             }

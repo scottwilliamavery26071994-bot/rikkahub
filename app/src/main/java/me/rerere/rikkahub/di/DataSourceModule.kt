@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -25,7 +25,7 @@ import me.rerere.rikkahub.data.ai.RequestLoggingInterceptor
 import me.rerere.rikkahub.data.ai.transformers.AssistantTemplateLoader
 import me.rerere.rikkahub.data.ai.GenerationHandler
 import me.rerere.rikkahub.data.ai.transformers.TemplateTransformer
-import me.rerere.rikkahub.data.api.RikkaHubAPI
+import me.rerere.rikkahub.data.api.LingxiAPI
 import me.rerere.rikkahub.data.api.SponsorAPI
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.db.AppDatabase
@@ -223,7 +223,7 @@ val dataSourceModule = module {
                     .addHeader(HttpHeaders.AcceptLanguage, acceptLang)
 
                 if (originalRequest.header(HttpHeaders.UserAgent) == null) {
-                    requestBuilder.addHeader(HttpHeaders.UserAgent, "RikkaHub-Android/${BuildConfig.VERSION_NAME}")
+                    requestBuilder.addHeader(HttpHeaders.UserAgent, "Lingxi-Android/${BuildConfig.VERSION_NAME}")
                 }
 
                 chain.proceed(requestBuilder.build())
@@ -302,7 +302,7 @@ val dataSourceModule = module {
             .build()
     }
 
-    single<RikkaHubAPI> {
-        get<Retrofit>().create(RikkaHubAPI::class.java)
+    single<LingxiAPI> {
+        get<Retrofit>().create(LingxiAPI::class.java)
     }
 }

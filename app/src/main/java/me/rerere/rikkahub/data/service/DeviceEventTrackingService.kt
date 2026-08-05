@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -52,7 +52,7 @@ class DeviceEventTrackingService : Service() {
 
         /**
          * 读取设置，仅当 deviceEventTrackingEnabled 为真且 Supabase 配置齐全时才拉起常驻服务。
-         * 被 RikkaHubApp.onCreate / SupabaseSyncReceiver(BOOT_COMPLETED) / 设置页开关三处调用，
+         * 被 LingxiApp.onCreate / SupabaseSyncReceiver(BOOT_COMPLETED) / 设置页开关三处调用，
          * 保持判断逻辑一致，避免重复。
          */
         fun startIfEnabled(context: Context) {

@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -14,7 +14,7 @@ import kotlin.uuid.Uuid
  *
  * The upstream ExTV/rikkahub-agent persists one cross-pillar "agent_runs" row per autonomous
  * run (cron / workflow / sub-agent / telegram / external-automation) for observability and
- * boot recovery. orangechat does not port that full ledger surface, so this stub keeps the
+ * boot recovery. lingxi does not port that full ledger surface, so this stub keeps the
  * [me.rerere.rikkahub.workflow.execution.WorkflowEngine] source identical to upstream while
  * making the ledger calls cheap no-ops. [open] still returns a stable id so callers can keep
  * a handle; [markTerminal] simply discards it. If the ledger is ever ported, swap this class

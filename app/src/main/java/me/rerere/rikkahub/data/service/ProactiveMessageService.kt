@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -94,7 +94,7 @@ class ProactiveMessageService : KoinComponent {
 
     companion object {
         const val TAG = "ProactiveMessageService"
-        const val ACTION_PROACTIVE_MESSAGE = "me.rerere.orangechat.PROACTIVE_MESSAGE"
+        const val ACTION_PROACTIVE_MESSAGE = "me.rerere.lingxi.PROACTIVE_MESSAGE"
         private const val REQUEST_CODE = 10001
 
         internal const val PREFS_NAME = "proactive_message_prefs"

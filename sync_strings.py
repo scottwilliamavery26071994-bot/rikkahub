@@ -1,10 +1,10 @@
 import re
 import os
 
-src = r'd:/a13/orangechat/app/src/main/res/values-zh/strings.xml'
+src = r'd:/a13/lingxi/app/src/main/res/values-zh/strings.xml'
 targets = [
-    r'd:/a13/orangechat/app/src/main/res/values/strings.xml',
-    r'd:/a13/orangechat/app/src/main/res/values-zh-rTW/strings.xml',
+    r'd:/a13/lingxi/app/src/main/res/values/strings.xml',
+    r'd:/a13/lingxi/app/src/main/res/values-zh-rTW/strings.xml',
 ]
 
 with open(src, 'r', encoding='utf-8') as f:

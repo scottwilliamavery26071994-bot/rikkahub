@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -30,7 +30,7 @@ import java.util.UUID
  * ([BiometricPromptActivity]) 来承载系统弹窗, 弹窗结束后回填结果.
  *
  * 移植自 rikkahub-agent 的 FingerprintTool.kt, 把宿主 Activity 从 ToolHostActivity
- * 改为 orangechat 专用的 BiometricPromptActivity.
+ * 改为 lingxi 专用的 BiometricPromptActivity.
  */
 fun fingerprintTool(context: Context, buffer: BiometricResultBuffer): Tool = Tool(
     name = "verify_fingerprint",

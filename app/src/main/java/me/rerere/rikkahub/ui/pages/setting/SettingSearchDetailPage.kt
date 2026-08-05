@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -219,8 +219,8 @@ private fun SearchServiceOptionsEditor(
         is SearchServiceOptions.BochaOptions -> {
             BochaOptions(options) { onUpdateOptions(it) }
         }
-        is SearchServiceOptions.RikkaHubOptions -> {
-            RikkaHubOptions(options) { onUpdateOptions(it) }
+        is SearchServiceOptions.LingxiOptions -> {
+            LingxiOptions(options) { onUpdateOptions(it) }
         }
         is SearchServiceOptions.GrokOptions -> {
             GrokOptions(options) { onUpdateOptions(it) }
@@ -779,9 +779,9 @@ internal fun BochaOptions(
 }
 
 @Composable
-internal fun RikkaHubOptions(
-    options: SearchServiceOptions.RikkaHubOptions,
-    onUpdateOptions: (SearchServiceOptions.RikkaHubOptions) -> Unit
+internal fun LingxiOptions(
+    options: SearchServiceOptions.LingxiOptions,
+    onUpdateOptions: (SearchServiceOptions.LingxiOptions) -> Unit
 ) {
     FormItem(
         label = {

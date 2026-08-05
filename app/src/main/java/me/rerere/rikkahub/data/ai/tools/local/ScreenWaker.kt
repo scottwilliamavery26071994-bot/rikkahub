@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -14,7 +14,7 @@ import android.os.PowerManager
  * Reusable helpers so launch_app and any screen-automation tool that needs the screen on can
  * opt in without duplicating the wake-lock dance. Ported from the upstream agent fork's
  * WakeScreenTool.kt (only the [ScreenWaker] object; the `wake_screen` Tool itself is already
- * provided by orangechat's SystemTools, so it is intentionally NOT duplicated here).
+ * provided by lingxi's SystemTools, so it is intentionally NOT duplicated here).
  */
 internal object ScreenWaker {
     fun isInteractive(ctx: Context): Boolean =

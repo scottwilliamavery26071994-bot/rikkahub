@@ -1,5 +1,5 @@
 {
-  "name": "orangechat-functions",
+  "name": "lingxi-functions",
   "description": "灵犀 Lingxi 公告推送 Cloud Functions",
   "scripts": {
     "deploy": "firebase deploy --only functions"

@@ -53,7 +53,7 @@ function Hero() {
           className="text-5xl md:text-7xl font-extrabold text-neutral-900 mb-4 animate-fade-in-up"
           style={{ animationDelay: '0.1s' }}
         >
-          灵犀 <span className="text-brand">OrangeChat</span>
+          灵犀 <span className="text-brand">Lingxi</span>
         </h1>
         <p
           className="text-xl md:text-2xl text-neutral-600 mb-6 animate-fade-in-up"
@@ -65,7 +65,7 @@ function Hero() {
           className="text-base text-neutral-500 mb-10 max-w-2xl mx-auto animate-fade-in-up"
           style={{ animationDelay: '0.3s' }}
         >
-          基于 RikkaHub 深度定制，在原生聊天体验之上，构建了完整的插件生态与智能生活服务
+          基于 Lingxi 深度定制，在原生聊天体验之上，构建了完整的插件生态与智能生活服务
         </p>
         <div
           className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in-up"
@@ -200,7 +200,7 @@ function UniqueFeatures() {
             ✨ 灵犀独有
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-            与 RikkaHub 不一样的地方
+            与 Lingxi 不一样的地方
           </h2>
           <p className="text-neutral-500 max-w-2xl mx-auto">
             在原生聊天体验之上，我们构建了完整的插件生态与智能生活服务
@@ -389,14 +389,14 @@ function ToolsSection() {
         {/* Comparison bar */}
         <div className="reveal max-w-2xl mx-auto mb-12">
           <div className="flex items-center justify-between mb-3 text-sm">
-            <span className="text-neutral-500">RikkaHub</span>
+            <span className="text-neutral-500">Lingxi</span>
             <span className="font-bold text-neutral-900">4 个工具</span>
           </div>
           <div className="h-4 bg-neutral-200 rounded-full overflow-hidden mb-6">
             <div className="h-full bg-neutral-400 rounded-full" style={{ width: '27%' }}></div>
           </div>
           <div className="flex items-center justify-between mb-3 text-sm">
-            <span className="text-brand font-medium">灵犀 OrangeChat</span>
+            <span className="text-brand font-medium">灵犀 Lingxi</span>
             <span className="font-bold text-brand">15 个工具 (+11)</span>
           </div>
           <div className="h-4 bg-orange-100 rounded-full overflow-hidden">
@@ -436,17 +436,17 @@ function ArchitectureComparison() {
             架构对比
           </h2>
           <p className="text-neutral-500 max-w-2xl mx-auto">
-            与原版 RikkaHub 的代码差异，灵犀做了大量扩展
+            与原版 Lingxi 的代码差异，灵犀做了大量扩展
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 reveal">
-          {/* RikkaHub */}
+          {/* Lingxi */}
           <div className="bg-neutral-50 rounded-2xl p-8 border border-neutral-200">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-neutral-300 rounded-xl flex items-center justify-center text-white font-bold text-sm">R</div>
               <div>
-                <h3 className="font-bold text-neutral-900">RikkaHub</h3>
+                <h3 className="font-bold text-neutral-900">Lingxi</h3>
                 <p className="text-xs text-neutral-400">原版</p>
               </div>
             </div>
@@ -477,12 +477,12 @@ function ArchitectureComparison() {
             </div>
           </div>
 
-          {/* OrangeChat */}
+          {/* Lingxi */}
           <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-8 border border-brand/20 shadow-lg shadow-brand/5">
             <div className="flex items-center gap-3 mb-6">
               <img src="/icon.png" alt="灵犀" className="w-10 h-10 rounded-xl" />
               <div>
-                <h3 className="font-bold text-neutral-900">灵犀 OrangeChat</h3>
+                <h3 className="font-bold text-neutral-900">灵犀 Lingxi</h3>
                 <p className="text-xs text-brand">增强版</p>
               </div>
             </div>
@@ -599,13 +599,13 @@ function Footer() {
           <div className="flex items-center gap-3">
             <img src="/icon.png" alt="灵犀" className="w-8 h-8 rounded-lg" />
             <div>
-              <span className="text-white font-semibold">灵犀 OrangeChat</span>
+              <span className="text-white font-semibold">灵犀 Lingxi</span>
               <p className="text-xs text-neutral-500">让 AI 不止活在对话框里</p>
             </div>
           </div>
           <div className="flex items-center gap-6 text-sm">
             <a
-              href="https://github.com/sue1231513/orangechat"
+              href="https://github.com/sue1231513/lingxi"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-white transition-colors flex items-center gap-1.5"
@@ -629,12 +629,12 @@ function Footer() {
               rel="noopener noreferrer"
               className="hover:text-white transition-colors"
             >
-              RikkaHub
+              Lingxi
             </a>
           </div>
         </div>
         <div className="mt-8 pt-6 border-t border-neutral-800 text-center text-xs text-neutral-600">
-          <p>灵犀 OrangeChat · 基于 Apache License 2.0 开源 · 致谢 RikkaHub</p>
+          <p>灵犀 Lingxi · 基于 Apache License 2.0 开源 · 致谢 Lingxi</p>
         </div>
       </div>
     </footer>

@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -57,7 +57,7 @@ import kotlin.uuid.Uuid
  * - `usage`: token usage in Chatbox's field names.
  *
  * Import mapping:
- * - One Chatbox `session:<id>` becomes one RikkaHub [Conversation].
+ * - One Chatbox `session:<id>` becomes one Lingxi [Conversation].
  * - Leading `system` messages are merged into [Conversation.customSystemPrompt].
  * - Each remaining Chatbox message becomes one [MessageNode] with one [UIMessage].
  * - Stable UUIDs are derived from Chatbox ids so importing the same file again can skip existing conversations.

@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -238,7 +238,7 @@ class ChatService(
 
     init {
         // 添加生命周期观察者。ProcessLifecycleOwner.get().lifecycle.addObserver
-        // 强制要求主线程调用。正常情况下 ChatService 由 RikkaHubApp.onCreate 的
+        // 强制要求主线程调用。正常情况下 ChatService 由 LingxiApp.onCreate 的
         // 预热调用在主线程构造, 这里直接执行即可。这里加线程判断 + 派发, 是给
         // "万一未来又出现一个在后台线程首次访问 ChatService 的新入口"兜底:
         // 不让它直接崩, 而是把 addObserver 派发到主线程异步执行。

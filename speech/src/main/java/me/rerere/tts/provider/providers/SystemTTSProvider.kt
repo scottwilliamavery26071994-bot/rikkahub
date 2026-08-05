@@ -1,6 +1,6 @@
 ﻿/*
  * 灵犀 Lingxi
- * 衍生自 RikkaHub (https://github.com/rikkahub/rikkahub)，原作者 RE
+ * 衍生自 Lingxi (https://github.com/rikkahub/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
  */
 
@@ -52,7 +52,7 @@ class SystemTTSProvider : TTSProvider<TTSProviderSetting.SystemTTS> {
                 ttsInstance.setSpeechRate(providerSetting.speechRate)
                 ttsInstance.setPitch(providerSetting.pitch)
 
-                // Create temporary file for audio output using temp directory like RikkaHubApp
+                // Create temporary file for audio output using temp directory like LingxiApp
                 val tempDir = context.appTempFolder
                 val audioFile = File(tempDir, "tts_${System.currentTimeMillis()}.wav")
 

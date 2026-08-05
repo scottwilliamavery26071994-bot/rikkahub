@@ -1,8 +1,8 @@
-# RikkaHub 外置记忆库（Supabase）完整配置教程
+# Lingxi 外置记忆库（Supabase）完整配置教程
 
 本教程面向希望把聊天记录、日记摘要保存到 Supabase，并让 AI 在对话时自动召回这些记忆的用户。
 
-> 适用版本：RikkaHub 2.2.2 及之后（含本仓库当前修改）
+> 适用版本：Lingxi 2.2.2 及之后（含本仓库当前修改）
 
 ---
 
@@ -24,7 +24,7 @@
 ## 1. 前置条件
 
 - 一个可用的 Supabase 账号（免费版即可）
-- RikkaHub App 已安装并能正常聊天
+- Lingxi App 已安装并能正常聊天
 - 一个能生成 embedding 的模型（推荐 siliconflow 的 `BAAI/bge-m3` 或 `BAAI/bge-large-zh-v1.5`）
 
 ---
@@ -112,7 +112,7 @@ CREATE POLICY "Allow anon insert memory_summaries" ON public.memory_summaries
 
 ## 5. 在 App 里添加外置记忆库
 
-1. 打开 RikkaHub App
+1. 打开 Lingxi App
 2. 进入 **设置 -> 外置记忆库**（或"进阶记忆"）
 3. 点击右上角 "+" 添加新记忆库
 4. 填写以下信息：
@@ -145,7 +145,7 @@ CREATE POLICY "Allow anon insert memory_summaries" ON public.memory_summaries
 
 ## 6. 把记忆库绑定到助手
 
-1. 打开 RikkaHub App
+1. 打开 Lingxi App
 2. 进入 **设置 -> 助手 -> 选择一个助手**
 3. 找到 **外置记忆库** 选项
 4. 勾选你刚才添加的记忆库
