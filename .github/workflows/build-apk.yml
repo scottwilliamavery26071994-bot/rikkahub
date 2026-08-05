@@ -33,6 +33,12 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      # 编译环境 Node.js 用 20 (runner 默认 24, web-ui/前端构建兼容性更好)
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       # 缓存 Android SDK 组件(platforms/build-tools), 避免每次重新下载 compileSdk 平台
       - name: Cache Android SDK
         uses: actions/cache@v4
