@@ -273,32 +273,48 @@ class WorkspaceRepository(
         val workspace = dao.getById(id) ?: return
         if (workspace.shellStatus != WorkspaceShellStatus.READY.name) return
 
-        onProgress("配置网络...")
-        // ubuntu-base 的 /etc/resolv.conf 为空, 先写入公共 DNS 才能 apt
-        val dns = executeCommand(
+        onProgress("配置网络与软件源...")
+        // 1. 写入可用 DNS (国内 223.5.5.5 优先)
+        executeCommand(
             id,
-            "printf 'nameserver 8.8.8.8\\nnameserver 223.5.5.5\\n' > /etc/resolv.conf",
+            "printf 'nameserver 223.5.5.5\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf",
             timeoutMillis = 30_000,
         )
-        if (dns.exitCode != 0) {
-            Log.w(TAG, "write resolv.conf failed: ${dns.stderr.take(120)}")
-        }
-
-        onProgress("更新软件源...")
-        val update = executeCommand(id, "apt-get update -y", timeoutMillis = 600_000)
-        if (update.exitCode != 0) {
-            throw RuntimeException("apt update failed: ${update.stderr.take(200)}")
-        }
-
-        onProgress("安装编程环境 (git/curl/wget/python3/pip/gcc/make/nano)...")
-        val install = executeCommand(
+        // 2. 切换到国内镜像源 (archive.ubuntu.com 在国内常超时/失败)
+        executeCommand(
             id,
-            "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends " +
-                "git curl wget python3 python3-pip build-essential nano unzip",
-            timeoutMillis = 1_200_000,
+            "sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|https://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|https://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' " +
+                "/etc/apt/sources.list.d/ubuntu.sources || true",
+            timeoutMillis = 30_000,
         )
-        if (install.exitCode != 0) {
-            throw RuntimeException("apt install failed: ${install.stderr.take(300)}")
+
+        // 3. update + install, 失败重试一次 (强制装上)
+        repeat(2) { attempt ->
+            try {
+                onProgress("更新软件源...")
+                val update = executeCommand(id, "apt-get update -y", timeoutMillis = 600_000)
+                if (update.exitCode != 0) {
+                    throw RuntimeException("apt update failed: ${update.stderr.take(200)}")
+                }
+                onProgress("安装编程环境 (git/curl/wget/python3/pip/gcc/make/nano)...")
+                val install = executeCommand(
+                    id,
+                    "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends " +
+                        "git curl wget python3 python3-pip build-essential nano unzip",
+                    timeoutMillis = 1_200_000,
+                )
+                if (install.exitCode != 0) {
+                    throw RuntimeException("apt install failed: ${install.stderr.take(300)}")
+                }
+                return
+            } catch (e: Throwable) {
+                if (attempt == 1) throw e
+                Log.w(TAG, "programming tools install attempt $attempt failed, retrying: ${e.message}")
+                onProgress("安装失败, 正在重试...")
+            }
         }
     }
 
@@ -313,39 +329,60 @@ class WorkspaceRepository(
         val workspace = dao.getById(id) ?: return
         if (workspace.shellStatus != WorkspaceShellStatus.READY.name) return
 
-        onProgress("安装 Java 运行时 (openjdk-17)...")
-        val java = executeCommand(
+        // 确保 DNS 与国内镜像源 (与 installProgrammingTools 一致)
+        executeCommand(
             id,
-            "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openjdk-17-jre-headless",
-            timeoutMillis = 1_200_000,
+            "printf 'nameserver 223.5.5.5\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf && " +
+                "sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|https://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|https://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' " +
+                "/etc/apt/sources.list.d/ubuntu.sources || true",
+            timeoutMillis = 30_000,
         )
-        if (java.exitCode != 0) {
-            throw RuntimeException("java install failed: ${java.stderr.take(200)}")
-        }
 
-        onProgress("安装 apktool (资源/smali 反编译)...")
-        val apktool = executeCommand(
-            id,
-            "curl -sL -o /usr/local/bin/apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar && " +
-                "printf '#!/bin/bash\\nexec java -jar /usr/local/bin/apktool.jar \"\\$@\"\\n' > /usr/local/bin/apktool && " +
-                "chmod +x /usr/local/bin/apktool",
-            timeoutMillis = 600_000,
-        )
-        if (apktool.exitCode != 0) {
-            throw RuntimeException("apktool install failed: ${apktool.stderr.take(200)}")
-        }
+        repeat(2) { attempt ->
+            try {
+                onProgress("安装 Java 运行时 (openjdk-17)...")
+                val java = executeCommand(
+                    id,
+                    "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openjdk-17-jre-headless",
+                    timeoutMillis = 1_200_000,
+                )
+                if (java.exitCode != 0) {
+                    throw RuntimeException("java install failed: ${java.stderr.take(200)}")
+                }
 
-        onProgress("安装 jadx (Java 源码反编译)...")
-        val jadx = executeCommand(
-            id,
-            "mkdir -p /opt && curl -sL -o /tmp/jadx.zip https://github.com/skylot/jadx/releases/download/v1.5.1/jadx-1.5.1.zip && " +
-                "unzip -q -o /tmp/jadx.zip -d /opt/ && rm -f /tmp/jadx.zip && " +
-                "ln -sf /opt/jadx-1.5.1/bin/jadx /usr/local/bin/jadx && " +
-                "ln -sf /opt/jadx-1.5.1/bin/jadx-gui /usr/local/bin/jadx-gui",
-            timeoutMillis = 600_000,
-        )
-        if (jadx.exitCode != 0) {
-            throw RuntimeException("jadx install failed: ${jadx.stderr.take(200)}")
+                onProgress("安装 apktool (资源/smali 反编译)...")
+                val apktool = executeCommand(
+                    id,
+                    "curl -sL -o /usr/local/bin/apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar && " +
+                        "printf '#!/bin/bash\\nexec java -jar /usr/local/bin/apktool.jar \"\\$@\"\\n' > /usr/local/bin/apktool && " +
+                        "chmod +x /usr/local/bin/apktool",
+                    timeoutMillis = 600_000,
+                )
+                if (apktool.exitCode != 0) {
+                    throw RuntimeException("apktool install failed: ${apktool.stderr.take(200)}")
+                }
+
+                onProgress("安装 jadx (Java 源码反编译)...")
+                val jadx = executeCommand(
+                    id,
+                    "mkdir -p /opt && curl -sL -o /tmp/jadx.zip https://github.com/skylot/jadx/releases/download/v1.5.1/jadx-1.5.1.zip && " +
+                        "unzip -q -o /tmp/jadx.zip -d /opt/ && rm -f /tmp/jadx.zip && " +
+                        "ln -sf /opt/jadx-1.5.1/bin/jadx /usr/local/bin/jadx && " +
+                        "ln -sf /opt/jadx-1.5.1/bin/jadx-gui /usr/local/bin/jadx-gui",
+                    timeoutMillis = 600_000,
+                )
+                if (jadx.exitCode != 0) {
+                    throw RuntimeException("jadx install failed: ${jadx.stderr.take(200)}")
+                }
+                return
+            } catch (e: Throwable) {
+                if (attempt == 1) throw e
+                Log.w(TAG, "reverse tools install attempt $attempt failed, retrying: ${e.message}")
+                onProgress("安装失败, 正在重试...")
+            }
         }
     }
 
