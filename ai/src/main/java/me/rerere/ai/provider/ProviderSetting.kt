@@ -70,6 +70,12 @@ sealed class ProviderSetting {
         var baseUrl: String = "https://api.openai.com/v1",
         var chatCompletionsPath: String = "/chat/completions",
         var useResponseApi: Boolean = false,
+        /**
+         * 提示词式工具调用: true 时不用原生 tool_calls 参数(部分免Key服务不支持),
+         * 改为在系统提示词中描述工具并让模型输出 <tool_call>{json}</tool_call> 标记,
+         * 由客户端解析并执行工具。
+         */
+        var promptToolCalling: Boolean = false,
     ) : ProviderSetting() {
         override fun addModel(model: Model): ProviderSetting {
             return copy(models = models + model)

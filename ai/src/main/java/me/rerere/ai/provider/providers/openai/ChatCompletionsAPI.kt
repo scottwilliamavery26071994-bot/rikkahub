@@ -28,6 +28,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlin.uuid.Uuid
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
@@ -400,7 +401,7 @@ class ChatCompletionsAPI(
         val host = providerSetting.baseUrl.toHttpUrl().host
         return buildJsonObject {
             put("model", params.model.modelId)
-            put("messages", buildMessages(messages, params.model))
+            put("messages", buildMessages(messages, params.model, providerSetting, params.tools))
 
             // 智谱 GLM 等 thinking 模型在开启深度思考时不允许设置 temperature/top_p,
             // 否则触发 "Invalid request body" (InvalidParameter) 400。
@@ -554,7 +555,7 @@ class ChatCompletionsAPI(
                 }
             }
 
-            if (params.model.abilities.contains(ModelAbility.TOOL) && params.tools.isNotEmpty()) {
+            if (params.model.abilities.contains(ModelAbility.TOOL) && params.tools.isNotEmpty() && !providerSetting.promptToolCalling) {
                 putJsonArray("tools") {
                     params.tools.forEach { tool ->
                         add(buildJsonObject {
@@ -587,9 +588,21 @@ class ChatCompletionsAPI(
         return !ModelRegistry.OPENAI_O_MODELS.match(model.modelId) && !ModelRegistry.GPT_5.match(model.modelId)
     }
 
-    private fun buildMessages(messages: List<UIMessage>, model: Model) = buildJsonArray {
+    private fun buildMessages(
+        messages: List<UIMessage>,
+        model: Model,
+        providerSetting: ProviderSetting.OpenAI = ProviderSetting.OpenAI(),
+        tools: List<Tool> = emptyList()
+    ) = buildJsonArray {
+        // 提示词式工具调用: 在消息最前面注入一条 system, 描述可用工具与 <tool_call> 输出格式
+        if (providerSetting.promptToolCalling && tools.isNotEmpty()) {
+            add(buildJsonObject {
+                put("role", "system")
+                put("content", buildPromptToolCallingSystem(tools))
+            })
+        }
         val filteredMessages = messages.filter { it.isValidToUpload() }
-        // 纯文本模型 (如 GLM-5.2) 不接受 image_url, 收到会报 "Model only support text input"。
+        // 纯文本模型 (如 GLM-5.2) 不接受 image_url, 收到会报 \"Model only support text input\"。
         // OcrTransformer 只覆盖 file: 图片, http/base64 图片会漏网; 这里在序列化层兜底,
         // 模型不支持 IMAGE 时直接跳过 Image part, 不再发给 API。
         val supportsImage = model.inputModalities.contains(Modality.IMAGE)
@@ -599,6 +612,30 @@ class ChatCompletionsAPI(
                 addAssistantMessages(message, includeReasoning = true, supportsImage = supportsImage)
             } else {
                 addNonAssistantMessage(message, supportsImage = supportsImage)
+            }
+        }
+    }
+
+    /**
+     * 提示词式工具调用: 生成 system 提示词, 描述可用工具并规定 <tool_call> JSON 输出格式。
+     * 适用于不支持原生 tool_calls 参数的免 Key 免费服务。
+     */
+    private fun buildPromptToolCallingSystem(tools: List<Tool>): String = buildString {
+        appendLine("你可以调用以下工具来帮助用户完成任务。")
+        appendLine("当需要调用工具时，请在回复中**单独一行**输出以下格式（可输出多次）：")
+        appendLine("<tool_call>{\"name\":\"工具名\",\"arguments\":{...JSON参数...}}</tool_call>")
+        appendLine("工具调用后，工具结果会作为新的消息返回给你，请基于结果继续回答。")
+        appendLine("如果没有工具结果或无需调用工具，直接正常回答即可。")
+        appendLine()
+        appendLine("可用工具列表：")
+        tools.forEach { tool ->
+            appendLine("- 工具名: ${tool.name}")
+            appendLine("  描述: ${tool.description.replace('\n', ' ')}")
+            runCatching {
+                val schema = tool.parameters()
+                if (schema != null) {
+                    appendLine("  参数: ${json.encodeToJsonElement(schema).toString()}")
+                }
             }
         }
     }
@@ -865,7 +902,38 @@ class ChatCompletionsAPI(
                         )
                     )
                 }
-                if (content.isNotEmpty()) add(UIMessagePart.Text(content))
+                if (toolCalls.isEmpty()) {
+                    // 提示词式工具调用 fallback: 模型未返回原生 tool_calls 时,
+                    // 尝试从回复文本中解析 <tool_call>{json}</tool_call> 标记
+                    val promptToolRegex =
+                        Regex("<tool_call>\\s*(\\{.*?\\})\\s*</tool_call>", RegexOption.DOT_MATCHES_ALL)
+                    val matches = promptToolRegex.findAll(content).toList()
+                    if (matches.isNotEmpty()) {
+                        var rest = content
+                        matches.forEach { m ->
+                            runCatching {
+                                val obj = json.parseToJsonElement(m.groupValues[1]).jsonObject
+                                val toolName = obj["name"]?.jsonPrimitive?.contentOrNull
+                                if (!toolName.isNullOrBlank()) {
+                                    add(
+                                        UIMessagePart.Tool(
+                                            toolCallId = Uuid.random().toString(),
+                                            toolName = toolName,
+                                            input = obj["arguments"]?.toString() ?: "{}",
+                                            output = emptyList()
+                                        )
+                                    )
+                                }
+                            }
+                            rest = rest.replace(m.value, "")
+                        }
+                        if (rest.isNotBlank()) add(UIMessagePart.Text(rest.trim()))
+                    } else if (content.isNotEmpty()) {
+                        add(UIMessagePart.Text(content))
+                    }
+                } else if (content.isNotEmpty()) {
+                    add(UIMessagePart.Text(content))
+                }
                 images.forEach { image ->
                     val imageObject = image.jsonObjectOrNull ?: return@forEach
                     val type = imageObject["type"]?.jsonPrimitive?.contentOrNull ?: return@forEach
