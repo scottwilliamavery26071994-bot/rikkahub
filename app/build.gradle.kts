@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "me.rerere.rikkahub"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -67,6 +67,11 @@ android {
         compilerOptions.optIn.add("kotlin.time.ExperimentalTime")
         compilerOptions.optIn.add("kotlinx.coroutines.ExperimentalCoroutinesApi")
     }
+}
+
+ksp {
+    // Room: 提供 schema 目录以支持 AutoMigration 读取旧 schema
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {
