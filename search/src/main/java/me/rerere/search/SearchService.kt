@@ -153,7 +153,9 @@ sealed class SearchServiceOptions {
         val NO_KEY_TYPES: Set<kotlin.reflect.KClass<out SearchServiceOptions>> = setOf(
             BingLocalOptions::class,
             DuckDuckGoOptions::class,
+            GoogleOptions::class,
             BaiduOptions::class,
+            SogouOptions::class,
             So360Options::class,
         )
 
@@ -167,7 +169,9 @@ sealed class SearchServiceOptions {
         fun allDefaults(): List<SearchServiceOptions> = listOf(
             BingLocalOptions(),
             DuckDuckGoOptions(),
+            GoogleOptions(),
             BaiduOptions(),
+            SogouOptions(),
             So360Options(),
         )
 

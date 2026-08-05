@@ -48,23 +48,23 @@ object GoogleSearchService : SearchService<SearchServiceOptions.GoogleOptions> {
     ): Result<SearchResult> = withContext(Dispatchers.IO) {
         runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
-            val url = "https://www.google.com/search?q=" + URLEncoder.encode(query, "UTF-8") + "&num=10&hl=zh-CN"
+            // Google 网页版无JS环境会返回 enablejs 页(反爬), 改用官方 Google News RSS:
+            // 免Key、无JS、稳定返回结构化结果
+            val url = "https://news.google.com/rss/search?q=" +
+                URLEncoder.encode(query, "UTF-8") +
+                "&hl=zh-CN&gl=CN&ceid=CN:zh-Hans"
             val doc = Jsoup.connect(url)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
-                .header("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8")
-                .header("Referer", "https://www.google.com/")
-                .timeout(8000)
+                .header("Accept", "application/rss+xml, application/xml;q=0.9, */*;q=0.8")
+                .header("Accept-Language", "zh-CN,zh;q=0.9")
+                .timeout(10000)
                 .get()
 
-            // 兼容新旧结构的容器选择器
-            val containers = doc.select(".tF2Cxc, .g, div[data-sncf]")
-            val results = containers.mapNotNull { element ->
-                val title = element.selectFirst("h3")?.text()?.ifBlank { null } ?: return@mapNotNull null
-                val link = element.selectFirst("a")?.attr("href")
-                    ?.takeIf { it.startsWith("http") }
-                    ?: return@mapNotNull null
-                val snippet = element.selectFirst(".VwiC3b, .IsZvec, [data-sncf]")?.text() ?: ""
+            // RSS <item>: title / link / description
+            val results = doc.select("item").mapNotNull { item ->
+                val title = item.selectFirst("title")?.text()?.ifBlank { null } ?: return@mapNotNull null
+                val link = item.selectFirst("link")?.text()?.ifBlank { null } ?: return@mapNotNull null
+                val snippet = item.selectFirst("description")?.text()?.take(300) ?: ""
                 SearchResultItem(title = title, url = link, text = snippet)
             }
 

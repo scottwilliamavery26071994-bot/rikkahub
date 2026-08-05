@@ -48,26 +48,26 @@ object SogouSearchService : SearchService<SearchServiceOptions.SogouOptions> {
     ): Result<SearchResult> = withContext(Dispatchers.IO) {
         runCatching {
             val query = params["query"]?.jsonPrimitive?.content ?: error("query is required")
-            val url = "https://www.sogou.com/web?query=" + URLEncoder.encode(query, "UTF-8")
+            // 搜狗网页版 antispider 验证码绕不过, 改用搜狗微信搜索(免验证, 返回公众号文章)
+            val url = "https://weixin.sogou.com/weixin?type=2&query=" + URLEncoder.encode(query, "UTF-8")
             val doc = Jsoup.connect(url)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
                 .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                 .header("Accept-Language", "zh-CN,zh;q=0.9")
-                .header("Referer", "https://www.sogou.com/")
+                .header("Referer", "https://weixin.sogou.com/")
                 .timeout(8000)
                 .get()
 
-            val results = doc.select(".vrwrap, .rb, .results .vrwrap").mapNotNull { element ->
-                val titleEl = element.selectFirst("h3 > a, h3 a, .vr-title a, .fz-mid a") ?: return@mapNotNull null
+            val results = doc.select("li, .txt-box").mapNotNull { element ->
+                val titleEl = element.selectFirst("h3 > a, h3 a") ?: return@mapNotNull null
                 val title = titleEl.text().ifBlank { return@mapNotNull null }
                 val link = titleEl.attr("href")
                     .let { h ->
                         if (h.startsWith("/link?")) {
-                            val urlEncoded = h.substringAfter("url=").substringBefore('&')
-                            if (urlEncoded.isNotEmpty()) java.net.URLDecoder.decode(urlEncoded, "UTF-8") else "https://www.sogou.com$h"
-                        } else if (h.startsWith("http")) h else "https://www.sogou.com$h"
+                            "https://weixin.sogou.com$h"
+                        } else if (h.startsWith("http")) h else "https://weixin.sogou.com$h"
                     }
-                val snippet = element.selectFirst(".text-layout, .fz-mid, .str_info, .space-txt")?.text() ?: ""
+                val snippet = element.selectFirst(".txt-info, p")?.text()?.take(300) ?: ""
                 SearchResultItem(title = title, url = link, text = snippet)
             }
 
