@@ -25,7 +25,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-          submodules: recursive
 
       - name: Setup JDK 17
         uses: actions/setup-java@v4
@@ -78,7 +77,7 @@ jobs:
           fi
 
       - name: Build Release APK
-        run: ./gradlew assembleRelease -x lint -x lintVitalRelease --no-daemon
+        run: ./gradlew assembleRelease -x lint -x lintVitalRelease --no-daemon --console=plain -q
         env:
           KEYSTORE_PASSWORD: ${{ env.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ env.KEY_ALIAS }}
