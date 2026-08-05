@@ -94,7 +94,7 @@ object BaiduSearchService : SearchService<SearchServiceOptions.BaiduOptions> {
             var doc = buildDoc()
             var results = parse(doc)
             // 触发百度安全验证或结果为空时重试一次 (百度随机验证, 重试常能成功)
-            if (results.isEmpty() && doc.title().contains("百度安全验证")) {
+            if (results.isEmpty() && doc.title()?.contains("百度安全验证") == true) {
                 doc = buildDoc()
                 results = parse(doc)
             }
