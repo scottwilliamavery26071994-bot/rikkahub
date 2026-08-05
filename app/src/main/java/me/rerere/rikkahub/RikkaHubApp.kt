@@ -25,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import me.rerere.common.android.appTempFolder
@@ -133,58 +134,50 @@ class RikkaHubApp : Application() {
         // Start App Lock guard (intercepts locked apps when opened) if any app is locked
         startAppLockGuardIfEnabled()
 
-        // 内置 AI: 自动创建默认工作区、自动下载安装 rootfs 并关联默认助手
-        // 全部静默后台安装, 不打扰用户。
+        // 内置 AI: 自动创建默认工作区、自动安装 rootfs + 编程/反编译工具
+        // 完全静默 + 强制安装: 失败持续重试直到全部装上
         CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-            runCatching {
-                val workspaceRepo: me.rerere.rikkahub.data.repository.WorkspaceRepository = get()
-                val prefs: me.rerere.rikkahub.data.datastore.SettingsStore = get()
-                val settings = prefs.settingsFlow.first()
-                val defaultAssistant = settings.assistants.firstOrNull {
-                    it.id == me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
-                }
-                // 确保有默认工作区 (已关联的复用, 否则复用第一个或新建)
-                val linkedWsId = defaultAssistant?.workspaceId?.toString()
-                val existingWs = if (linkedWsId != null) {
-                    workspaceRepo.getById(linkedWsId)
-                } else {
-                    workspaceRepo.listFlow().first().firstOrNull()
-                }
-                val ws = existingWs ?: workspaceRepo.create("默认工作区")
-                // 只要不是 READY (未装/损坏/未初始化), 一律自动下载安装 rootfs
-                if (ws.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name) {
-                    Log.i(TAG, "auto-installing rootfs for workspace ${ws.id}, status=${ws.shellStatus}")
-                    runCatching {
+            var attempt = 0
+            while (isActive) {
+                attempt++
+                val success = runCatching {
+                    val workspaceRepo: me.rerere.rikkahub.data.repository.WorkspaceRepository = get()
+                    val prefs: me.rerere.rikkahub.data.datastore.SettingsStore = get()
+                    val settings = prefs.settingsFlow.first()
+                    val defaultAssistant = settings.assistants.firstOrNull {
+                        it.id == me.rerere.rikkahub.data.datastore.DEFAULT_ASSISTANT_ID
+                    }
+                    // 确保有默认工作区 (已关联的复用, 否则复用第一个或新建)
+                    val linkedWsId = defaultAssistant?.workspaceId?.toString()
+                    val existingWs = if (linkedWsId != null) {
+                        workspaceRepo.getById(linkedWsId)
+                    } else {
+                        workspaceRepo.listFlow().first().firstOrNull()
+                    }
+                    val ws = existingWs ?: workspaceRepo.create("默认工作区")
+
+                    // 1. rootfs: 不是 READY 就下载安装 (失败抛异常)
+                    if (ws.shellStatus != me.rerere.workspace.WorkspaceShellStatus.READY.name) {
+                        Log.i(TAG, "auto-installing rootfs for workspace ${ws.id}, status=${ws.shellStatus}")
                         workspaceRepo.installDefaultRootfs(ws.id) { p ->
                             Log.i(TAG, "rootfs install progress: ${p.bytesRead} bytes")
                         }
-                    }.onFailure { e ->
-                        Log.w(TAG, "rootfs auto install failed", e)
                     }
-                }
-                // 自动安装编程环境与反编译工具 (静默, 失败只记日志)
-                if (ws != null) {
-                    // 已就绪的 rootfs 也补打 patch (修复 passwd/group, 版本升级后生效)
+
+                    // 2. 补打 patch (passwd/group)
                     workspaceRepo.patchRootfs(ws.id)
 
-                    // 编程工具 (git/python3/gcc/make)
-                    runCatching {
-                        workspaceRepo.installProgrammingTools(ws.id) { step ->
-                            Log.i(TAG, "installing programming tools: $step")
-                        }
-                    }.onFailure { e ->
-                        Log.w(TAG, "programming tools install failed", e)
+                    // 3. 编程工具 (git/python3/gcc/make), 内部含验证, 失败抛异常
+                    workspaceRepo.installProgrammingTools(ws.id) { step ->
+                        Log.i(TAG, "installing programming tools: $step")
                     }
 
-                    // 反编译工具 (Java + apktool + jadx)
-                    runCatching {
-                        workspaceRepo.installReverseTools(ws.id) { step ->
-                            Log.i(TAG, "installing reverse tools: $step")
-                        }
-                    }.onFailure { e ->
-                        Log.w(TAG, "reverse tools install failed", e)
+                    // 4. 反编译工具 (Java + apktool + jadx), 内部含验证, 失败抛异常
+                    workspaceRepo.installReverseTools(ws.id) { step ->
+                        Log.i(TAG, "installing reverse tools: $step")
                     }
 
+                    // 5. 关联默认助手
                     prefs.update { s ->
                         s.copy(
                             assistants = s.assistants.map {
@@ -196,10 +189,13 @@ class RikkaHubApp : Application() {
                             }
                         )
                     }
-                }
-                Log.i(TAG, "default workspace ready: ${ws?.id}")
-            }.onFailure { e ->
-                Log.w(TAG, "auto-init default workspace failed", e)
+                    Log.i(TAG, "workspace fully installed: ${ws.id}")
+                    true
+                }.getOrDefault(false)
+
+                if (success) break
+                Log.w(TAG, "workspace auto-install attempt $attempt failed, retrying in 60s...")
+                delay(60_000)
             }
         }
 
