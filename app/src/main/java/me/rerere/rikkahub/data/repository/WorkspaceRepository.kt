@@ -271,8 +271,7 @@ class WorkspaceRepository(
         onProgress: (String) -> Unit = {},
     ) {
         val workspace = dao.getById(id) ?: return
-        if (workspace.shellStatus != WorkspaceShellStatus.READY.name) return
-
+        // 强制尝试: 不依赖 shellStatus 状态检查 (即使标记异常也尝试, executeCommand 失败会抛出)
         onProgress("配置网络与软件源...")
         // 1. 写入可用 DNS (国内 223.5.5.5 优先)
         executeCommand(
@@ -336,7 +335,7 @@ class WorkspaceRepository(
         onProgress: (String) -> Unit = {},
     ) {
         val workspace = dao.getById(id) ?: return
-        if (workspace.shellStatus != WorkspaceShellStatus.READY.name) return
+        // 强制尝试: 不依赖 shellStatus 状态检查
 
         // 确保 DNS 与国内镜像源 (与 installProgrammingTools 一致)
         executeCommand(
