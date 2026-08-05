@@ -137,52 +137,56 @@ object ApkReverse {
         pos = 8
         // String pool
         var stringPoolOff = -1
-        var stringPoolSize = 0
+        var stringDataOff = -1
         var stringCount = 0
-        var stringsStart = 0
         var isUtf8 = false
         val chunkType = u16(pos)
         if (chunkType == 0x0001) {
             val headerSize = u16(pos + 2)
-            stringPoolSize = u32(pos + 4).toInt()
+            val chunkSize = u32(pos + 4).toInt()
             stringCount = u32(pos + 8).toInt()
             val flags = u32(pos + 16).toInt()
-            stringsStart = u32(pos + 20).toInt()
+            val stringsStart = u32(pos + 20).toInt()
             isUtf8 = flags and 0x100 != 0
-            stringPoolOff = pos + headerSize
-            pos += stringPoolSize
+            stringPoolOff = pos + headerSize  // 索引表位置
+            stringDataOff = pos + stringsStart // 字符串数据位置 (相对 chunk)
+            pos += chunkSize
         }
         // String 读取
         fun readString(index: Int): String {
             if (index < 0 || index >= stringCount) return ""
-            val off = stringPoolOff + u32(stringPoolOff + index * 4).toInt()
+            if (stringPoolOff < 0 || stringDataOff < 0) return ""
+            val offset = u32(stringPoolOff + index * 4).toInt()
+            val off = stringDataOff + offset
+            if (off >= bytes.size) return ""
             return if (isUtf8) {
                 // UTF-8: 长度(变长) + 实际长度(变长) + 字节
                 var p = off
                 fun readLen(): Int {
+                    if (p >= bytes.size) return 0
                     val b = bytes[p].toInt() and 0xFF
                     p++
-                    return if (b and 0x80 != 0) ((b and 0x7F) shl 8) or (bytes[p++].toInt() and 0xFF) else b
+                    return if (b and 0x80 != 0) ((b and 0x7F) shl 8) or (bytes.getOrElse(p++) { 0 }.toInt() and 0xFF) else b
                 }
-                readLen()  // char len (ignore)
+                readLen()  // char len (忽略)
                 val byteLen = readLen()
-                val str = String(bytes, p, byteLen, Charsets.UTF_8)
-                str
+                if (byteLen <= 0 || p + byteLen > bytes.size) return ""
+                String(bytes, p, byteLen, Charsets.UTF_8)
             } else {
                 // UTF-16LE: 字符数(变长) + 字符
                 var p = off
                 fun readLen(): Int {
+                    if (p >= bytes.size) return 0
                     val b = bytes[p].toInt() and 0xFF
                     p++
-                    return if (b and 0x80 != 0) ((b and 0x7F) shl 8) or (bytes[p++].toInt() and 0xFF) else b
+                    return if (b and 0x80 != 0) ((b and 0x7F) shl 8) or (bytes.getOrElse(p++) { 0 }.toInt() and 0xFF) else b
                 }
-                readLen()
-                val chars = ByteArray(0)
+                val len = readLen()
                 val sb = StringBuilder()
-                while (true) {
+                for (i in 0 until len) {
+                    if (p + 1 >= bytes.size) break
                     val lo = bytes[p++].toInt() and 0xFF
                     val hi = bytes[p++].toInt() and 0xFF
-                    if (lo == 0 && hi == 0) break
                     sb.append((hi shl 8 or lo).toChar())
                 }
                 sb.toString()
@@ -190,11 +194,10 @@ object ApkReverse {
         }
 
         // 遍历元素
-        val attrNamePool = mutableListOf<String>()
         while (pos + 8 <= bytes.size) {
             val type = u16(pos)
             val size = u32(pos + 4).toInt()
-            if (size <= 0) break
+            if (size <= 0 || pos + size > bytes.size) break
             when (type) {
                 0x0102 -> {  // StartElement
                     val nameIdx = u32(pos + 8).toInt()
@@ -204,17 +207,18 @@ object ApkReverse {
                     val attrs = mutableMapOf<String, String>()
                     var ap = pos + attrStart
                     for (i in 0 until attrCount) {
-                        val nsIdx = u32(ap).toInt()
+                        if (ap + 20 > bytes.size) break
                         val nameIdx2 = u32(ap + 4).toInt()
                         val rawIdx = u32(ap + 8).toInt()
-                        val typedSize = u32(ap + 12).toInt()
+                        val typedValue = u32(ap + 12)
                         val data = u32(ap + 16)
+                        val dataType = ((typedValue shr 16) and 0xFF).toInt()
                         val attrName = readString(nameIdx2)
                         val value = when {
                             rawIdx >= 0 -> readString(rawIdx)
-                            typedSize == 0x10 && data == 0L -> "true"
-                            typedSize == 0x10 && data == 1L -> "false"
-                            typedSize == 0x10 -> data.toString()
+                            dataType == 0x12 -> if (data == 0L) "true" else "false" // TYPE_INT_BOOLEAN
+                            dataType == 0x10 -> data.toString()                      // TYPE_INT_DEC
+                            dataType == 0x11 -> "0x" + data.toString(16)            // TYPE_INT_HEX
                             else -> ""
                         }
                         attrs[attrName] = value
