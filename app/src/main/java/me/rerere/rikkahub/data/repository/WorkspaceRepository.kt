@@ -176,9 +176,15 @@ class WorkspaceRepository(
             withContext(NonCancellable) { restoreShellState(workspace) }
             throw CancellationException("Rootfs install cancelled").also { it.initCause(e) }
         } catch (e: Throwable) {
-            Log.e(TAG, "installBundledRootfs failed: workspace=${workspace.id}", e)
-            updateShellState(workspace, WorkspaceShellStatus.BROKEN.name)
-            throw e
+            Log.e(TAG, "installBundledRootfs failed (内置安装失败), 自动切换网络下载安装: workspace=${workspace.id}", e)
+            // Fallback: 内置安装失败时自动从官方源下载安装
+            return try {
+                installRootfs(id, DEFAULT_ROOTFS_URL, onProgress)
+            } catch (e2: Throwable) {
+                Log.e(TAG, "fallback download rootfs install failed", e2)
+                updateShellState(workspace, WorkspaceShellStatus.BROKEN.name)
+                throw e2
+            }
         }
     }
 
@@ -415,5 +421,9 @@ class WorkspaceRepository(
 
     companion object {
         private const val TAG = "WorkspaceRepository"
+
+        /** 内置 rootfs 安装失败时的自动下载源 (Ubuntu 24.04 base arm64) */
+        private const val DEFAULT_ROOTFS_URL =
+            "https://cdimage.ubuntu.com/ubuntu-base/releases/24.04/release/ubuntu-base-24.04.3-base-arm64.tar.gz"
     }
 }
