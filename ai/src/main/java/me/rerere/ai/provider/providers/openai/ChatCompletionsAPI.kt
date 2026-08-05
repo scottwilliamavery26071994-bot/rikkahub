@@ -29,6 +29,10 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlin.uuid.Uuid
+
+/** 提示词式工具调用: 免Key免费服务对请求大小敏感, 限制消息条数与单条长度 */
+private const val MAX_PROMPT_TOOLCALLING_MESSAGES = 8
+private const val MAX_PROMPT_MESSAGE_LENGTH = 1500
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
@@ -602,6 +606,15 @@ class ChatCompletionsAPI(
         // 且匿名免费不支持 system 消息 -> 返回 402):
         // 把工具说明 + 原 system 提示词合并进第一条 user 消息
         if (providerSetting.promptToolCalling) {
+            // 免Key免费服务对请求大小/消息数敏感: 限制历史条数与单条长度, 避免 402
+            filteredMessages = filteredMessages.takeLast(MAX_PROMPT_TOOLCALLING_MESSAGES)
+                .map { msg ->
+                    msg.copy(parts = msg.parts.map { part ->
+                        if (part is UIMessagePart.Text && part.text.length > MAX_PROMPT_MESSAGE_LENGTH) {
+                            UIMessagePart.Text(part.text.take(MAX_PROMPT_MESSAGE_LENGTH) + "...")
+                        } else part
+                    })
+                }
             val toolPrompt = if (tools.isNotEmpty()) buildPromptToolCallingSystem(tools) else null
             val systemTexts = filteredMessages
                 .filter { it.role == MessageRole.SYSTEM }
