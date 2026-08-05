@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="docs/icon.png" alt="橘瓣" width="120" />
-  <h1>橘瓣</h1>
+  <img src="docs/icon.png" alt="灵犀" width="120" />
+  <h1>灵犀</h1>
   <p><strong>基於 RikkaHub 的增強版 Android AI 聊天客戶端</strong></p>
   <p>在 RikkaHub 的基礎上，加入更多實用工具與個人化能力 🍊💬</p>
 
@@ -21,9 +21,9 @@
 
 ---
 
-## 🍊 橘瓣獨有功能
+## 🍊 灵犀獨有功能
 
-> 以下為橘瓣在 RikkaHub 基礎上新增或增強的功能
+> 以下為灵犀在 RikkaHub 基礎上新增或增強的功能
 
 ### 🎨 個人化訂製
 - **頭像框** — 為 AI 助手頭像添加裝飾邊框，打造獨特視覺風格
@@ -107,7 +107,7 @@
 ## 🏗️ 專案架構
 
 ```
-橘瓣/
+灵犀/
 ├── app/          # 主應用模組（UI、ViewModel、核心邏邏輯）
 ├── ai/           # AI SDK 抽象層（OpenAI / Google / Anthropic）
 ├── common/       # 通用工具與擴展

@@ -1,6 +1,6 @@
-# 橘瓣 OrangeChat 插件开发指南
+# 灵犀 Lingxi 插件开发指南
 
-> 本文档面向插件开发者，介绍如何为橘瓣 OrangeChat 编写、打包和安装插件。
+> 本文档面向插件开发者，介绍如何为灵犀 Lingxi 编写、打包和安装插件。
 
 ---
 
@@ -16,7 +16,7 @@ my-plugin.zip
 └── main.js            ← 入口脚本（必填）
 ```
 
-安装时，用户通过「设置 → 插件管理 → 导入 ZIP」选择文件，橘瓣会自动解压并加载。
+安装时，用户通过「设置 → 插件管理 → 导入 ZIP」选择文件，灵犀会自动解压并加载。
 
 ### 1.2 Hello World
 
@@ -184,7 +184,7 @@ exports.my_tool = my_tool;
 
 ### 3.3 返回值格式
 
-工具函数返回一个**普通对象**，橘瓣会将其序列化为 JSON 展示给 AI：
+工具函数返回一个**普通对象**，灵犀会将其序列化为 JSON 展示给 AI：
 
 ```javascript
 return {
@@ -321,7 +321,7 @@ var text = decoder.decode(bytes);       // "你好"
 
 ## 五、promptTemplate（让 AI 知道你的插件）
 
-在 `manifest.json` 中提供 `promptTemplate`，安装后橘瓣会自动将其注入到 AI 的系统提示词中：
+在 `manifest.json` 中提供 `promptTemplate`，安装后灵犀会自动将其注入到 AI 的系统提示词中：
 
 ```json
 {
@@ -345,12 +345,12 @@ zip -r my-plugin.zip manifest.json main.js
 
 ### 6.2 安装
 
-1. 打开橘瓣 → 设置 → 插件管理
+1. 打开灵犀 → 设置 → 插件管理
 2. 点击「导入插件」
 3. 选择 ZIP 文件
 4. 确认 manifest 信息 → 点击「安装」
 
-安装后橘瓣会：
+安装后灵犀会：
 - 验证 manifest.json 格式
 - 校验入口文件存在
 - 计算并保存 SHA-256 完整性校验和
@@ -402,7 +402,7 @@ my-plugin/
 
 ### 7.2 WebView ↔ 原生 Bridge
 
-WebView 中的 JavaScript 可以通过 `Bridge` 对象与橘瓣原生交互：
+WebView 中的 JavaScript 可以通过 `Bridge` 对象与灵犀原生交互：
 
 ```javascript
 // 调用插件 main.js 中导出的函数
@@ -454,7 +454,7 @@ WebView 页面可以通过 `hookConfigs` 声明事件绑定：
 
 ### 7.4 内置页面标识
 
-如果不想用 WebView，也可以使用橘瓣内置的页面：
+如果不想用 WebView，也可以使用灵犀内置的页面：
 
 ```json
 {
