@@ -54,9 +54,8 @@ object BaiduSearchService : SearchService<SearchServiceOptions.BaiduOptions> {
                 val session = Jsoup.connect("https://www.baidu.com/")
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
                     .execute()
-                val baiduid = session.cookie("BAIDUID").ifBlank {
-                    java.util.UUID.randomUUID().toString().replace("-", "") + ":FG=1"
-                }
+                val baiduid = session.cookie("BAIDUID")?.takeIf { it.isNotBlank() }
+                    ?: (java.util.UUID.randomUUID().toString().replace("-", "") + ":FG=1")
                 val url = "https://www.baidu.com/s?wd=" + URLEncoder.encode(query, "UTF-8") + "&rn=10"
                 return Jsoup.connect(url)
                     .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
