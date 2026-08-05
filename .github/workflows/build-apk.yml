@@ -15,8 +15,6 @@ env:
   KEYSTORE_PASSWORD: Abc123456789@xyz
   KEY_ALIAS: auto_key
   KEY_PASSWORD: Abc123456789@xyz
-  # 编译环境统一用 Node.js 20 (runner 默认 Node 24)
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: "true"
 
 jobs:
   Release_Build:
@@ -34,12 +32,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
-
-      # 编译环境 Node.js 用 20 (runner 默认 24, web-ui/前端构建兼容性更好)
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
 
       # 缓存 Android SDK 组件(platforms/build-tools), 避免每次重新下载 compileSdk 平台
       - name: Cache Android SDK
