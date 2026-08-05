@@ -151,6 +151,7 @@ sealed class SearchServiceOptions {
 
         /** 免 API Key、实测可直接用的搜索引擎 */
         val NO_KEY_TYPES: Set<kotlin.reflect.KClass<out SearchServiceOptions>> = setOf(
+            BingLocalOptions::class,
             DuckDuckGoOptions::class,
             BaiduOptions::class,
             So360Options::class,
@@ -164,6 +165,7 @@ sealed class SearchServiceOptions {
          * (Bing/Google/搜狗 被反爬, CustomJS 需用户自写脚本, 已从默认移除)
          */
         fun allDefaults(): List<SearchServiceOptions> = listOf(
+            BingLocalOptions(),
             DuckDuckGoOptions(),
             BaiduOptions(),
             So360Options(),
