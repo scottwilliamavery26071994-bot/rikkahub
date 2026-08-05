@@ -146,34 +146,27 @@ sealed class SearchServiceOptions {
         get() = TYPES[this::class] ?: "Unknown"
 
     companion object {
-        val DEFAULT = BingLocalOptions()
+        /** 默认搜索服务 (免Key且实测可用: DuckDuckGo) */
+        val DEFAULT = DuckDuckGoOptions()
 
-        /** 免 API Key、开箱即用的搜索引擎 (可直接用, 不需要配置) */
+        /** 免 API Key、实测可直接用的搜索引擎 */
         val NO_KEY_TYPES: Set<kotlin.reflect.KClass<out SearchServiceOptions>> = setOf(
-            BingLocalOptions::class,
             DuckDuckGoOptions::class,
-            GoogleOptions::class,
             BaiduOptions::class,
-            SogouOptions::class,
             So360Options::class,
-            CustomJsOptions::class,
         )
 
         fun isNoKey(type: kotlin.reflect.KClass<*>): Boolean = type in NO_KEY_TYPES
 
         /**
          * 全部"免 API Key、直接调用"搜索引擎的默认实例列表。
-         * 安装后开箱即用：全部无需配置 Key，直接像浏览器一样搜索。
-         * AI 搜索时使用列表中选择的那一个（不是全部同时调用）。
+         * 只保留实测可用的: DuckDuckGo / 百度 / 360
+         * (Bing/Google/搜狗 被反爬, CustomJS 需用户自写脚本, 已从默认移除)
          */
         fun allDefaults(): List<SearchServiceOptions> = listOf(
-            BingLocalOptions(),
             DuckDuckGoOptions(),
-            GoogleOptions(),
             BaiduOptions(),
-            SogouOptions(),
             So360Options(),
-            CustomJsOptions(),
         )
 
         val TYPES = mapOf(
