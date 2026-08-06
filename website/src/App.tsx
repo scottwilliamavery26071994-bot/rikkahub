@@ -624,7 +624,7 @@ function Footer() {
               官网
             </a>
             <a
-              href="https://github.com/rikkahub/rikkahub"
+              href="https://github.com/scottwilliamavery26071994-bot/rikkahub"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-white transition-colors"
