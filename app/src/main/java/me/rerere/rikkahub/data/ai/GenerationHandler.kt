@@ -361,7 +361,7 @@ class GenerationHandler(
                             coroutineContext.ensureActive()
                             executedTools += tool.copy(output = result)
                         }.onFailure {
-                            it.printStackTrace()
+                            Log.e(TAG, "Tool execution failed", it)
                             executedTools += tool.copy(
                                 output = listOf(
                                     UIMessagePart.Text(

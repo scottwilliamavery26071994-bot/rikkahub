@@ -137,14 +137,14 @@ class McpManager(
                         toAdd.forEach { cfg ->
                             appScope.launch {
                                 runCatching { addClient(cfg) }
-                                    .onFailure { it.printStackTrace() }
+                                    .onFailure { Log.w(TAG, "operation failed", it) }
                             }
                         }
                         toRemove.forEach { cfg ->
                             appScope.launch { removeClient(cfg) }
                         }
                     }.onFailure {
-                        it.printStackTrace()
+                        Log.w(TAG, "operation failed", it)
                     }
                 }
         }
@@ -395,7 +395,7 @@ class McpManager(
         }
 
         transport.onError { error ->
-            Log.e(TAG, "Transport error for ${config.commonOptions.name}: ${error.message}")
+            Log.e(TAG, "Transport error for ${config.commonOptions.name}: ${error.javaClass.simpleName}")
             val currentStatus = syncingStatus.value[config.id]
             // 只有在已连接状态下才触发重连
             if (currentStatus == McpStatus.Connected) {
@@ -412,7 +412,7 @@ class McpManager(
             reconnectAttempts[config.id] = 0 // 重置重连计数
             Log.i(TAG, "addClient: connected ${config.commonOptions.name}")
         }.onFailure {
-            it.printStackTrace()
+            Log.w(TAG, "operation failed", it)
             if (needsAuthorization(config, it)) {
                 setStatus(config = config, status = McpStatus.NeedsAuthorization)
             } else {
@@ -495,7 +495,7 @@ class McpManager(
             runCatching {
                 sync(config)
             }.onFailure {
-                it.printStackTrace()
+                Log.w(TAG, "operation failed", it)
             }
         }
     }
@@ -547,7 +547,7 @@ class McpManager(
             runCatching {
                 entry.second.close()
             }.onFailure {
-                it.printStackTrace()
+                Log.w(TAG, "operation failed", it)
             }
             syncingStatus.emit(syncingStatus.value.toMutableMap().apply { remove(config.id) })
             Log.i(TAG, "removeClient: ${entry.first} / ${entry.first.commonOptions.name}")
@@ -656,7 +656,7 @@ class McpManager(
         // 先关闭旧客户端
         val oldEntry = clients[config.id]
         if (oldEntry != null) {
-            runCatching { oldEntry.second.close() }.onFailure { it.printStackTrace() }
+            runCatching { oldEntry.second.close() }.onFailure { Log.w(TAG, "operation failed", it) }
             clients.remove(config.id)
         }
 
@@ -738,7 +738,7 @@ class McpManager(
                 .onFailure {
                     // 用户主动取消：状态由 cancelAuthorization 负责回退，这里不覆盖
                     if (it is CancellationException) return@onFailure
-                    it.printStackTrace()
+                    Log.w(TAG, "operation failed", it)
                     setStatus(config, McpStatus.Error(it.message ?: "OAuth authorization failed"))
                 }
         }
@@ -904,7 +904,7 @@ class McpManager(
             persistOAuthState(config.id, updated)
             config.clone(commonOptions = config.commonOptions.copy(oauth = updated))
         }.getOrElse {
-            Log.w(TAG, "Token refresh failed for ${config.commonOptions.name}: ${it.message}")
+            Log.w(TAG, "Token refresh failed for ${config.commonOptions.name}: ${it.javaClass.simpleName}")
             // 刷新失败：若错误为 OAuth 凭据失效（invalid client/grant），将服务器状态标记为
             // NeedsAuthorization，让 UI 显示需要重新授权；否则保持旧令牌尝试。
             val errorMsg = it.message?.lowercase() ?: ""
@@ -958,7 +958,7 @@ class McpManager(
         if (hasManualAuth) return false
         // 主动探测：仅当 server 发布了受保护资源元数据 (protected resource metadata) 时才支持 OAuth
         return runCatching { oauthClient.discoverProtectedResource(config.serverUrl) }
-            .onFailure { Log.i(TAG, "OAuth probe failed for ${config.commonOptions.name}: ${it.message}") }
+            .onFailure { Log.i(TAG, "OAuth probe failed for ${config.commonOptions.name}: ${it.javaClass.simpleName}") }
             .isSuccess
     }
 
