@@ -464,7 +464,7 @@ class McpManager(
     /**
      * 清理不活跃的 MCP 连接（超过 MAX_CLIENTS 上限时释放最旧的连接）
      */
-    private fun cleanupInactiveClients() {
+    private suspend fun cleanupInactiveClients() {
         clientsMutex.withLock {
             if (clients.size <= MAX_CLIENTS) return@withLock
             val overflow = clients.size - MAX_CLIENTS
