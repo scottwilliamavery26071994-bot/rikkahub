@@ -38,6 +38,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.ClassDiscriminatorMode
@@ -455,6 +457,29 @@ class McpManager(
                 reconnectClient(config)
             }.onFailure { e ->
                 Log.e(TAG, "reconnectServer failed: $configId", e)
+            }
+        }
+    }
+
+    /**
+     * 清理不活跃的 MCP 连接（超过 MAX_CLIENTS 上限时释放最旧的连接）
+     */
+    private fun cleanupInactiveClients() {
+        clientsMutex.withLock {
+            if (clients.size <= MAX_CLIENTS) return@withLock
+            val overflow = clients.size - MAX_CLIENTS
+            val oldestKeys = clients.keys.take(overflow)
+            for (key in oldestKeys) {
+                val entry = clients.remove(key)
+                if (entry != null) {
+                    runCatching { entry.second.close() }
+                    reconnectJobs[key]?.cancel()
+                    pingJobs[key]?.cancel()
+                    reconnectJobs.remove(key)
+                    pingJobs.remove(key)
+                    reconnectAttempts.remove(key)
+                    Log.i(TAG, "cleanupInactiveClients: closed ${entry.first.commonOptions.name}")
+                }
             }
         }
     }

@@ -45,10 +45,6 @@ internal suspend fun githubApiCall(token: String, method: String, path: String, 
         "PATCH" -> builder.patch((body ?: "{}").toRequestBody("application/json".toMediaType())).build()
         else -> builder.get().build()
     }
-    // 设置超时时间
-    request.newBuilder().apply {
-        timeout(java.time.Duration.ofSeconds(30))
-    }.build()
     return try {
         githubHttpClient.newCall(request).execute().use { resp ->
             val text = resp.body?.string() ?: ""
