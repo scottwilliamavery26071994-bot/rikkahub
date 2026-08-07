@@ -76,11 +76,24 @@ private const val TAG = "GenerationHandler"
 // animateContentSize 的尺寸补间动画被不断打断重启），表现为打字机效果的"抖动/掉帧"。
 // 这里把推送频率限制在这个间隔以内，肉眼完全感知不到延迟，但能大幅降低重组频率。
 private const val STREAM_UI_THROTTLE_MS = 50L
+
+/**
+ * 上下文长度提醒阈值（估算 token 数）。
+ * 大部分模型上下文为 32K~200K tokens，这里保守取 100K 作为提醒阈值，
+ * 超过后提醒用户压缩上下文或开启新对话。
+ */
+private const val CONTEXT_WARNING_THRESHOLD_TOKENS = 100_000
  
 @Serializable
 sealed interface GenerationChunk {
     data class Messages(
         val messages: List<UIMessage>
+    ) : GenerationChunk
+
+    /** 非对话内容的提醒（如上下文超限警告），不写入对话历史 */
+    @Serializable
+    data class Reminder(
+        val text: String
     ) : GenerationChunk
 }
  
@@ -112,6 +125,18 @@ class GenerationHandler(
         val provider = model.findProvider(settings.providers)
             ?: error("Provider not found for model: ${model.id}")
         val providerImpl = providerManager.getProviderByType(provider)
+ 
+        // 上下文长度提醒：发送前估算消息 token 量，若接近模型上下文上限则提醒用户
+        val estimatedTokens = messages.sumOf { message ->
+            message.toText().length / 2 // 粗略估算：约 2 字符 ≈ 1 token（中英文混合保守估计）
+        }
+        if (estimatedTokens > CONTEXT_WARNING_THRESHOLD_TOKENS) {
+            val wanTokens = estimatedTokens / 10_000
+            val contextWarnText = "⚠️ 当前对话内容约 ${wanTokens} 万 tokens，已接近模型上下文窗口上限，" +
+                "继续发送可能导致模型无法完整回复或遗忘早期内容。建议：压缩上下文、精简历史消息或开启新对话。"
+            emit(GenerationChunk.Reminder(contextWarnText))
+            Log.w(TAG, "generateText: context length warning, estimatedTokens=$estimatedTokens (threshold=$CONTEXT_WARNING_THRESHOLD_TOKENS)")
+        }
  
         var messages: List<UIMessage> = messages
  

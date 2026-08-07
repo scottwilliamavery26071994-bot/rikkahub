@@ -1085,6 +1085,18 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
                             sendLiveUpdateNotification(conversationId, chunk.messages, senderName)
                         }
                     }
+                    is GenerationChunk.Reminder -> {
+                        // 上下文超限等非对话提醒：Toast 展示 + 写入处理状态（UI 可见）
+                        Log.w(TAG, "Generation reminder for conversation $conversationId: ${chunk.text}")
+                        runCatching {
+                            android.widget.Toast.makeText(
+                                context,
+                                chunk.text,
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
+                        }
+                        session.processingStatus.value = chunk.text
+                    }
                 }
             }
         }.onFailure {
@@ -1381,6 +1393,16 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
                                 nodes[placeholderIndex] = reply.copy(isPublic = false).toMessageNode()
                                 saveConversation(conversationId, latest.copy(messageNodes = nodes))
                             }
+                        }
+                    }
+                    is GenerationChunk.Reminder -> {
+                        Log.w(TAG, "群聊生成提醒 for conversation $conversationId: ${chunk.text}")
+                        runCatching {
+                            android.widget.Toast.makeText(
+                                context,
+                                chunk.text,
+                                android.widget.Toast.LENGTH_LONG
+                            ).show()
                         }
                     }
                 }
