@@ -72,7 +72,7 @@ fun createSearchTools(settings: Settings): Set<Tool> {
                         JsonInstantPretty.encodeToJsonElement(result.getOrThrow()).jsonObject.let { json ->
                             val map = json.toMutableMap()
                             map["items"] =
-                                JsonArray(map["items"]!!.jsonArray.mapIndexed { index, item ->
+                                JsonArray((map["items"]?.jsonArray ?: JsonArray(emptyList())).mapIndexed { index, item ->
                                     JsonObject(item.jsonObject.toMutableMap().apply {
                                         put("id", JsonPrimitive(Uuid.random().toString().take(6)))
                                         put("index", JsonPrimitive(index + 1))
