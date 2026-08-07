@@ -1108,6 +1108,31 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
             Logging.log(TAG, "handleMessageComplete: $it")
             Logging.log(TAG, it.stackTraceToString())
 
+            // 检测上下文超限类错误（请求发出后由服务端返回），提醒用户压缩上下文
+            val errorMsg = (it.message ?: "").lowercase()
+            val isContextOverflow = listOf(
+                "context length",
+                "context_length",
+                "maximum context",
+                "max context",
+                "context window",
+                "prompt is too long",
+                "too many tokens",
+                "tokens exceeded",
+                "input is too long",
+                "maximum prompt length",
+                "exceeded the maximum",
+            ).any { keyword -> errorMsg.contains(keyword) }
+            if (isContextOverflow) {
+                val contextOverflowText = "⚠️ 模型返回错误：发送给模型的内容超过了其上下文窗口上限。" +
+                    "建议：压缩上下文、精简历史消息、关闭已完成的工具结果，或开启新对话。"
+                Log.w(TAG, "Context overflow detected for conversation $conversationId: ${it.message}")
+                runCatching {
+                    android.widget.Toast.makeText(context, contextOverflowText, android.widget.Toast.LENGTH_LONG).show()
+                }
+                session.processingStatus.value = contextOverflowText
+            }
+
             // 兜底保存已生成的部分内容：报错时把内存中已有的半截回复落库，
             // 避免"报错即清空"导致已生成内容全部丢失
             runCatching {
