@@ -1,0 +1,471 @@
+﻿/*
+ * 灵犀 Lingxi
+ * 衍生自 Lingxi (https://github.com/scottwilliamavery26071994-bot/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
+package me.rerere.rikkahub.data.repository
+
+import android.util.Log
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.withContext
+import me.rerere.rikkahub.data.datastore.SettingsStore
+import me.rerere.rikkahub.data.db.dao.WorkspaceDAO
+import me.rerere.rikkahub.data.db.entity.WorkspaceEntity
+import me.rerere.rikkahub.utils.JsonInstant
+import me.rerere.workspace.RootfsInstallProgress
+import me.rerere.workspace.RootfsInstaller
+import me.rerere.workspace.WorkspaceCommandResult
+import me.rerere.workspace.WorkspaceFileEntry
+import me.rerere.workspace.WorkspaceManager
+import me.rerere.workspace.WorkspaceShellStatus
+import me.rerere.workspace.WorkspaceStorageArea
+import java.io.InputStream
+import java.io.OutputStream
+import java.io.File
+import kotlin.uuid.Uuid
+
+class WorkspaceRepository(
+    private val dao: WorkspaceDAO,
+    private val manager: WorkspaceManager,
+    private val rootfsInstaller: RootfsInstaller,
+    private val settingsStore: SettingsStore,
+) {
+    fun listFlow(): Flow<List<WorkspaceEntity>> = dao.listFlow()
+
+    suspend fun checkIntegrity() = withContext(Dispatchers.IO) {
+        val workspaces = dao.getAll()
+        for (workspace in workspaces) {
+            val dir = manager.workspaceDir(workspace.root)
+            if (!dir.exists()) {
+                Log.w(TAG, "Workspace directory missing, removing record: id=${workspace.id}, root=${workspace.root}")
+                dao.deleteById(workspace.id)
+                cleanupAssistantReferences(workspace.id)
+                continue
+            }
+            val statusName = workspace.shellStatus
+            if ((statusName == WorkspaceShellStatus.READY.name || statusName == WorkspaceShellStatus.INSTALLING.name)
+                && !manager.hasRootfs(workspace.root)
+            ) {
+                Log.w(TAG, "Rootfs missing, resetting shell status: id=${workspace.id}")
+                updateShellState(workspace.id, WorkspaceShellStatus.DISABLED.name)
+            }
+        }
+    }
+
+    suspend fun getById(id: String): WorkspaceEntity? = dao.getById(id)
+
+    suspend fun create(name: String): WorkspaceEntity {
+        val id = Uuid.random().toString()
+        val now = System.currentTimeMillis()
+        val finalName = name.trim().ifBlank { "Workspace" }
+        require(!isNameTaken(finalName, excludeId = null)) {
+            "Workspace name already exists: $finalName"
+        }
+        val workspace = WorkspaceEntity(
+            id = id,
+            name = finalName,
+            root = id,
+            createdAt = now,
+            updatedAt = now,
+            lastAccessAt = null,
+        )
+        manager.ensureWorkspace(workspace.root)
+        dao.upsert(workspace)
+        return workspace
+    }
+
+    suspend fun rename(id: String, name: String): Boolean {
+        val workspace = dao.getById(id) ?: return false
+        val finalName = name.trim().ifBlank { workspace.name }
+        require(!isNameTaken(finalName, excludeId = id)) {
+            "Workspace name already exists: $finalName"
+        }
+        dao.upsert(
+            workspace.copy(
+                name = finalName,
+                updatedAt = System.currentTimeMillis(),
+            )
+        )
+        return true
+    }
+
+    /** 名字是否已被其他 workspace 占用（trim 后精确匹配，排除 [excludeId] 自身） */
+    suspend fun isNameTaken(name: String, excludeId: String?): Boolean {
+        val target = name.trim()
+        return dao.getAll().any { it.id != excludeId && it.name.trim() == target }
+    }
+
+    suspend fun setToolApproval(id: String, toolName: String, needsApproval: Boolean): Boolean {
+        val workspace = dao.getById(id) ?: return false
+        val overrides = workspace.toolApprovalOverrides() + (toolName to needsApproval)
+        dao.upsert(
+            workspace.copy(
+                toolApprovals = JsonInstant.encodeToString(overrides),
+                updatedAt = System.currentTimeMillis(),
+            )
+        )
+        return true
+    }
+
+    suspend fun installRootfs(
+        id: String,
+        url: String,
+        onProgress: (RootfsInstallProgress) -> Unit = {},
+    ): Boolean {
+        val workspace = dao.getById(id) ?: return false
+        updateShellState(workspace, WorkspaceShellStatus.INSTALLING.name)
+        try {
+            // runInterruptible 让协程取消转成线程中断, 打断 install 内阻塞的下载/解压循环
+            runInterruptible(Dispatchers.IO) {
+                rootfsInstaller.install(workspace.root, url, onProgress)
+            }
+            updateShellState(workspace, WorkspaceShellStatus.READY.name)
+            return true
+        } catch (e: CancellationException) {
+            withContext(NonCancellable) {
+                restoreShellState(workspace)
+            }
+            throw e
+        } catch (e: InterruptedException) {
+            withContext(NonCancellable) {
+                restoreShellState(workspace)
+            }
+            throw CancellationException("Rootfs install cancelled").also { it.initCause(e) }
+        } catch (e: Throwable) {
+            Log.e(TAG, "installRootfs failed: workspace=${workspace.id}, root=${workspace.root}, url=$url", e)
+            updateShellState(workspace, WorkspaceShellStatus.BROKEN.name)
+            throw e
+        }
+    }
+
+    /**
+     * 自动下载并安装 rootfs (Ubuntu 24.04 base arm64, 官方源)。
+     * 需 shell 可访问网络。后台调用, 失败抛异常由调用方容错。
+     */
+    suspend fun installDefaultRootfs(
+        id: String,
+        onProgress: (RootfsInstallProgress) -> Unit = {},
+    ): Boolean = installRootfs(id, DEFAULT_ROOTFS_URL, onProgress)
+
+    /** 对已就绪的 rootfs 重新执行 patch (修复 passwd/group 等, 版本升级用) */
+    suspend fun patchRootfs(id: String) = withContext(Dispatchers.IO) {
+        val workspace = dao.getById(id) ?: return@withContext
+        runCatching {
+            rootfsInstaller.patchExisting(workspace.root)
+            // 修复旧版 jadx 安装路径错误（旧版链接指向 /opt/jadx-1.5.1/bin/jadx）
+            runCatching {
+                executeCommand(
+                    id,
+                    "ln -sf /opt/bin/jadx /usr/local/bin/jadx 2>/dev/null; " +
+                        "ln -sf /opt/bin/jadx-gui /usr/local/bin/jadx-gui 2>/dev/null",
+                    timeoutMillis = 10_000,
+                )
+            }
+        }.onFailure { e ->
+            Log.w(TAG, "patchRootfs failed: workspace=${workspace.id}", e)
+        }
+    }
+
+    suspend fun listFiles(
+        id: String,
+        area: WorkspaceStorageArea,
+        path: String,
+    ): List<WorkspaceFileEntry> = withContext(Dispatchers.IO) {
+        val workspace = dao.getById(id) ?: return@withContext emptyList()
+        manager.ensureWorkspace(workspace.root)
+        manager.listFiles(workspace.root, path, area)
+    }
+
+    suspend fun readText(
+        id: String,
+        path: String,
+    ): String = withContext(Dispatchers.IO) {
+        val workspace = dao.getById(id) ?: error("Workspace not found: $id")
+        manager.ensureWorkspace(workspace.root)
+        manager.readText(workspace.root, path)
+    }
+
+    suspend fun writeText(
+        id: String,
+        path: String,
+        text: String,
+        overwrite: Boolean,
+    ): WorkspaceFileEntry = withContext(Dispatchers.IO) {
+        val workspace = dao.getById(id) ?: error("Workspace not found: $id")
+        manager.ensureWorkspace(workspace.root)
+        manager.writeText(workspace.root, path, text, overwrite)
+    }
+
+    suspend fun importFile(
+        id: String,
+        area: WorkspaceStorageArea,
+        destinationPath: String,
+        fileName: String,
+        inputStream: InputStream,
+    ): WorkspaceFileEntry = withContext(Dispatchers.IO) {
+        val workspace = dao.getById(id) ?: error("Workspace not found: $id")
+        manager.ensureWorkspace(workspace.root)
+        manager.importFile(workspace.root, destinationPath, area, fileName, inputStream)
+    }
+
+    suspend fun fileSize(
+        id: String,
+        area: WorkspaceStorageArea,
+        path: String,
+    ): Long = withContext(Dispatchers.IO) {
+        val workspace = dao.getById(id) ?: error("Workspace not found: $id")
+        manager.fileSize(workspace.root, path, area)
+    }
+
+    suspend fun exportFile(
+        id: String,
+        area: WorkspaceStorageArea,
+        path: String,
+        outputStream: OutputStream,
+    ) = withContext(Dispatchers.IO) {
+        val workspace = dao.getById(id) ?: error("Workspace not found: $id")
+        manager.exportFile(workspace.root, path, area, outputStream)
+    }
+
+    suspend fun deleteFile(
+        id: String,
+        area: WorkspaceStorageArea,
+        path: String,
+        recursive: Boolean,
+    ): Boolean {
+        val deleted = withContext(Dispatchers.IO) {
+            val workspace = dao.getById(id) ?: return@withContext false
+            manager.deleteFile(workspace.root, path, recursive, area)
+        }
+        return deleted
+    }
+
+    suspend fun moveFile(
+        id: String,
+        source: String,
+        target: String,
+        overwrite: Boolean,
+    ): WorkspaceFileEntry = withContext(Dispatchers.IO) {
+        val workspace = dao.getById(id) ?: error("Workspace not found: $id")
+        manager.ensureWorkspace(workspace.root)
+        manager.moveFile(workspace.root, source, target, overwrite)
+    }
+
+    suspend fun executeCommand(
+        id: String,
+        command: String,
+        cwd: String = "",
+        timeoutMillis: Long = WorkspaceManager.DEFAULT_COMMAND_TIMEOUT_MS,
+        stdin: ByteArray? = null,
+    ): WorkspaceCommandResult {
+        val workspace = dao.getById(id) ?: error("Workspace not found: $id")
+        // runInterruptible 让协程取消转化为线程中断，从而打断阻塞的 Process.waitFor 并杀掉进程
+        return runInterruptible(Dispatchers.IO) {
+            manager.ensureWorkspace(workspace.root)
+            manager.executeCommand(workspace.root, command, cwd, timeoutMillis, stdin)
+        }
+    }
+
+    /**
+     * 自动安装编程环境与常用工具 (git/curl/wget/python3/pip/build-essential/nano/unzip)。
+     * 需 shell 已 READY (rootfs 已就绪)。后台调用, 失败抛异常由调用方容错。
+     */
+    suspend fun installProgrammingTools(
+        id: String,
+        onProgress: (String) -> Unit = {},
+    ) {
+        val workspace = dao.getById(id) ?: return
+        // 检查工具是否已安装，已装则跳过
+        val check = executeCommand(id, "which git && which python3 && which gcc && which curl", timeoutMillis = 10_000)
+        if (check.exitCode == 0) return
+
+        onProgress("配置网络与软件源...")
+        // 1. 写入可用 DNS (国内 223.5.5.5 优先)
+        executeCommand(
+            id,
+            "printf 'nameserver 223.5.5.5\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf",
+            timeoutMillis = 30_000,
+        )
+        // 2. 切换到国内镜像源 (archive.ubuntu.com 在国内常超时/失败)
+        executeCommand(
+            id,
+            "sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|https://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|https://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' " +
+                "/etc/apt/sources.list.d/ubuntu.sources || true",
+            timeoutMillis = 30_000,
+        )
+
+        // 3. update + install, 失败重试一次 (强制装上)
+        repeat(2) { attempt ->
+            try {
+                onProgress("更新软件源...")
+                val update = executeCommand(id, "apt-get update -y", timeoutMillis = 600_000)
+                if (update.exitCode != 0) {
+                    throw RuntimeException("apt update failed: ${update.stderr.take(200)}")
+                }
+                onProgress("安装编程环境 (git/curl/wget/python3/pip/gcc/make/nano)...")
+                val install = executeCommand(
+                    id,
+                    "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends " +
+                        "git curl wget python3 python3-pip build-essential nano unzip lynx",
+                    timeoutMillis = 1_200_000,
+                )
+                if (install.exitCode != 0) {
+                    throw RuntimeException("apt install failed: ${install.stderr.take(300)}")
+                }
+                // 验证核心工具已装上, 否则视为失败重试
+                val verify = executeCommand(
+                    id,
+                    "which git && which python3 && which gcc && which make",
+                    timeoutMillis = 30_000,
+                )
+                if (verify.exitCode != 0) {
+                    throw RuntimeException("programming tools verification failed: ${verify.stdout.take(100)} ${verify.stderr.take(100)}")
+                }
+                return
+            } catch (e: Throwable) {
+                if (attempt == 1) throw e
+                Log.w(TAG, "programming tools install attempt $attempt failed, retrying: ${e.message}")
+                onProgress("安装失败, 正在重试...")
+            }
+        }
+    }
+
+    /**
+     * 自动安装 APK 反编译工具链: Java 运行时 + apktool + jadx。
+     * 需 shell 已 READY。后台调用, 失败抛异常由调用方容错。
+     */
+    suspend fun installReverseTools(
+        id: String,
+        onProgress: (String) -> Unit = {},
+    ) {
+        val workspace = dao.getById(id) ?: return
+        // 检查 Java 和 jadx 是否已安装，已装则跳过
+        val check = executeCommand(id, "java -version 2>&1 && which jadx", timeoutMillis = 10_000)
+        if (check.exitCode == 0) return
+
+        // 确保 DNS 与国内镜像源 (与 installProgrammingTools 一致)
+        executeCommand(
+            id,
+            "printf 'nameserver 223.5.5.5\\nnameserver 8.8.8.8\\n' > /etc/resolv.conf && " +
+                "sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|https://archive.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|http://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g; " +
+                "s|https://security.ubuntu.com/ubuntu|http://mirrors.aliyun.com/ubuntu|g' " +
+                "/etc/apt/sources.list.d/ubuntu.sources || true",
+            timeoutMillis = 30_000,
+        )
+
+        repeat(2) { attempt ->
+            try {
+                onProgress("安装 Java 运行时 (openjdk-17)...")
+                val java = executeCommand(
+                    id,
+                    "DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends openjdk-17-jre-headless",
+                    timeoutMillis = 1_200_000,
+                )
+                if (java.exitCode != 0) {
+                    throw RuntimeException("java install failed: ${java.stderr.take(200)}")
+                }
+
+                onProgress("安装 apktool (资源/smali 反编译)...")
+                val apktool = executeCommand(
+                    id,
+                    "curl -sL -o /usr/local/bin/apktool.jar https://github.com/iBotPeaches/Apktool/releases/download/v2.10.0/apktool_2.10.0.jar && " +
+                        "printf '#!/bin/bash\\nexec java -jar /usr/local/bin/apktool.jar \"\\$@\"\\n' > /usr/local/bin/apktool && " +
+                        "chmod +x /usr/local/bin/apktool",
+                    timeoutMillis = 600_000,
+                )
+                if (apktool.exitCode != 0) {
+                    throw RuntimeException("apktool install failed: ${apktool.stderr.take(200)}")
+                }
+
+                onProgress("安装 jadx (Java 源码反编译)...")
+                val jadx = executeCommand(
+                    id,
+                    "mkdir -p /opt && curl -sL -o /tmp/jadx.zip https://github.com/skylot/jadx/releases/download/v1.5.1/jadx-1.5.1.zip && " +
+                        "unzip -q -o /tmp/jadx.zip -d /opt/ && rm -f /tmp/jadx.zip && " +
+                        "ln -sf /opt/bin/jadx /usr/local/bin/jadx && " +
+                        "ln -sf /opt/bin/jadx-gui /usr/local/bin/jadx-gui",
+                    timeoutMillis = 600_000,
+                )
+                if (jadx.exitCode != 0) {
+                    throw RuntimeException("jadx install failed: ${jadx.stderr.take(200)}")
+                }
+                // 验证 Java/apktool/jadx 已可用, 否则重试
+                val verify = executeCommand(
+                    id,
+                    "java -version 2>&1 && which apktool && which jadx",
+                    timeoutMillis = 30_000,
+                )
+                if (verify.exitCode != 0) {
+                    throw RuntimeException("reverse tools verification failed: ${verify.stdout.take(150)} ${verify.stderr.take(150)}")
+                }
+                return
+            } catch (e: Throwable) {
+                if (attempt == 1) throw e
+                Log.w(TAG, "reverse tools install attempt $attempt failed, retrying: ${e.message}")
+                onProgress("安装失败, 正在重试...")
+            }
+        }
+    }
+
+    suspend fun delete(id: String): Boolean {
+        val workspace = dao.getById(id) ?: return false
+        dao.deleteById(id)
+        withContext(Dispatchers.IO) {
+            manager.deleteWorkspace(workspace.root)
+        }
+        cleanupAssistantReferences(id)
+        return true
+    }
+
+    private suspend fun cleanupAssistantReferences(workspaceId: String) {
+        settingsStore.update { settings ->
+            settings.copy(
+                assistants = settings.assistants.map { assistant ->
+                    if (assistant.workspaceId?.toString() == workspaceId) {
+                        assistant.copy(workspaceId = null)
+                    } else {
+                        assistant
+                    }
+                }
+            )
+        }
+    }
+
+    private suspend fun restoreShellState(workspace: WorkspaceEntity) {
+        updateShellState(workspace.id, workspace.shellStatus)
+    }
+
+    private suspend fun updateShellState(
+        workspace: WorkspaceEntity,
+        shellStatus: String,
+    ) = updateShellState(workspace.id, shellStatus)
+
+    private suspend fun updateShellState(
+        workspaceId: String,
+        shellStatus: String,
+    ) {
+        dao.updateShellStatus(
+            id = workspaceId,
+            shellStatus = shellStatus,
+            updatedAt = System.currentTimeMillis(),
+        )
+    }
+
+    companion object {
+        private const val TAG = "WorkspaceRepository"
+
+        /** rootfs 自动下载源 (Ubuntu 24.04 base arm64) */
+        const val DEFAULT_ROOTFS_URL =
+            "https://cdimage.ubuntu.com/ubuntu-base/releases/24.04/release/ubuntu-base-24.04.3-base-arm64.tar.gz"
+    }
+}
