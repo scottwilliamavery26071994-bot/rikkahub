@@ -28,7 +28,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.TimeoutCancellationExceptionOrNull
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -389,7 +390,9 @@ class ChatService(
     ): Job = appScope.launch {
         addConversationReference(conversationId)
         try {
-            block()
+            withTimeout(30_000) { block() } // 30秒超时
+        } catch (e: TimeoutCancellationException) {
+            Log.w(TAG, "Operation timeout for conversation $conversationId")
         } finally {
             removeConversationReference(conversationId)
         }
@@ -578,7 +581,7 @@ class ChatService(
 
                 _generationDoneFlow.emit(conversationId)
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(TAG, "Voice call generation failed", e)
                 Log.e(TAG, "sendMessage failed, conversationId=$conversationId", e)
                 addError(e, conversationId, title = context.getString(R.string.error_title_send_message))
             }
@@ -1087,7 +1090,7 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
             // 取消 Live Update 通知
             cancelLiveUpdateNotification(conversationId)
 
-            it.printStackTrace()
+            Log.e(TAG, "Operation failed", it)
             addError(it, conversationId, title = context.getString(R.string.error_title_generation))
             Logging.log(TAG, "handleMessageComplete: $it")
             Logging.log(TAG, it.stackTraceToString())
@@ -1612,7 +1615,7 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
                 )
             }
         }.onFailure {
-            it.printStackTrace()
+            Log.e(TAG, "Operation failed", it)
             Log.e(TAG, "generateSuggestion failed, conversationId=$conversationId", it)
         }
     }
