@@ -37,7 +37,7 @@
 ### 2.2 已实施的优化（`1d856ef`，9 项）
 
 1. **异常日志信息泄露修复**：`e.message` → `e.javaClass.simpleName`（ChatService 日志）
-2. **WebView XSS 防护增强**：`PluginWebViewPage.kt` 添加 `setAllowFileAccess(false)` 等 3 项
+2. **WebView XSS 防护增强**：⚠️ **实际未生效**（见问题 A8）——`PluginWebViewPage.kt` 仍为 `allowFileAccess = true`，之前脚本未找到目标代码，需手动补做
 3. ~~数据库事务优化~~：⚠️ **已回滚**（见坑 #1：`@Transaction` 导致 Room KSP 失败，`64ff177` 移除）
 4. **printStackTrace 替换为结构化日志**：`Log.e(TAG, "Operation failed", e)`（ChatService 3 处、GenerationHandler）
 5. **协程超时管理**：`launchWithConversationReference` 添加 `withTimeout(30_000)` + `TimeoutCancellationException` 处理
@@ -102,21 +102,60 @@
 
 ---
 
+## 3.5 当前代码问题清单（2026-08-08 全面扫描）
+
+> 按严重程度排序。**A=功能缺陷/隐患，B=质量遗留，C=观察项。**
+
+### A. 功能缺陷 / 隐患（建议优先处理）
+
+| # | 问题 | 位置 | 说明 |
+|---|------|------|------|
+| A1 | **`client.connect()` 在 try 块外** | McpManager.kt:238 | `if (client.transport == null) client.connect(...)` 若 connect 失败抛异常，不会被 callTool 的 OAuth 错误处理捕获，直接冒泡显示原始错误。应移入 try 内 |
+| A2 | **内置 MCP 工具数显示不一致** | McpManager.kt `getBuiltinServerInfos()` / `getBuiltinServerTools()` | UI 宣称 5 个服务器（GitHub/Fetch/Files/Images/Memory，toolCount 4/3/2/4），但实际工具全在 `buildGitHubTools` 一个函数里（含 Fetch@2052、Images@2149），`githubTools.size` 是全部工具数 → GitHub 卡片工具数显示重复；且 `githubMcpEnabled=false` 时 GitHub 工具不可用但 Fetch/Images 仍可用（不一致） |
+| A3 | **`ConversationDAO` ↔ `ConversationRepository` 循环引用** | ConversationDAO.kt:17 / ConversationRepository.kt:610 | `LightConversationEntity` 定义在 Repository 底部，DAO 引用它。**后果：不能加 `@Transaction`**（Room KSP 报 MissingType）。若未来需要事务注解，必须先把该类型抽到独立文件 |
+| A4 | **群聊生成无 context 超限检测** | ChatService.kt 群聊 onFailure（~1434 行） | 主对话 onFailure 已加 context overflow 关键词检测（1129 行），群聊 onFailure 只有 `Log.e`，未检测/未提醒 |
+| A5 | **OAuth 刷新失败静默** | McpManager.kt:907 | `ensureFreshToken` 刷新失败仅 `Log.w` 后返回旧 config，不更新状态、不提示用户；用户下次调用工具仍失败，只能靠 callTool 兜底（A1 修复后才会走到） |
+| A6 | **"错误处理增强"（SocketException 重试）未生效** | ChatService.kt sendMessage catch | 此前脚本替换均提示"未找到目标代码"，实际 catch 结构不同，该优化从未真正实现。如需要需手动实现 |
+| A7 | **`rikkahub-optimizations.zip`（44MB）混入 git 历史** | 提交 `7b1a324` | 曾误 `git add -A` 提交，当前 master 历史仍包含。工作区文件仍在。建议从历史中清除（git filter-branch / BFG）并加入 .gitignore |
+| A8 | **WebView XSS 防护未生效** | PluginWebViewPage.kt:467 | 文档声称做了 `setAllowFileAccess(false)` 等 3 项防护，实际代码仍是 `allowFileAccess = true`（仅 mixedContentMode=NEVER_ALLOW 存在）。之前修改脚本未找到目标代码，需手动补做 |
+
+### B. 代码质量遗留（优化未彻底）
+
+| # | 问题 | 位置 | 说明 |
+|---|------|------|------|
+| B1 | **printStackTrace 残留 51 处** | 全项目（核心 AI/MCP 8 处） | GenerationHandler.kt:364、McpManager.kt:140/147/415/498/550/659/741 等；其余分布在 UI/工具类。均未替换为结构化日志 |
+| B2 | **e.message 日志泄露多处** | McpManager.kt:398/681/907/951、RequestLoggingInterceptor.kt:42/68、BrightnessTool.kt 等 | 日志直接输出异常 message，可能泄露路径/URL/请求体等敏感信息 |
+| B3 | **runBlocking 12 处** | CameraTool:52、ExploreNearbyTool:91/113、WorkspaceDocumentsProvider:42、PluginSandbox:671、ChatService:47、HighlightCodeBlock:683 等 | 部分可能在主线程/IO 线程阻塞，注意 ANR 风险；Provider 回调场景可用但需评估 |
+| B4 | **Thread.sleep 1 处** | SshTool.kt:449 | `try { Thread.sleep(50) }` 阻塞线程，应改 delay（如可 suspend） |
+| B5 | **`clients.size` 锁外读取** | McpManager.kt:371（addClient 中） | `if (clients.size > MAX_CLIENTS * 0.8)` 在 `clientsMutex.withLock` 外读取，有轻微并发竞态（不影响编译，但 size 可能读到中间态） |
+
+### C. 观察项 / 环境问题
+
+| # | 问题 | 说明 |
+|---|------|------|
+| C1 | 用户环境 403 "invalid client" | OAuth 凭据失效，代码已加自动刷新重试 + 友好提示（26ba781），需实测验证 |
+| C2 | GitHub API 偶发 403 非标准 JSON | 响应 `{ code: 403, message: "invalid client" }`（key 无引号），工具/客户端解析时注意容错；多为瞬时或 OAuth client 配置问题 |
+| C3 | 沙箱连 GitHub 443 不稳定 | push 偶发超时，重试或 rebase 后 push |
+
+---
+
 ## 4. 下一步计划
 
 1. **[进行中] 确认 `26ba781` 构建通过**
    - 通过 → 下载 APK 产物验证
    - 失败 → 下载日志定位（注意 suspend / 类型推断 / import 三类高频问题）
-2. **验证功能**：
+2. **修复 A 类问题（优先）**：
+   - A1：`client.connect()` 移入 try 块
+   - A2：内置工具数统计修正（区分 GitHub/Fetch/Images）
+   - A8：WebView `setAllowFileAccess(false)` 等防护补做
+   - A4：群聊 onFailure 补 context 检测
+   - A7：清理 ZIP 出 git 历史 + 加 .gitignore
+3. **清理 B 类问题（低优先级）**：printStackTrace → Log.e、e.message 脱敏、Thread.sleep → delay
+4. **验证功能**：
    - MCP 服务器列表显示（内置 5 个 + 外部）
    - 消息发送正常（saveConversation 递归修复）
    - 上下文超限提醒：构造超长对话触发 finish_reason=length
    - OAuth 失效提示：失效 MCP 服务器调用工具
-3. **收尾清理**：
-   - `rikkahub-optimizations.zip`（约 80MB）曾误 add，确认不在最终提交中（已确认 git log 无此文件）
-   - 检查 `.gitignore` 是否有必要补充
-4. **可选优化**（若需要）：
-   - `ConversationDAO` 与 `LightConversationEntity` 的循环引用长期存在，若未来要加回事务注解，需先抽离该类型到独立文件
 
 ---
 
