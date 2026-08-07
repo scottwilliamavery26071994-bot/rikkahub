@@ -1886,14 +1886,14 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
             return // 新会话且为空时不保存
         }
 
-        val updatedConversation = conversation.copy()
-        saveConversation(conversationId, updatedConversation)
-
+        // 落库
         if (!exists) {
-            conversationRepo.insertConversation(updatedConversation)
+            conversationRepo.insertConversation(conversation)
         } else {
-            conversationRepo.updateConversation(updatedConversation)
+            conversationRepo.updateConversation(conversation)
         }
+        // 将最新状态写回 session.state，通知 UI flow 刷新（否则发送后消息不显示）
+        updateConversation(conversationId, conversation)
     }
 
     // ---- 翻译消息 ----
