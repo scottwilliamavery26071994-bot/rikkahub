@@ -1652,7 +1652,10 @@ private const val overlayBridgeJavascript = """
 
 private fun uriToBase64(context: android.content.Context, uri: Uri): String {
     val inputStream = context.contentResolver.openInputStream(uri) ?: return "null"
-    val bytes = inputStream.readBytes()
-    inputStream.close()
-    return "\"" + Base64.encodeToString(bytes, Base64.NO_WRAP) + "\""
+    return try {
+        val bytes = inputStream.readBytes()
+        "\"" + Base64.encodeToString(bytes, Base64.NO_WRAP) + "\""
+    } finally {
+        inputStream.close()
+    }
 }
