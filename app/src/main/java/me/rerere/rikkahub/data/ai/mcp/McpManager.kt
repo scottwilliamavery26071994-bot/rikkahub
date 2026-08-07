@@ -59,6 +59,7 @@ import me.rerere.rikkahub.data.files.saveUploadFromBytes
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.checkDifferent
 import okhttp3.OkHttpClient
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import kotlin.io.encoding.Base64
 import kotlin.time.Duration.Companion.minutes
@@ -106,12 +107,12 @@ class McpManager(
 
     private val oauthClient = McpOAuthClient(okHttpClient)
 
-    private val clients: MutableMap<Uuid, Pair<McpServerConfig, Client>> = mutableMapOf()
+    private val clients: MutableMap<Uuid, Pair<McpServerConfig, Client>> = ConcurrentHashMap()
     private val MAX_CLIENTS = 20 // 限制最大连接数，防止内存泄漏
-    private val reconnectJobs: MutableMap<Uuid, Job> = mutableMapOf()
-    private val reconnectAttempts: MutableMap<Uuid, Int> = mutableMapOf()
-    private val pingJobs: MutableMap<Uuid, Job> = mutableMapOf()
-    private val authorizationJobs: MutableMap<Uuid, Job> = mutableMapOf()
+    private val reconnectJobs: MutableMap<Uuid, Job> = ConcurrentHashMap()
+    private val reconnectAttempts: MutableMap<Uuid, Int> = ConcurrentHashMap()
+    private val pingJobs: MutableMap<Uuid, Job> = ConcurrentHashMap()
+    private val authorizationJobs: MutableMap<Uuid, Job> = ConcurrentHashMap()
     private val clientsMutex = Mutex()
     val syncingStatus = MutableStateFlow<Map<Uuid, McpStatus>>(mapOf())
 
