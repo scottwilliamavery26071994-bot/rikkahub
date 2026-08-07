@@ -229,25 +229,79 @@ class McpManager(
         val pair = clientsMutex.withLock { clients[serverId] }
         val client = pair?.second
             ?: return listOf(UIMessagePart.Text("Failed to execute tool, because no such mcp client for the tool"))
-        val config = pair.first
+        var config = pair.first
         Log.i(TAG, "callTool: $toolName / $args (server: ${config.commonOptions.name})")
 
         if (client.transport == null) client.connect(getTransport(config))
-        val result = client.callTool(
-            request = CallToolRequest(
-                params = CallToolRequestParams(
-                    name = toolName,
-                    arguments = args,
+        try {
+            val result = client.callTool(
+                request = CallToolRequest(
+                    params = CallToolRequestParams(
+                        name = toolName,
+                        arguments = args,
+                    ),
                 ),
-            ),
-            options = RequestOptions(timeout = 120.seconds),
-        )
-        return result.content.map {
-            when(it) {
-                is TextContent -> UIMessagePart.Text(it.text)
-                is ImageContent -> convertImageContentToFilePart(it)
-                else -> UIMessagePart.Text(JsonInstant.encodeToString(it))
+                options = RequestOptions(timeout = 120.seconds),
+            )
+            return result.content.map {
+                when (it) {
+                    is TextContent -> UIMessagePart.Text(it.text)
+                    is ImageContent -> convertImageContentToFilePart(it)
+                    else -> UIMessagePart.Text(JsonInstant.encodeToString(it))
+                }
             }
+        } catch (e: Exception) {
+            // 对话中调用 MCP 工具失败：检测 OAuth 凭据失效（如 invalid client），
+            // 先尝试刷新令牌后重试一次，仍失败则返回友好提示引导用户重新授权。
+            val errorMsg = e.message?.lowercase() ?: ""
+            val isOAuthInvalid = listOf(
+                "invalid client",
+                "invalid_client",
+                "invalid grant",
+                "invalid_grant",
+                "unauthorized_client",
+                "invalid_token",
+                "token expired",
+                "access token",
+                "401 unauthorized",
+            ).any { keyword -> errorMsg.contains(keyword) }
+
+            if (isOAuthInvalid && config.commonOptions.oauth?.refreshToken != null) {
+                Log.i(TAG, "callTool: OAuth token invalid for ${config.commonOptions.name}, refreshing and retrying")
+                val refreshed = ensureFreshToken(config)
+                if (refreshed.commonOptions.oauth?.accessToken != null) {
+                    config = refreshed
+                    runCatching {
+                        val retryResult = client.callTool(
+                            request = CallToolRequest(
+                                params = CallToolRequestParams(
+                                    name = toolName,
+                                    arguments = args,
+                                ),
+                            ),
+                            options = RequestOptions(timeout = 120.seconds),
+                        )
+                        return retryResult.content.map {
+                            when (it) {
+                                is TextContent -> UIMessagePart.Text(it.text)
+                                is ImageContent -> convertImageContentToFilePart(it)
+                                else -> UIMessagePart.Text(JsonInstant.encodeToString(it))
+                            }
+                        }
+                    }.onFailure { retryError ->
+                        Log.w(TAG, "callTool: retry after token refresh failed for ${config.commonOptions.name}: ${retryError.message}")
+                    }
+                }
+            }
+
+            val friendly = if (isOAuthInvalid) {
+                "⚠️ MCP 服务器「${config.commonOptions.name}」的 OAuth 授权已失效（${e.message}）。" +
+                    "请在 设置 → MCP 服务器 中对它重新授权后重试。"
+            } else {
+                "MCP 工具调用失败（${config.commonOptions.name} / $toolName）：${e.message}"
+            }
+            Log.w(TAG, "callTool failed: $friendly")
+            return listOf(UIMessagePart.Text(friendly))
         }
     }
 
