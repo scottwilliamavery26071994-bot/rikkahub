@@ -47,7 +47,6 @@ import kotlin.math.sin
 import kotlin.math.PI
 
 /**
- * 悬浮球服务：主动消息到达时弹出一个 Telegram 风格的圆形悬浮球提醒。
  *
  * - 点击球 → 打开对应会话聊天页（RouteActivity + conversationId extra）→ 球消失。
  * - 长按/拖动 → 改变球的位置，松手贴边。

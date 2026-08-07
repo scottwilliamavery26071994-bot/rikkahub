@@ -440,7 +440,7 @@ class ChatService(
             Log.d(TAG, "initializeConversation: $conversationId 正在生成中, 跳过 DB 重载以保留流式回复")
             return
         }
-        // 从数据库重新加载最新数据，确保能显示主动消息等新内容
+        // 从数据库重新加载最新数据，确保能显示新内容
         val conversation = conversationRepo.getConversationById(conversationId)
         if (conversation != null) {
             updateConversation(conversationId, conversation)

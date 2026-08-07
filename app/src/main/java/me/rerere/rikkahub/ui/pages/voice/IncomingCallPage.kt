@@ -55,7 +55,6 @@ private val ColorIncoming = Color(0xFFFDAE4F) // 来电主色: 琥珀
 private val ColorBgIncoming = Color(0xFF241A0B) // 暖深褐底
 
 /**
- * 来电界面 (AI 主动发起语音通话时弹出)
  *
  * - 全屏暖色背景 + 来电光球脉动 + 震动提醒
  * - 底部两个按钮: 接听 / 拒接

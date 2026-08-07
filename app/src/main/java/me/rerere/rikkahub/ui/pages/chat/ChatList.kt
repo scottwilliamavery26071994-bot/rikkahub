@@ -305,28 +305,6 @@ private fun ChatListNormal(
             }
         }
 
-        // Filter out [SKIP] messages and proactive message context markers
-        val displayNodes = remember(conversation.messageNodes) {
-            conversation.messageNodes.filter { node ->
-                val msg = node.currentMessage
-                val text = msg.toText().trim()
-                !(msg.role == MessageRole.ASSISTANT && text == "[SKIP]") &&
-                !(msg.role == MessageRole.USER && text.contains("[主动消息上下文]"))
-            }
-        }
-
-        LazyColumn(
-            state = state,
-            contentPadding = PaddingValues(16.dp) + PaddingValues(bottom = 32.dp + innerPadding.calculateBottomPadding()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(state = hazeState)
-                .padding(top = innerPadding.calculateTopPadding()),
-        ) {
-            itemsIndexed(
-                items = displayNodes,
                 key = { index, item -> item.id },
             ) { index, node ->
                 Column {

@@ -398,7 +398,7 @@ class LocalTools(
     private fun createRequestVoiceCallTool(conversationId: String) = Tool(
         name = "request_voice_call",
         description = """
-            Proactively initiate a voice call to the user, like making a phone call.
+            Initiate a voice call to the user, like making a phone call.
             The user will see an incoming-call screen and can choose to answer or decline.
             Use this when a voice conversation would be more natural than text — for example
             when the topic is emotional, complex, or the user seems to want real-time back-and-forth.

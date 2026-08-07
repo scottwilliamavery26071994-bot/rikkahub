@@ -91,7 +91,6 @@ class LingxiApp : Application() {
         // 访问 chatService 的是 TriggerService(它在自己的
         // Dispatchers.IO 协程里首次访问), 就会在后台线程构造并抛
         // "addObserver must be called on the main thread" 崩溃。这里预热后, 任何
-        // 后续入口(主动消息/语音通话/WebServer/新功能)拿到的都是已在主线程建好的现成单例。
         // 必须放在 startWebServerIfEnabled() 之前, 因为后者会间接触发 WebServerManager
         // -> chatService 解析链。
         runCatching { get<ChatService>() }.onFailure { e ->
@@ -115,8 +114,6 @@ class LingxiApp : Application() {
 
         // Start WebServer if enabled in settings
         startWebServerIfEnabled()
-
-        // Reschedule proactive message alarm if enabled
 
         // Reschedule Supabase sync alarm if enabled
         rescheduleSupabaseSyncIfEnabled()

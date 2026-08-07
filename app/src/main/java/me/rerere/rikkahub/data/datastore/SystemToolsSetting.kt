@@ -33,14 +33,6 @@ data class SystemToolsSetting(
     // Feature 6: Camera OCR
     val cameraOcrEnabled: Boolean = false,
 
-    // Feature 12: Proactive messaging
-    val proactiveMessagingEnabled: Boolean = false,
-    val proactiveMessagingMinInterval: Int = 30,
-    val proactiveMessagingMaxInterval: Int = 90,
-
-    // Feature 13: Supabase data sync
-    val supabaseEnabled: Boolean = false,
-    val supabaseUrl: String = "",
     val supabaseApiKey: String = "",
     val supabaseTableName: String = "device_data",
 

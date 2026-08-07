@@ -66,10 +66,7 @@ class ContextProvider(
 
     /**
      * Epoch ms of the last message in the current assistant's most-recent conversation.
-     * Mirrors [me.rerere.rikkahub.data.service.ProactiveMessageService.getLastMessageTime]
      * but lives here so the workflow condition evaluator can access it without going through
-     * the proactive-message service. Returns null when there is no conversation / no message.
-     */
     @SuppressLint("VisibleForTests")
     private suspend fun lastChatMessageMs(): Long? = try {
         val assistantId = settingsStore.settingsFlow.first().assistantId
