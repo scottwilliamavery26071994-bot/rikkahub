@@ -187,22 +187,27 @@ class McpManager(
     /** 内置 MCP 服务器信息（用于 MCP 管理界面显示）—— 移植自 Kelivo 全部 5 个引擎 */
     fun getBuiltinServerInfos(): List<Pair<me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo, Int>> {
         val settings = settingsStore.settingsFlow.value
-        val githubTools = me.rerere.rikkahub.data.ai.tools.buildGitHubTools(
+        // GitHub/Fetch/Images 工具均构建于 buildGitHubTools 内，按名称前缀分别统计，
+        // 避免 GitHub 卡片工具数错误地包含 Fetch/Images 全部数量。
+        val builtinTools = me.rerere.rikkahub.data.ai.tools.buildGitHubTools(
             getToken = { settings.githubToken },
             enabled = { settings.githubMcpEnabled },
-        ).size
+        )
+        val githubToolCount = builtinTools.count { it.name.startsWith("github_") }
+        val fetchToolCount = builtinTools.count { it.name.startsWith("fetch_") }
+        val imagesToolCount = builtinTools.count { it.name.startsWith("image_") }
         return listOf(
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-github",
                 name = "GitHub MCP",
                 description = "内置 GitHub 仓库/文件/Issue/PR/Actions/Release 管理（移植自 Kelivo）",
-                toolCount = githubTools,
+                toolCount = githubToolCount,
             ) to (if (settings.githubMcpEnabled) 1 else 0),
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
                 name = "Fetch MCP",
                 description = "内置 Fetch MCP：抓取网页 HTML/TXT/JSON/Markdown（移植自 Kelivo）",
-                toolCount = 4,
+                toolCount = fetchToolCount,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-files",
@@ -214,7 +219,7 @@ class McpManager(
                 id = "builtin-images",
                 name = "Images MCP",
                 description = "内置图片 MCP：图片生成/保存（移植自 Kelivo）",
-                toolCount = 2,
+                toolCount = imagesToolCount,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-memory",
@@ -367,9 +372,11 @@ class McpManager(
     }
 
     suspend fun addClient(configInput: McpServerConfig) = withContext(Dispatchers.IO) {
-        // 定期清理不活跃的连接
-        if (clients.size > MAX_CLIENTS * 0.8) {
-            cleanupInactiveClients()
+        // 定期清理不活跃的连接（size 读取与清理都在锁内，避免并发竞态）
+        clientsMutex.withLock {
+            if (clients.size > MAX_CLIENTS * 0.8) {
+                cleanupInactiveClients()
+            }
         }
         val config = ensureFreshToken(configInput)
         removeClient(config) // Remove first
