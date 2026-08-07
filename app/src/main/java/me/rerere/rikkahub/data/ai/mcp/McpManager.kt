@@ -606,11 +606,13 @@ class McpManager(
             }
         }
 
-        if (clients.size >= MAX_CLIENTS) {
-            Log.w(TAG, "MCP client pool full, removing oldest client")
-            clients.remove(clients.keys.first())
+        clientsMutex.withLock {
+            if (clients.size >= MAX_CLIENTS) {
+                Log.w(TAG, "MCP client pool full, removing oldest client")
+                clients.remove(clients.keys.first())
+            }
+            clients[config.id] = Pair(config, client)
         }
-        clients[config.id] = Pair(config, client)
         setStatus(config, McpStatus.Connecting)
         runCatching {
             client.connect(transport)
