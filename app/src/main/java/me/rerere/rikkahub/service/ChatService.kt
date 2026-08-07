@@ -916,7 +916,7 @@ class ChatService(
                 )
             }
         }.onFailure { e ->
-            Log.w(TAG, "auto compress failed: ${e.message}")
+            Log.w(TAG, "auto compress failed: ${e.javaClass.simpleName}")
         }
 
         val senderName = if (assistant.useAssistantAvatar) {
@@ -1532,7 +1532,7 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
             )
             result.choices[0].message?.toText()?.trim()?.takeIf { it.isNotBlank() }
         }.getOrElse { e ->
-            Log.w(TAG, "generateTitle failed, falling back to first user message: ${e.message}")
+            Log.w(TAG, "generateTitle failed, falling back to first user message: ${e.javaClass.simpleName}")
             null
         }
 

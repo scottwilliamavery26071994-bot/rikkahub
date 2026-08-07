@@ -109,7 +109,8 @@ class GenerationHandler(
         pluginPromptInjections: List<String> = emptyList(),
         conversationId: String? = null,
     ): Flow<GenerationChunk> = flow {
-        val provider = model.findProvider(settings.providers) ?: error("Provider not found")
+        val provider = model.findProvider(settings.providers)
+            ?: error("Provider not found for model: ${model.id}")
         val providerImpl = providerManager.getProviderByType(provider)
  
         var messages: List<UIMessage> = messages
@@ -332,11 +333,11 @@ class GenerationHandler(
                         // Auto or Approved - execute the tool
                         runCatching {
                             val toolDef = toolsInternal.find { toolDef -> toolDef.name == tool.toolName }
-                                ?: error("Tool ${tool.toolName} not found")
+                                ?: error("Tool ${tool.toolName} not found in ${toolsInternal.map { it.name }}")
                             val args = runCatching {
                                 json.parseToJsonElement(tool.input.ifBlank { "{}" })
                             }.getOrElse {
-                                error("Invalid tool arguments JSON for ${tool.toolName}: ${it.message}")
+                                error("Invalid tool arguments JSON for ${tool.toolName}")
                             }
                             Log.i(TAG, "generateText: executing tool ${toolDef.name} with args: $args")
                             coroutineContext.ensureActive()

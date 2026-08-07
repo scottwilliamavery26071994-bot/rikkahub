@@ -105,10 +105,12 @@ class McpManager(
     private val oauthClient = McpOAuthClient(okHttpClient)
 
     private val clients: MutableMap<Uuid, Pair<McpServerConfig, Client>> = mutableMapOf()
+    private val MAX_CLIENTS = 20 // 限制最大连接数，防止内存泄漏
     private val reconnectJobs: MutableMap<Uuid, Job> = mutableMapOf()
     private val reconnectAttempts: MutableMap<Uuid, Int> = mutableMapOf()
     private val pingJobs: MutableMap<Uuid, Job> = mutableMapOf()
     private val authorizationJobs: MutableMap<Uuid, Job> = mutableMapOf()
+    private val clientsMutex = Mutex()
     val syncingStatus = MutableStateFlow<Map<Uuid, McpStatus>>(mapOf())
 
     init {
@@ -222,7 +224,7 @@ class McpManager(
     }
 
     suspend fun callTool(serverId: Uuid, toolName: String, args: JsonObject): List<UIMessagePart> {
-        val pair = clients[serverId]
+        val pair = clientsMutex.withLock { clients[serverId] }
         val client = pair?.second
             ?: return listOf(UIMessagePart.Text("Failed to execute tool, because no such mcp client for the tool"))
         val config = pair.first
@@ -309,6 +311,10 @@ class McpManager(
     }
 
     suspend fun addClient(configInput: McpServerConfig) = withContext(Dispatchers.IO) {
+        // 定期清理不活跃的连接
+        if (clients.size > MAX_CLIENTS * 0.8) {
+            cleanupInactiveClients()
+        }
         val config = ensureFreshToken(configInput)
         removeClient(config) // Remove first
         cancelReconnect(config.id)
@@ -341,7 +347,7 @@ class McpManager(
             }
         }
 
-        clients[config.id] = Pair(config, client)
+        clientsMutex.withLock { clients[config.id] = Pair(config, client) }
         runCatching {
             setStatus(config = config, status = McpStatus.Connecting)
             client.connect(transport)
@@ -542,7 +548,7 @@ class McpManager(
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Log.w(TAG, "Keep-alive ping failed for ${entry.first.commonOptions.name}: ${e.message}")
+                    Log.w(TAG, "Keep-alive ping failed for ${entry.first.commonOptions.name}")
                     // ping 失败：若仍处于已连接状态，触发重连
                     if (syncingStatus.value[configId] == McpStatus.Connected) {
                         scheduleReconnect(config)
@@ -600,6 +606,10 @@ class McpManager(
             }
         }
 
+        if (clients.size >= MAX_CLIENTS) {
+            Log.w(TAG, "MCP client pool full, removing oldest client")
+            clients.remove(clients.keys.first())
+        }
         clients[config.id] = Pair(config, client)
         setStatus(config, McpStatus.Connecting)
         runCatching {

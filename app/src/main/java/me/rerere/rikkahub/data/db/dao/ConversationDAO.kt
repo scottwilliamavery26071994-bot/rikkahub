@@ -64,18 +64,22 @@ interface ConversationDAO {
     suspend fun existsById(id: String): Boolean
 
     @Insert
+    @Transaction
     suspend fun insert(conversation: ConversationEntity)
 
     @Update
+    @Transaction
     suspend fun update(conversation: ConversationEntity)
 
     @Delete
+    @Transaction
     suspend fun delete(conversation: ConversationEntity)
 
     @Query("UPDATE conversationentity SET nodes = '[]' WHERE id = :id")
     suspend fun resetConversationNodes(id: String)
 
     @Query("DELETE FROM conversationentity WHERE id = :id")
+    @Transaction
     suspend fun deleteById(id: String)
 
     @Query("DELETE FROM conversationentity")

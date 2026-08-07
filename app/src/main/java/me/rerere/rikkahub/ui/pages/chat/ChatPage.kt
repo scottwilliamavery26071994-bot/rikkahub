@@ -775,7 +775,7 @@ private fun TokenStatsDialog(
     onDismiss: () -> Unit,
 ) {
     val usages = remember(conversation.messageNodes) {
-        conversation.currentMessages.mapNotNull { it.usage }
+        conversation.currentMessages.mapNotNull { it.usage }.takeIf { it.isNotEmpty() } ?: emptyList()
     }
     val totalPrompt = usages.sumOf { it.promptTokens.toLong() }
     val totalCompletion = usages.sumOf { it.completionTokens.toLong() }
