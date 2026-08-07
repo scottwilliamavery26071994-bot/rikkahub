@@ -232,8 +232,8 @@ class McpManager(
         var config = pair.first
         Log.i(TAG, "callTool: $toolName / $args (server: ${config.commonOptions.name})")
 
-        if (client.transport == null) client.connect(getTransport(config))
         try {
+            if (client.transport == null) client.connect(getTransport(config))
             val result = client.callTool(
                 request = CallToolRequest(
                     params = CallToolRequestParams(
@@ -905,6 +905,16 @@ class McpManager(
             config.clone(commonOptions = config.commonOptions.copy(oauth = updated))
         }.getOrElse {
             Log.w(TAG, "Token refresh failed for ${config.commonOptions.name}: ${it.message}")
+            // 刷新失败：若错误为 OAuth 凭据失效（invalid client/grant），将服务器状态标记为
+            // NeedsAuthorization，让 UI 显示需要重新授权；否则保持旧令牌尝试。
+            val errorMsg = it.message?.lowercase() ?: ""
+            val isOAuthInvalid = listOf(
+                "invalid client", "invalid_client", "invalid grant", "invalid_grant",
+                "unauthorized_client", "invalid_token", "token expired",
+            ).any { keyword -> errorMsg.contains(keyword) }
+            if (isOAuthInvalid) {
+                setStatus(config, McpStatus.NeedsAuthorization)
+            }
             config // 刷新失败仍用旧令牌尝试，失败会转为 NeedsAuthorization
         }
     }

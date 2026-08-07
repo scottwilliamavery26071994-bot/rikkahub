@@ -1434,6 +1434,25 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
             }
         }.onFailure { e ->
             Log.e(TAG, "群聊生成失败 assistant=$targetAssistantId", e)
+
+            // 检测上下文超限类错误，提醒用户压缩上下文
+            val errorMsg = (e.message ?: "").lowercase()
+            val isContextOverflow = listOf(
+                "context length", "context_length", "maximum context", "max context",
+                "context window", "prompt is too long", "too many tokens",
+                "tokens exceeded", "input is too long", "maximum prompt length",
+                "exceeded the maximum",
+            ).any { keyword -> errorMsg.contains(keyword) }
+            if (isContextOverflow) {
+                val contextOverflowText = "⚠️ 群聊生成失败：发送给模型的内容超过了其上下文窗口上限。" +
+                    "建议：压缩上下文、精简历史消息，或开启新对话。"
+                Log.w(TAG, "群聊 context overflow detected for conversation $conversationId: ${e.message}")
+                runCatching {
+                    android.widget.Toast.makeText(context, contextOverflowText, android.widget.Toast.LENGTH_LONG).show()
+                }
+                session.processingStatus.value = contextOverflowText
+            }
+
             // 占位节点标记失败原因，避免空白节点
             session.saveMutex.withLock {
                 val latest = getConversationFlow(conversationId).value

@@ -464,7 +464,10 @@ fun PluginWebViewPage(
                                 @SuppressLint("SetJavaScriptEnabled")
                                 javaScriptEnabled = true
                                 domStorageEnabled = true
-                                allowFileAccess = true
+                                // 安全加固：禁止文件访问，防止插件通过 WebView 读取本地敏感文件（XSS/路径穿越防护）
+                                allowFileAccess = false
+                                setAllowFileAccessFromFileURLs(false)
+                                setAllowUniversalAccessFromFileURLs(false)
                                 allowContentAccess = true
                                 mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                                 databaseEnabled = true
