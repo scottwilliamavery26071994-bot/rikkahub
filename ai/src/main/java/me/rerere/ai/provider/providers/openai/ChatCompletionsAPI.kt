@@ -725,7 +725,7 @@ class ChatCompletionsAPI(
         appendLine("工具结果会返回给你，请基于结果继续回答。无需调用工具时直接回答。")
         appendLine("可用工具：")
         tools.forEach { tool ->
-            appendLine("- ${tool.name}: ${tool.description.replace('\\n', ' ').take(60)}")
+            appendLine("- ${tool.name}: ${tool.description.replace("\\n", " ").take(60)}")
         }
     }
 

@@ -70,11 +70,12 @@ private const val ANTHROPIC_VERSION = "2023-06-01"
 
 class ClaudeProvider(private val client: OkHttpClient, context: Context? = null) : Provider<ProviderSetting.Claude> {
     private val keyRoulette = if (context != null) KeyRoulette.lru(context) else KeyRoulette.default()
+
     override suspend fun getBalance(providerSetting: ProviderSetting.Claude): String = withContext(Dispatchers.IO) {
         autoDetectBalance(client, providerSetting.baseUrl, providerSetting.apiKey)
     }
 
-: List<Model> =
+    override suspend fun listModels(providerSetting: ProviderSetting.Claude): List<Model> =
         withContext(Dispatchers.IO) {
             val request = Request.Builder()
                 .url("${providerSetting.baseUrl}/models")
