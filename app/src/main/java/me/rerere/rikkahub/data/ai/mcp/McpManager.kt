@@ -239,6 +239,7 @@ class McpManager(
             getToken = { settings.githubToken },
         )
         list += me.rerere.rikkahub.data.ai.tools.buildXingceMcpTools(context)
+        list += me.rerere.rikkahub.data.ai.tools.buildFileSystemMcpTools(context)
         return list
     }
 
@@ -353,6 +354,12 @@ class McpManager(
                 name = "Fetch MCP",
                 description = "内置 Fetch MCP：抓取网页 HTML/TXT/JSON/Markdown（移植自 Kelivo）",
                 toolCount = 0,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-filesystem",
+                name = "Filesystem MCP 📁",
+                description = "内置完整文件系统操作：读/写/复制/移动/删除/搜索/目录树/文件信息",
+                toolCount = 12,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-files",
