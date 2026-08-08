@@ -57,7 +57,11 @@ val AVAILABLE_MODELS = listOf(
 
 class LocalModelDownloader(
     private val context: Context,
-    private val client: OkHttpClient = OkHttpClient()
+    private val client: OkHttpClient = OkHttpClient.Builder()
+        .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(30, java.util.concurrent.TimeUnit.MINUTES)
+        .writeTimeout(30, java.util.concurrent.TimeUnit.MINUTES)
+        .build()
 ) {
     fun download(model: AvailableModel): Flow<DownloadProgress> = callbackFlow {
         trySend(DownloadProgress.Started(model))
