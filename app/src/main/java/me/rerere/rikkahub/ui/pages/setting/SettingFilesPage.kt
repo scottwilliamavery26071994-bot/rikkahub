@@ -1,8 +1,14 @@
+﻿/*
+ * 灵犀 Lingxi
+ * 衍生自 Lingxi (https://github.com/scottwilliamavery26071994-bot/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
 package me.rerere.rikkahub.ui.pages.setting
 
 import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.*
 import me.rerere.hugeicons.stroke.Image02
-import me.rerere.hugeicons.stroke.Clean
 import me.rerere.hugeicons.stroke.Delete01
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,8 +16,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -43,7 +47,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
@@ -57,7 +60,6 @@ import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.ui.components.nav.BackButton
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.CustomColors
-import me.rerere.rikkahub.utils.fileSizeToString
 import org.koin.compose.koinInject
 import java.io.File
 
@@ -74,12 +76,9 @@ fun SettingFilesPage(
     // 预先获取字符串资源
     val deletedToast = stringResource(R.string.setting_files_page_deleted_toast)
     val deleteFailedToast = stringResource(R.string.setting_files_page_delete_failed_toast)
-    val cleanedToast = stringResource(R.string.setting_files_page_cleaned_toast)
-    val cleanFailedToast = stringResource(R.string.setting_files_page_clean_failed_toast)
 
     var selectedFolder by remember { mutableStateOf(FileFolders.UPLOAD) }
     var pendingDelete by remember { mutableStateOf<ManagedFileEntity?>(null) }
-    var showCleanDialog by remember { mutableStateOf(false) }
     val files by filesManager.observe(selectedFolder).collectAsState(initial = emptyList())
 
     if (pendingDelete != null) {
@@ -113,48 +112,11 @@ fun SettingFilesPage(
         )
     }
 
-    if (showCleanDialog) {
-        AlertDialog(
-            onDismissRequest = { showCleanDialog = false },
-            title = { Text(stringResource(R.string.setting_files_page_clean_title)) },
-            text = { Text(stringResource(R.string.setting_files_page_clean_confirmation)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showCleanDialog = false
-                        scope.launch {
-                            val ok = filesManager.deleteAll(selectedFolder)
-                            toaster.show(if (ok) cleanedToast else cleanFailedToast)
-                        }
-                    }
-                ) {
-                    Text(stringResource(R.string.setting_files_page_clean_action))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCleanDialog = false }) {
-                    Text(stringResource(R.string.setting_files_page_cancel_action))
-                }
-            }
-        )
-    }
-
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
                 title = { Text(stringResource(R.string.setting_files_page_title)) },
                 navigationIcon = { BackButton() },
-                actions = {
-                    IconButton(
-                        onClick = { showCleanDialog = true },
-                        enabled = files.isNotEmpty(),
-                    ) {
-                        Icon(
-                            imageVector = HugeIcons.Clean,
-                            contentDescription = stringResource(R.string.setting_files_page_clean_content_description),
-                        )
-                    }
-                },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors
             )
@@ -162,15 +124,10 @@ fun SettingFilesPage(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = CustomColors.topBarColors.containerColor
     ) { innerPadding ->
-        val layoutDirection = LocalLayoutDirection.current
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    top = innerPadding.calculateTopPadding(),
-                    start = innerPadding.calculateStartPadding(layoutDirection),
-                    end = innerPadding.calculateEndPadding(layoutDirection),
-                )
+                .padding(innerPadding)
         ) {
             FolderRow(
                 folders = folders,
@@ -189,12 +146,7 @@ fun SettingFilesPage(
             } else {
                 LazyVerticalStaggeredGrid(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        start = 16.dp,
-                        top = 16.dp,
-                        end = 16.dp,
-                        bottom = innerPadding.calculateBottomPadding() + 16.dp,
-                    ),
+                    contentPadding = PaddingValues(16.dp),
                     verticalItemSpacing = 8.dp,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     state = gridState,
@@ -308,11 +260,21 @@ private fun FileItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = file.sizeBytes.fileSizeToString(),
+                    text = formatBytes(file.sizeBytes),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
     }
+}
+
+private fun formatBytes(bytes: Long): String {
+    if (bytes < 1024) return "${bytes}B"
+    val kb = bytes / 1024.0
+    if (kb < 1024) return String.format("%.1fKB", kb)
+    val mb = kb / 1024.0
+    if (mb < 1024) return String.format("%.1fMB", mb)
+    val gb = mb / 1024.0
+    return String.format("%.1fGB", gb)
 }

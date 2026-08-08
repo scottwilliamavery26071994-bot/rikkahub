@@ -1,13 +1,23 @@
+﻿/*
+ * 灵犀 Lingxi
+ * 衍生自 Lingxi (https://github.com/scottwilliamavery26071994-bot/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
 package me.rerere.rikkahub.ui.pages.setting
 
 import me.rerere.hugeicons.HugeIcons
+import me.rerere.hugeicons.*
 import me.rerere.hugeicons.stroke.Code
 import me.rerere.hugeicons.stroke.Earth
 import me.rerere.hugeicons.stroke.File02
 import me.rerere.hugeicons.stroke.Github
+import me.rerere.hugeicons.stroke.SecurityCheck
 import me.rerere.hugeicons.stroke.SmartPhone01
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -121,7 +131,7 @@ fun SettingAboutPage() {
                         )
 
                         Text(
-                            text = "RikkaHub",
+                            text = "灵犀",
                             style = MaterialTheme.typography.displaySmall,
                         )
                     }
@@ -135,10 +145,12 @@ fun SettingAboutPage() {
                             modifier = Modifier.combinedClickable(
                                 onClick = {},
                                 onLongClick = { navController.navigate(Screen.Debug) },
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = LocalIndication.current,
                             ),
                             leadingContent = { Icon(HugeIcons.Code, null) },
                             supportingContent = {
-                                Text("${BuildConfig.VERSION_NAME} / ${BuildConfig.VERSION_CODE}")
+                                Text("${BuildConfig.VERSION_NAME} / ${BuildConfig.VERSION_CODE} / ${BuildConfig.GIT_COMMIT} / ${BuildConfig.BUILD_TIME}")
                             },
                             headlineContent = { Text(stringResource(R.string.about_page_version)) },
                         )
@@ -157,24 +169,115 @@ fun SettingAboutPage() {
                         modifier = Modifier.padding(horizontal = 8.dp),
                     ) {
                         item(
-                            onClick = { context.openUrl("https://rikka-ai.com/") },
+                            onClick = { context.openUrl("https://github.com/sue1231513/lingxi") },
                             leadingContent = { Icon(HugeIcons.Earth, null) },
-                            supportingContent = { Text("https://rikka-ai.com") },
+                            supportingContent = {
+                                Text("https://github.com/sue1231513/lingxi")
+                            },
                             headlineContent = { Text(stringResource(R.string.about_page_website)) },
                         )
                         item(
-                            onClick = { context.openUrl("https://github.com/rikkahub/rikkahub") },
+                            onClick = { context.openUrl("https://github.com/sue1231513/lingxi") },
                             leadingContent = { Icon(HugeIcons.Github, null) },
-                            supportingContent = { Text("https://github.com/rikkahub/rikkahub") },
+                            supportingContent = {
+                                Text("https://github.com/sue1231513/lingxi")
+                            },
                             headlineContent = { Text(stringResource(R.string.about_page_github)) },
                         )
                         item(
-                            onClick = { context.openUrl("https://github.com/rikkahub/rikkahub/blob/master/LICENSE") },
+                            onClick = { context.openUrl("https://github.com/sue1231513/lingxi/blob/master/LICENSE") },
                             leadingContent = { Icon(HugeIcons.File02, null) },
-                            supportingContent = { Text("https://github.com/rikkahub/rikkahub/blob/master/LICENSE") },
+                            supportingContent = {
+                                Text("https://github.com/sue1231513/lingxi/blob/master/LICENSE")
+                            },
                             headlineContent = { Text(stringResource(R.string.about_page_license)) },
                         )
                     }
+                }
+
+                item {
+                    CardGroup(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    ) {
+                        item(
+                            onClick = { context.openUrl("https://github.com/scottwilliamavery26071994-bot/rikkahub") },
+                            leadingContent = { Icon(HugeIcons.Github, null) },
+                            supportingContent = {
+                                Text(stringResource(R.string.about_page_upstream_desc))
+                            },
+                            headlineContent = { Text(stringResource(R.string.about_page_upstream_name)) },
+                        )
+                    }
+                }
+
+                item {
+                    CardGroup(
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    ) {
+                        item(
+                            onClick = {
+                                navController.navigate(
+                                    Screen.Legal(
+                                        titleRes = R.string.legal_user_agreement_title,
+                                        contentRes = R.string.legal_user_agreement_text
+                                    )
+                                )
+                            },
+                            leadingContent = { Icon(HugeIcons.File02, null) },
+                            supportingContent = { Text(stringResource(R.string.legal_user_agreement_desc)) },
+                            headlineContent = { Text(stringResource(R.string.legal_user_agreement_title)) },
+                        )
+                        item(
+                            onClick = {
+                                navController.navigate(
+                                    Screen.Legal(
+                                        titleRes = R.string.legal_privacy_policy_title,
+                                        contentRes = R.string.legal_privacy_policy_text
+                                    )
+                                )
+                            },
+                            leadingContent = { Icon(HugeIcons.File02, null) },
+                            supportingContent = { Text(stringResource(R.string.legal_privacy_policy_desc)) },
+                            headlineContent = { Text(stringResource(R.string.legal_privacy_policy_title)) },
+                        )
+                        item(
+                            onClick = {
+                                navController.navigate(
+                                    Screen.Legal(
+                                        titleRes = R.string.legal_disclaimer_title,
+                                        contentRes = R.string.legal_disclaimer_text
+                                    )
+                                )
+                            },
+                            leadingContent = { Icon(HugeIcons.SecurityCheck, null) },
+                            supportingContent = { Text(stringResource(R.string.legal_disclaimer_desc)) },
+                            headlineContent = { Text(stringResource(R.string.legal_disclaimer_title)) },
+                        )
+                        item(
+                            onClick = {
+                                navController.navigate(
+                                    Screen.Legal(
+                                        titleRes = R.string.legal_plugin_security_title,
+                                        contentRes = R.string.legal_plugin_security_text
+                                    )
+                                )
+                            },
+                            leadingContent = { Icon(HugeIcons.SecurityCheck, null) },
+                            supportingContent = { Text(stringResource(R.string.legal_plugin_security_desc)) },
+                            headlineContent = { Text(stringResource(R.string.legal_plugin_security_title)) },
+                        )
+                    }
+                }
+
+                item {
+                    Text(
+                        text = stringResource(R.string.about_page_derivation_notice),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                    )
                 }
             }
         }
