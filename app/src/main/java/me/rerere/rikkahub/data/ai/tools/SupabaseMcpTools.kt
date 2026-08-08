@@ -86,7 +86,7 @@ fun buildSupabaseMcpTools(
                 properties = buildJsonObject {
                     put("table", buildJsonObject { put("type", "string"); put("description", "表名") })
                     put("columns", buildJsonObject { put("type", "string"); put("description", "列名(默认*)") })
-                    put("filter", buildJsonObject { put("type", "string"); put("description", "过滤如 id=eq.1" }) }
+                    put("filter", buildJsonObject { put("type", "string"); put("description", "过滤如 id=eq.1") })
                 },
                 required = listOf("table")
             )
