@@ -268,12 +268,13 @@ class SupabaseSyncReceiver : BroadcastReceiver() {
                             val settingsStore = GlobalContext.get().get<SettingsStore>()
                             val settings = settingsStore.settingsFlowRaw.first()
                             val systemTools = settings.systemToolsSetting
-                            val service = SupabaseService(
-                                supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
-                                supabaseApiKey = systemTools.supabaseApiKey,
-                                tableName = systemTools.supabaseTableName
-                            )
-                            val result = service.insertDeviceEvent("boot")
+                            if (systemTools.supabaseApiKey.isNotBlank()) {
+                                val service = SupabaseService(
+                                    supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
+                                    supabaseApiKey = systemTools.supabaseApiKey,
+                                    tableName = systemTools.supabaseTableName
+                                )
+                                val result = service.insertDeviceEvent("boot")
                                 if (result.isSuccess) {
                                     Log.d("SupabaseSyncService", "Boot: pushed boot event")
                                 } else {

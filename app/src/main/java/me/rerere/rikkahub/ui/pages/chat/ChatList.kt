@@ -35,7 +35,7 @@ fun ChatList(
     onTranslate: (UIMessage, String) -> Unit,
     onClearTranslation: (UIMessage) -> Unit,
     onToolApproval: (String, Boolean, String) -> Unit,
-    onToolAnswer: (String) -> Unit,
+    onToolAnswer: (String, String) -> Unit,
     onToggleFavorite: (MessageNode) -> Unit,
     onConversationSystemPromptChange: (String) -> Unit,
     onClickSuggestion: (String) -> Unit,

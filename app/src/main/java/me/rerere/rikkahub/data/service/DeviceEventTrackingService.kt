@@ -76,8 +76,7 @@ class DeviceEventTrackingService : Service() {
                             TAG,
                             "startIfEnabled: conditions not met " +
                                 "(deviceEventTrackingEnabled=${s.deviceEventTrackingEnabled}, " +
-                                "supabaseUrlBlank=${s.supabaseUrl.isNotBlank()}, " +
-                                "keyBlank=${s.supabaseKey.isNotBlank()}), skip"
+                                "apiKeyBlank=${s.supabaseApiKey.isNotBlank()}), skip"
                         )
                     }
                 }
