@@ -51,12 +51,12 @@ val AVAILABLE_MODELS = listOf(
         filename = "phi3.5-mini-q4.onnx",
     ),
     AvailableModel(
-        id = "deepseek-r1-1.5b",
-        name = "DeepSeek R1 (1.5B)",
-        description = "蒸馏版推理模型，逻辑能力强",
+        id = "deepseek-r1-0528",
+        name = "DeepSeek R1 0528 (1.5B)",
+        description = "推理增强模型，逻辑能力强",
         size = "~900MB",
-        downloadUrl = "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/resolve/main/onnx/model.onnx",
-        filename = "deepseek-r1-1.5b.onnx",
+        downloadUrl = "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Distill-Qwen-1.5B/resolve/main/onnx/model.onnx",
+        filename = "deepseek-r1-0528-1.5b.onnx",
     ),
 )
 
