@@ -73,8 +73,15 @@ class LocalModelEngine(
             val result = ortSession.run(inputs)
             inputTensor.close()
 
-            // result.get(0) returns Optional, .get() unwraps Optional
-            val logitsTensor = result.get(0).get() as? OnnxTensor
+            // Iterate result entries to find logits
+            var logitsTensor: OnnxTensor? = null
+            val iter = result.iterator()
+            while (iter.hasNext()) {
+                val entry = iter.next()
+                if (entry.key == "logits") {
+                    logitsTensor = entry.value as? OnnxTensor
+                }
+            }
             if (logitsTensor == null) {
                 result.close()
                 return null
