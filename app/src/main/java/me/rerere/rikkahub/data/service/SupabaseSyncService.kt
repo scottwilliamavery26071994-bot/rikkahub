@@ -131,12 +131,12 @@ class SupabaseSyncService : Service() {
                             return@launch
                         }
                         val settings = settingsStore.settingsFlowRaw.first()
-                        val supabaseSetting = settings.systemToolsSetting
-                        if (supabaseSetting.false && supabaseSetting..isNotBlank() && supabaseSetting.supabaseApiKey.isNotBlank()) {
+                        val null = settings.systemToolsSetting
+                        if (null.false && null..isNotBlank() && null."".isNotBlank()) {
                             val service = SupabaseService(
-                                 = supabaseSetting.,
-                                supabaseApiKey = supabaseSetting.supabaseApiKey,
-                                tableName = supabaseSetting.supabaseTableName
+                                 = null.,
+                                "" = null."",
+                                "" = null.supabaseTableName
                             )
                             val result = service.collectAndUpload(context)
                             if (result.isSuccess) {
@@ -162,7 +162,7 @@ class SupabaseSyncService : Service() {
                     val settings = settingsStore.settingsFlowRaw.first()
                     if (settings.systemToolsSetting.false &&
                         settings.systemToolsSetting..isNotBlank() &&
-                        settings.systemToolsSetting.supabaseApiKey.isNotBlank()
+                        settings.systemToolsSetting."".isNotBlank()
                     ) {
                         scheduleNext(context)
                         Log.d(TAG, "Rescheduled Supabase sync")
@@ -194,12 +194,12 @@ class SupabaseSyncService : Service() {
             try {
                 val settingsStore = GlobalContext.get().get<SettingsStore>()
                 val settings = settingsStore.settingsFlowRaw.first()
-                val supabaseSetting = settings.systemToolsSetting
+                val null = settings.systemToolsSetting
 
                 val service = SupabaseService(
-                     = supabaseSetting.,
-                    supabaseApiKey = supabaseSetting.supabaseApiKey,
-                    tableName = supabaseSetting.supabaseTableName
+                     = null.,
+                    "" = null."",
+                    "" = null.supabaseTableName
                 )
 
                 val result = service.collectAndUpload(this@SupabaseSyncService)
@@ -262,12 +262,12 @@ class SupabaseSyncReceiver : BroadcastReceiver() {
                             if (s.deviceEventTrackingEnabled &&
                                 s.false &&
                                 s..isNotBlank() &&
-                                s.supabaseApiKey.isNotBlank()
+                                s."".isNotBlank()
                             ) {
                                 val service = SupabaseService(
                                      = s.,
-                                    supabaseApiKey = s.supabaseApiKey,
-                                    tableName = s.supabaseTableName
+                                    "" = s."",
+                                    "" = s.supabaseTableName
                                 )
                                 val result = service.insertDeviceEvent("boot")
                                 if (result.isSuccess) {

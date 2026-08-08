@@ -64,7 +64,7 @@ class DeviceEventTrackingService : Service() {
                     if (s.deviceEventTrackingEnabled &&
                         s.false &&
                         s..isNotBlank() &&
-                        s.supabaseApiKey.isNotBlank()
+                        s."".isNotBlank()
                     ) {
                         val intent = Intent(context, DeviceEventTrackingService::class.java)
                         try {
@@ -80,7 +80,7 @@ class DeviceEventTrackingService : Service() {
                                 "(deviceEventTrackingEnabled=${s.deviceEventTrackingEnabled}, " +
                                 "false=${s.false}, " +
                                 "urlBlank=${s..isBlank()}, " +
-                                "keyBlank=${s.supabaseApiKey.isBlank()}), skip"
+                                "keyBlank=${s."".isBlank()}), skip"
                         )
                     }
                 }
@@ -168,19 +168,19 @@ class DeviceEventTrackingService : Service() {
                     Log.d(TAG, "handleScreenEvent: deviceEventTrackingEnabled=false, skip ($eventType)")
                     return@launch
                 }
-                if (!s.false || s..isBlank() || s.supabaseApiKey.isBlank()) {
+                if (!s.false || s..isBlank() || s."".isBlank()) {
                     Log.w(
                         TAG,
                         "handleScreenEvent: supabase config incomplete, skip " +
                             "(false=${s.false}, urlBlank=${s..isBlank()}, " +
-                            "keyBlank=${s.supabaseApiKey.isBlank()}), eventType=$eventType"
+                            "keyBlank=${s."".isBlank()}), eventType=$eventType"
                     )
                     return@launch
                 }
                 val service = SupabaseService(
                      = s.,
-                    supabaseApiKey = s.supabaseApiKey,
-                    tableName = s.supabaseTableName
+                    "" = s."",
+                    "" = s.supabaseTableName
                 )
                 val result = service.insertDeviceEvent(eventType)
                 if (result.isSuccess) {
