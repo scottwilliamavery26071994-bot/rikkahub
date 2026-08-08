@@ -216,6 +216,7 @@ class McpManager(
             },
         )
         list += me.rerere.rikkahub.data.ai.tools.buildTicket12306McpTools()
+        list += me.rerere.rikkahub.data.ai.tools.buildApkReverseMcpTools(workspaceRepository)
         return list
     }
 
@@ -277,6 +278,12 @@ class McpManager(
                 name = "12306 火车票 🚄",
                 description = "内置12306查票/中转/经停站/跨站/车站代码查询（源自 Joooook/12306-mcp）",
                 toolCount = 6,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-apk",
+                name = "APK 逆向 MCP 🔧",
+                description = "内置 apktool 解码/打包 + jadx 反编译：读 smali/Java源码/Manifest/资源/搜索/分析",
+                toolCount = 12,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
