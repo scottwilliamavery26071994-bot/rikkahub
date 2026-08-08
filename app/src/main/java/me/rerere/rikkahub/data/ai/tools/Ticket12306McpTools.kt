@@ -57,11 +57,12 @@ private fun parseTickets(raw: String, mapJson: String): String {
         val map = Json.parseToJsonElement(mapJson).jsonObject
         val lines = raw.split("\n").filter { it.isNotBlank() }
         if (lines.isEmpty()) return "未查询到车次"
-        val sb = StringBuilder("车次|出发→到达|时间|历时|票务\n")
+        val sb = StringBuilder("车次(train_no)|出发→到达|时间|历时|票务\n")
         for (line in lines.take(30)) {
             val f = line.split("|")
             if (f.size < 35) continue
             val code = f[3]
+            val tno = f[2]  // train_no 用于查经停站
             val from = map[f[6]]?.jsonPrimitive?.content ?: f[6]
             val to = map[f[7]]?.jsonPrimitive?.content ?: f[7]
             val seats = listOf("swz" to "商务座","zy" to "一等座","ze" to "二等座","rw" to "软卧","yw" to "硬卧","yz" to "硬座","wz" to "无座")
@@ -69,7 +70,7 @@ private fun parseTickets(raw: String, mapJson: String): String {
                 val idx = when(k){"swz"->32;"zy"->31;"ze"->30;"rw"->23;"yw"->28;"yz"->29;"wz"->26;else->-1}
                 if (idx in f.indices && f[idx].isNotBlank() && f[idx] != "" && f[idx] != "*") "$v:${f[idx]}" else null
             }.joinToString(" ")
-            sb.append("$code|$from→$to|${f[8]}→${f[9]}|${f[10]}|$tix\n")
+            sb.append("$code($tno)|$from→$to|${f[8]}→${f[9]}|${f[10]}|$tix\n")
         }
         return sb.toString()
     } catch(e: Exception) { return raw.take(3000) }
@@ -104,6 +105,7 @@ fun buildTicket12306McpTools(): List<Tool> = buildList {
                 val flt=o["filter"]?.jsonPrimitive?.contentOrNull ?: ""
                 var tickets=parseTickets(result,map)
                 if(flt.isNotBlank()) tickets=tickets.lines().filter{it.isBlank()||flt.any{c->it.startsWith(c)}}.joinToString("\n")
+                tickets += "\n---\n💡 查看经停站：复制括号中的 train_no，用 ticket_train_route 查询（如 ticket_train_route('G103', '2026-01-15')）"
                 listOf(UIMessagePart.Text(tickets.ifBlank{"未查询到车次"}))
             } catch(e: Exception) { listOf(UIMessagePart.Text(resp.take(2000))) }
         },
