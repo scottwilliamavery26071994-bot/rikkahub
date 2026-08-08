@@ -203,6 +203,18 @@ class McpManager(
                 model?.findProvider(settings.providers)?.baseUrl
             },
         )
+        list += me.rerere.rikkahub.data.ai.tools.buildDouyinMcpTools(
+            getCookie = {
+                // 从沙箱读取抖音Cookie文件
+                try {
+                    workspaceRepository.executeCommand(
+                        "default",
+                        "cat ~/.config/douyinmcp/cookies.txt 2>/dev/null || echo ''",
+                        timeoutMillis = 5000
+                    ).stdout.trim()
+                } catch (e: Exception) { "" }
+            },
+        )
         return list
     }
 
@@ -252,6 +264,12 @@ class McpManager(
                 name = "Shannon AI Pentester 🛡️",
                 description = "内置 AI 渗透测试：攻击面映射/OWASP漏洞扫描/利用验证/安全报告（源自 KeygraphHQ/shannon AGPL-3.0）",
                 toolCount = shannonTools.size,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-douyin",
+                name = "抖音 MCP 🎵",
+                description = "内置抖音搜索/视频详情/评论/用户资料/推荐流（通过抖音Web API，需扫码登录）",
+                toolCount = 7,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
