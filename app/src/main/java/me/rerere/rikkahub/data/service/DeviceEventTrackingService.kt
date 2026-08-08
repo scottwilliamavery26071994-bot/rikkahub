@@ -32,6 +32,7 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import org.koin.core.context.GlobalContext
 
 private const val TAG = "DeviceEventTrackingService"
+private const val DEFAULT_SUPABASE_URL = "https://your-project.supabase.co"
 
 /**
  * 常驻前台服务，用于实时监听亮屏/黑屏系统广播（ACTION_SCREEN_ON / ACTION_SCREEN_OFF）。
@@ -76,7 +77,7 @@ class DeviceEventTrackingService : Service() {
                             TAG,
                             "startIfEnabled: conditions not met " +
                                 "(deviceEventTrackingEnabled=${s.deviceEventTrackingEnabled}, " +
-                                "apiKeyBlank=${s.supabaseApiKey.isNotBlank()}), skip"
+                                "apiKeyBlank=${s.supabaseApiKey.isBlank()}), skip"
                         )
                     }
                 }
@@ -164,16 +165,16 @@ class DeviceEventTrackingService : Service() {
                     Log.d(TAG, "handleScreenEvent: deviceEventTrackingEnabled=false, skip ($eventType)")
                     return@launch
                 }
-                if (!s.supabaseApiKey.isNotBlank()) {
+                if (s.supabaseApiKey.isBlank()) {
                     Log.w(
                         TAG,
                         "handleScreenEvent: supabase config incomplete, skip " +
-                            "(apiKeyBlank=${s.supabaseApiKey.isNotBlank()}), eventType=$eventType"
+                            "(apiKeyBlank=${s.supabaseApiKey.isBlank()}), eventType=$eventType"
                     )
                     return@launch
                 }
                 val service = SupabaseService(
-                    supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
+                    supabaseUrl = DEFAULT_SUPABASE_URL,
                     supabaseApiKey = s.supabaseApiKey,
                     tableName = s.supabaseTableName
                 )

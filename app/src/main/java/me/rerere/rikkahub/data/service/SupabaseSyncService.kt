@@ -22,6 +22,8 @@ import me.rerere.rikkahub.CHAT_COMPLETED_NOTIFICATION_CHANNEL_ID
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import org.koin.core.context.GlobalContext
 
+private const val DEFAULT_SUPABASE_URL = "https://your-project.supabase.co"
+
 class SupabaseSyncService : Service() {
 
     companion object {
@@ -134,7 +136,7 @@ class SupabaseSyncService : Service() {
                         val systemTools = settings.systemToolsSetting
                         if (systemTools.supabaseApiKey.isNotBlank()) {
                             val service = SupabaseService(
-                                supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
+                                supabaseUrl = DEFAULT_SUPABASE_URL,
                                 supabaseApiKey = systemTools.supabaseApiKey,
                                 tableName = systemTools.supabaseTableName
                             )
@@ -156,17 +158,8 @@ class SupabaseSyncService : Service() {
         }
 
         fun rescheduleIfEnabled(context: Context) {
-            try {
-                val settingsStore = GlobalContext.get().get<SettingsStore>()
-                val settings = kotlinx.coroutines.runBlocking { settingsStore.settingsFlowRaw.first() }
-                val systemTools = settings.systemToolsSetting
-                if (systemTools.supabaseApiKey.isNotBlank()) {
-                    scheduleNext(context)
-                    Log.d(TAG, "Rescheduled Supabase sync")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to reschedule Supabase sync", e)
-            }
+            scheduleNext(context)
+            Log.d(TAG, "Rescheduled Supabase sync")
         }
     }
 
@@ -192,7 +185,7 @@ class SupabaseSyncService : Service() {
                 val settings = settingsStore.settingsFlowRaw.first()
                 val systemTools = settings.systemToolsSetting
                 val service = SupabaseService(
-                    supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
+                    supabaseUrl = DEFAULT_SUPABASE_URL,
                     supabaseApiKey = systemTools.supabaseApiKey,
                     tableName = systemTools.supabaseTableName
                 )
@@ -255,7 +248,7 @@ class SupabaseSyncReceiver : BroadcastReceiver() {
                             val systemTools = settings.systemToolsSetting
                             if (systemTools.supabaseApiKey.isNotBlank()) {
                                 val service = SupabaseService(
-                                    supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
+                                    supabaseUrl = DEFAULT_SUPABASE_URL,
                                     supabaseApiKey = systemTools.supabaseApiKey,
                                     tableName = systemTools.supabaseTableName
                                 )

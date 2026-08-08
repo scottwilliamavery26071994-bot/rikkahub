@@ -7,13 +7,9 @@
 package me.rerere.rikkahub.ui.pages.chat
 
 import android.app.Application
-import android.content.Context
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -48,8 +44,6 @@ import me.rerere.rikkahub.utils.UiState
 import me.rerere.rikkahub.utils.UpdateChecker
 import java.util.Locale
 import kotlin.uuid.Uuid
-
-private const val TAG = "ChatVM"
 
 class ChatVM(
     id: String,
@@ -153,15 +147,10 @@ class ChatVM(
         viewModelScope.launch {
             settingsStore.update { settings ->
                 settings.copy(
-                    assistants = settings.assistants.map {
-                        if (it.id == assistant.id) {
-                            it.copy(
-                                chatModelId = model.id
-                            )
-                        } else {
-                            it
-                        }
-                    })
+                    assistants = settings.assistants.map { it ->
+                        if (it.id == assistant.id) it.copy(chatModelId = model.id) else it
+                    }
+                )
             }
         }
     }
@@ -176,7 +165,7 @@ class ChatVM(
      * @param content 消息内容
      * @param answer 是否触发消息生成，如果为false，则仅添加消息到消息列表中
      */
-    fun handleMessageSend(content: List<UIMessagePart>,answer: Boolean = true) {
+    fun handleMessageSend(content: List<UIMessagePart>, answer: Boolean = true) {
         if (content.isEmptyInputMessage()) return
 
         chatService.sendMessage(_conversationId, content, answer)
@@ -239,7 +228,7 @@ class ChatVM(
 
     fun handleToolAnswer(
         toolCallId: String,
-        answer: String,
+        answer: String
     ) {
         chatService.handleToolApproval(_conversationId, toolCallId, approved = true, answer = answer)
     }
@@ -346,11 +335,7 @@ class ChatVM(
             chatService.updateConversationState(_conversationId) { currentConversation ->
                 currentConversation.copy(
                     messageNodes = currentConversation.messageNodes.map { existingNode ->
-                        if (existingNode.id == node.id) {
-                            existingNode.copy(isFavorite = !currentlyFavorited)
-                        } else {
-                            existingNode
-                        }
+                        if (existingNode.id == node.id) existingNode.copy(isFavorite = !currentlyFavorited) else existingNode
                     }
                 )
             }
