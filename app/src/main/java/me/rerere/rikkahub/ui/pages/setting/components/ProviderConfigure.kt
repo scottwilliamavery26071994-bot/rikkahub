@@ -12,9 +12,18 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -23,16 +32,25 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dokar.sonner.ToastType
+import kotlinx.coroutines.launch
 import me.rerere.ai.provider.ClaudePromptCacheTtl
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
+import me.rerere.rikkahub.data.localmodel.AVAILABLE_MODELS
+import me.rerere.rikkahub.data.localmodel.DownloadProgress
+import me.rerere.rikkahub.data.localmodel.LocalModelDownloader
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -662,7 +680,11 @@ private fun ColumnScope.ProviderConfigureLocalModel(
     provider: ProviderSetting.LocalModel,
     onEdit: (ProviderSetting.LocalModel) -> Unit
 ) {
+    val context = LocalContext.current
     val toaster = LocalToaster.current
+    val scope = rememberCoroutineScope()
+    val downloader = remember { LocalModelDownloader(context) }
+    var downloadingId by remember { mutableStateOf<String?>(null) }
 
     provider.description()
 
@@ -676,17 +698,95 @@ private fun ColumnScope.ProviderConfigureLocalModel(
         label = { Text("名称") }, modifier = Modifier.fillMaxWidth()
     )
 
-    // 模型文件选择器
-    Text("本地模型文件", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+    // === 下载模型 ===
+    Text("下载模型", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.heightIn(max = 300.dp)
+    ) {
+        items(AVAILABLE_MODELS) { model ->
+            val isDownloading = downloadingId == model.id
+            val existingPath = downloader.getExistingModelPath(model.id)
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (existingPath != null)
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    else MaterialTheme.colorScheme.surface
+                )
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(model.name, style = MaterialTheme.typography.titleSmall)
+                            Text(model.description, style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(model.size, style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline)
+                        }
+                        if (existingPath != null) {
+                            Button(
+                                onClick = {
+                                    onEdit(provider.copy(modelFilePath = existingPath))
+                                    toaster.show("已选择: ${model.name}", type = ToastType.Success)
+                                },
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text("使用", fontSize = 12.sp)
+                            }
+                        } else {
+                            Button(
+                                onClick = {
+                                    downloadingId = model.id
+                                    scope.launch {
+                                        downloader.download(model).collect { progress ->
+                                            when (progress) {
+                                                is DownloadProgress.Completed -> {
+                                                    downloadingId = null
+                                                    onEdit(provider.copy(modelFilePath = progress.path))
+                                                    toaster.show("下载完成: ${model.name}", type = ToastType.Success)
+                                                }
+                                                is DownloadProgress.Error -> {
+                                                    downloadingId = null
+                                                    toaster.show(progress.message, type = ToastType.Error)
+                                                }
+                                                else -> {}
+                                            }
+                                        }
+                                    }
+                                },
+                                enabled = !isDownloading,
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(if (isDownloading) "下载中..." else "下载", fontSize = 12.sp)
+                            }
+                        }
+                    }
+                    if (isDownloading) {
+                        Spacer(Modifier.height(4.dp))
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        }
+    }
+
+    // === 模型文件选择器 ===
+    Text("或选择已有文件", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
 
     val modelFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
         try {
-            val fileName = uri.lastPathSegment ?: "unknown"
             onEdit(provider.copy(modelFilePath = uri.toString()))
-            toaster.show("已选择: $fileName", type = ToastType.Success)
+            toaster.show("已选择模型文件", type = ToastType.Success)
         } catch (e: Exception) {
             toaster.show("选择失败: ${e.message}", type = ToastType.Error)
         }
@@ -707,35 +807,24 @@ private fun ColumnScope.ProviderConfigureLocalModel(
             placeholder = { Text("未选择") }
         )
         OutlinedButton(onClick = { modelFileLauncher.launch(arrayOf("*/*")) }) {
-            Text("选择文件")
+            Text("浏览")
         }
     }
 
     if (provider.modelFilePath.isNotBlank()) {
-        Text(
-            text = "已选: ${provider.modelFilePath.substringAfterLast("/")}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary
-        )
+        Text("已选: ${provider.modelFilePath.substringAfterLast("/")}",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
     }
 
-    // 远程 API 地址（可选，当使用 Ollama 等远程服务时）
-    Text("远程推理服务 (可选)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-
+    // 远程 API 地址
+    Text("远程推理 (可选)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
     OutlinedTextField(
         value = provider.baseUrl, onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
         label = { Text("服务地址") }, placeholder = { Text("http://localhost:11434/v1") },
         modifier = Modifier.fillMaxWidth(), singleLine = true
     )
-
     OutlinedTextField(
         value = provider.apiKey, onValueChange = { onEdit(provider.copy(apiKey = it.trim())) },
         label = { Text("API Key (可留空)") }, modifier = Modifier.fillMaxWidth(), maxLines = 1
-    )
-
-    Text(
-        text = "提示：模型文件为空时将使用远程推理服务地址；填写了模型文件则使用 ONNX Runtime 本地推理。",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
