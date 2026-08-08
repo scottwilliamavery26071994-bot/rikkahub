@@ -708,6 +708,41 @@ private fun ColumnScope.ProviderConfigureLocalModel(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.heightIn(max = 300.dp)
     ) {
+        // 当前已选的本地模型
+        if (provider.modelFilePath.isNotBlank()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("当前使用", style = MaterialTheme.typography.titleSmall,
+                                color = MaterialTheme.colorScheme.primary)
+                            Text(
+                                provider.modelFilePath.substringAfterLast("/"),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Text("已选择", style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.outline)
+                        }
+                        OutlinedButton(onClick = {
+                            onEdit(provider.copy(modelFilePath = ""))
+                            toaster.show("已清除", type = ToastType.Success)
+                        }) {
+                            Text("清除", fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+        }
+
         items(AVAILABLE_MODELS) { model ->
             val isDownloading = downloadingId == model.id
             val existingPath = downloader.getExistingModelPath(model.id)
