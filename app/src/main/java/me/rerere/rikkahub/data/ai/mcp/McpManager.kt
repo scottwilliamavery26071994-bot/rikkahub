@@ -215,6 +215,7 @@ class McpManager(
                 } catch (e: Exception) { "" }
             },
         )
+        list += me.rerere.rikkahub.data.ai.tools.buildTicket12306McpTools()
         return list
     }
 
@@ -270,6 +271,12 @@ class McpManager(
                 name = "抖音 MCP 🎵",
                 description = "内置15+抖音工具：扫码登录/搜索/视频详情/评论/用户/推荐/下载/转写/OCR（走Web API，AI展示二维码）",
                 toolCount = 17,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-12306",
+                name = "12306 火车票 🚄",
+                description = "内置12306查票/中转/经停站/车站代码查询（源自 Joooook/12306-mcp）",
+                toolCount = 4,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
