@@ -61,6 +61,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dokar.sonner.ToastType
 import dev.chrisbanes.haze.rememberHazeState
+import java.util.Locale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -463,17 +464,17 @@ private fun ChatPageContent(
                 onCompressContext = { additionalPrompt, targetTokens, keepRecentMessages ->
                     vm.handleCompressContext(additionalPrompt, targetTokens, keepRecentMessages)
                 },
-                onTranslate = { message, locale: Locale ->
+                onTranslate = { message, locale: String ->
                     vm.translateMessage(message, locale)
                 },
                 onClearTranslation = { message ->
                     vm.clearTranslationField(message.id)
                 },
-                onToolApproval = { toolCallId, approved, reason: String ->
+                onToolApproval = { toolCallId, approved: Int, reason: String ->
                     vm.handleToolApproval(toolCallId, approved, reason)
                 },
-                onToolAnswer = { toolCallId, answer: String ->
-                    vm.handleToolAnswer(toolCallId, answer)
+                onToolAnswer = { answer: String ->
+                    vm.handleToolAnswer(answer)
                 },
                 onToggleFavorite = { node ->
                     vm.toggleMessageFavorite(node)
