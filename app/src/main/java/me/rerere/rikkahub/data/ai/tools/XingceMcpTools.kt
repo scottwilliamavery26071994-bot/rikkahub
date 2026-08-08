@@ -38,7 +38,7 @@ private fun cardSummary(card: JsonObject): String {
     val steps = card["steps"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
     val triggers = card["trigger_conditions"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
     val pitfalls = card["pitfalls"]?.jsonArray?.map { it.jsonPrimitive.content } ?: emptyList()
-    buildString {
+    return buildString {
         append("📋 $method\n")
         append("模块: $module | 题型: $qType | 子类: $subType\n")
         append("ID: $id\n")
@@ -135,7 +135,7 @@ fun buildXingceMcpTools(context: Context): List<Tool> = buildList {
             val text = if (scored.isEmpty()) {
                 "未能自动分类，请提供更多题目信息"
             } else {
-                buildString {
+                return buildString {
                     append("🔍 可能的题型匹配（按匹配度排序）：\n\n")
                     scored.forEachIndexed { i, (card, score) ->
                         val mod = card["module"]?.jsonPrimitive?.contentOrNull ?: ""
@@ -205,7 +205,7 @@ fun buildXingceMcpTools(context: Context): List<Tool> = buildList {
             val text = if (scored.isEmpty()) {
                 "未能匹配到解题方法，请用 xingce_search_methods 手动搜索"
             } else {
-                buildString {
+                return buildString {
                     append("🎯 解题引导\n\n")
                     scored.forEach { (card, score) ->
                         append(cardSummary(card))

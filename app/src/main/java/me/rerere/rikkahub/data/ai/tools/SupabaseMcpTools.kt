@@ -156,7 +156,7 @@ fun buildSupabaseMcpTools(
             val data = o["data"]?.jsonPrimitive?.contentOrNull ?: error("data required")
             val url = getProjectUrl() ?: return@Tool listOf(UIMessagePart.Text("""{"error":"未配置项目URL"}"""))
             val key = getApiKey() ?: return@Tool listOf(UIMessagePart.Text("""{"error":"未配置API Key"}"""))
-            listOf(UIMessagePart.Text(sbCall(url, "/rest/v1/$table?$filter", "PATCH", key, data,
+            listOf(UIMessagePart.Text(sbCall(url, "/rest/v1/$table?${"\$filter"}", "PATCH", key, data,
                 mapOf("Prefer" to "return=representation"))))
         },
     ))
@@ -181,7 +181,7 @@ fun buildSupabaseMcpTools(
             val filter = o["filter"]?.jsonPrimitive?.contentOrNull ?: error("filter required")
             val url = getProjectUrl() ?: return@Tool listOf(UIMessagePart.Text("""{"error":"未配置项目URL"}"""))
             val key = getApiKey() ?: return@Tool listOf(UIMessagePart.Text("""{"error":"未配置API Key"}"""))
-            listOf(UIMessagePart.Text(sbCall(url, "/rest/v1/$table?$filter", "DELETE", key)))
+            listOf(UIMessagePart.Text(sbCall(url, "/rest/v1/$table?${"\$filter"}", "DELETE", key)))
         },
     ))
 

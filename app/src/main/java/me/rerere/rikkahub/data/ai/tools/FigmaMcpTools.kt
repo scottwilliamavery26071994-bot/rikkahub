@@ -97,7 +97,7 @@ fun buildFigmaMcpTools(getToken: () -> String?): List<Tool> = buildList {
                     put("file_key", buildJsonObject { put("type", "string"); put("description", "Figma文件key") })
                     put("node_id", buildJsonObject { put("type", "string"); put("description", "节点ID") })
                     put("format", buildJsonObject { put("type", "string"); put("description", "png/jpg/svg/pdf") })
-                    put("scale", buildJsonObject { put("type", "number"); put("description", "缩放比例" })
+                    put("scale", buildJsonObject { put("type", "number"); put("description", "缩放比例") })
                 },
                 required = listOf("file_key", "node_id")
             )
