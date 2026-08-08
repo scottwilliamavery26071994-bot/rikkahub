@@ -411,7 +411,7 @@ class ChatCompletionsAPI(
             // 智谱 GLM 等 thinking 模型在开启深度思考时不允许设置 temperature/top_p,
             // 否则触发 "Invalid request body" (InvalidParameter) 400。
             // moonshot/deepseek 的 thinking 字段结构与智谱一致, 一并处理。
-            val thinkingEnabled = params.model.abilities.contains(ModelAbility.REASONING) &&
+            val thinkingEnabled = params.reasoningLevel != ReasoningLevel.OFF &&
                 params.reasoningLevel.isEnabled &&
                 host in setOf("open.bigmodel.cn", "api.moonshot.cn", "api.deepseek.com")
             if (isModelAllowTemperature(params.model) && !thinkingEnabled) {
@@ -439,7 +439,7 @@ class ChatCompletionsAPI(
                 }
             }
 
-            if (params.model.abilities.contains(ModelAbility.REASONING)) {
+            if (params.reasoningLevel != ReasoningLevel.OFF) {
                 val level = params.reasoningLevel
                 when (host) {
                     "openrouter.ai" -> {

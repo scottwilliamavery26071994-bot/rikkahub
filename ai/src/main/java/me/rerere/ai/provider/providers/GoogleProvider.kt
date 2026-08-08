@@ -383,7 +383,7 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
                     add(JsonPrimitive("IMAGE"))
                 })
             }
-            if (params.model.abilities.contains(ModelAbility.REASONING)) {
+            if (params.reasoningLevel != ReasoningLevel.OFF) {
                 put("thinkingConfig", buildJsonObject {
                     put("includeThoughts", true)
 
