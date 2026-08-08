@@ -220,7 +220,7 @@ private fun ChatListNormal(
     onPublishMessage: (UIMessage) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
-    val loadingState by rememberUpdatedState(loading)
+    val loadingState.value by rememberUpdatedState(loading)
     var isRecentScroll by remember { mutableStateOf(false) }
     val conversationUpdated by rememberUpdatedState(conversation)
     val density = LocalDensity.current
@@ -281,7 +281,7 @@ private fun ChatListNormal(
             var stickToBottom by remember { mutableStateOf(true) }
             LaunchedEffect(state) {
                 snapshotFlow { state.layoutInfo.visibleItemsInfo }.collect { visibleItemsInfo ->
-                    if (!state.isScrollInProgress && loadingState) {
+                    if (!state.isScrollInProgress && loadingState.value) {
                         if (visibleItemsInfo.isAtBottom()) {
                             stickToBottom = true
                         }
