@@ -48,6 +48,9 @@ import androidx.compose.ui.unit.sp
 import com.dokar.sonner.ToastType
 import kotlinx.coroutines.launch
 import me.rerere.ai.provider.ClaudePromptCacheTtl
+import me.rerere.ai.provider.Model
+import me.rerere.ai.provider.ModelAbility
+import me.rerere.ai.provider.Modality
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
@@ -57,6 +60,7 @@ import me.rerere.rikkahub.data.localmodel.DownloadProgress
 import me.rerere.rikkahub.data.localmodel.LocalModelDownloader
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
+import kotlin.uuid.Uuid
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
@@ -692,6 +696,20 @@ private fun ColumnScope.ProviderConfigureLocalModel(
     val downloader = remember { LocalModelDownloader(context) }
     var downloadingId by remember { mutableStateOf<String?>(null) }
 
+    // 自动将模型文件名同步到模型列表
+    fun autoSyncModel(provider: ProviderSetting.LocalModel, modelName: String): ProviderSetting.LocalModel {
+        val exists = provider.models.any { it.modelId == modelName }
+        return if (exists) provider else provider.addModel(
+            Model(
+                modelId = modelName,
+                displayName = modelName,
+                inputModalities = listOf(Modality.TEXT),
+                outputModalities = listOf(Modality.TEXT),
+                abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
+            )
+        ) as ProviderSetting.LocalModel
+    }
+
     provider.description()
 
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -776,7 +794,7 @@ private fun ColumnScope.ProviderConfigureLocalModel(
                         if (existingPath != null) {
                             Button(
                                 onClick = {
-                                    val updated = provider.copy(modelFilePath = existingPath)
+                                    val updated = autoSyncModel(provider.copy(modelFilePath = existingPath), model.name)
                                     onEdit(updated)
                                     onInstantSave(updated)
                                     toaster.show("已选择: ${model.name}", type = ToastType.Success)
@@ -794,7 +812,7 @@ private fun ColumnScope.ProviderConfigureLocalModel(
                                             when (progress) {
                                                 is DownloadProgress.Completed -> {
                                                     downloadingId = null
-                                                    val updated = provider.copy(modelFilePath = progress.path)
+                                                    val updated = autoSyncModel(provider.copy(modelFilePath = progress.path), model.name)
                                                     onEdit(updated)
                                                     onInstantSave(updated)
                                                     toaster.show("下载完成: ${model.name}", type = ToastType.Success)
@@ -850,7 +868,7 @@ private fun ColumnScope.ProviderConfigureLocalModel(
         val existingPath = downloader.getExistingModelPath("custom")
         if (existingPath != null) {
             Button(onClick = {
-                val updated = provider.copy(modelFilePath = existingPath)
+                val updated = autoSyncModel(provider.copy(modelFilePath = existingPath), customFilename)
                 onEdit(updated)
                 onInstantSave(updated)
                 toaster.show("已选择: $customFilename", type = ToastType.Success)
@@ -864,7 +882,7 @@ private fun ColumnScope.ProviderConfigureLocalModel(
                             when (progress) {
                                 is DownloadProgress.Completed -> {
                                     downloadingId = null
-                                    val updated = provider.copy(modelFilePath = progress.path)
+                                    val updated = autoSyncModel(provider.copy(modelFilePath = progress.path), customFilename)
                                     onEdit(updated)
                                     onInstantSave(updated)
                                     toaster.show("下载完成", type = ToastType.Success)
@@ -891,7 +909,8 @@ private fun ColumnScope.ProviderConfigureLocalModel(
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
         try {
-            val updated = provider.copy(modelFilePath = uri.toString())
+            val fileName = uri.lastPathSegment ?: "model.onnx"
+            val updated = autoSyncModel(provider.copy(modelFilePath = uri.toString()), fileName)
             onEdit(updated)
             onInstantSave(updated)
             toaster.show("已选择模型文件", type = ToastType.Success)
