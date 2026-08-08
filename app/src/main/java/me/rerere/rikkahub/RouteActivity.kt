@@ -724,8 +724,6 @@ entry<Screen.Extensions> {
                                 SettingWeixinBotPage()
                             }
 
-                            }
-
                             entry<Screen.SettingApiExplorer> {
                                 SettingApiExplorerPage()
                             }
