@@ -780,6 +780,61 @@ private fun ColumnScope.ProviderConfigureLocalModel(
         }
     }
 
+    // 自定义 URL 下载
+    Text("或粘贴模型下载链接", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+    var customUrl by remember { mutableStateOf("") }
+    var customFilename by remember { mutableStateOf("") }
+    OutlinedTextField(
+        value = customUrl, onValueChange = { customUrl = it },
+        label = { Text("HuggingFace 模型链接") },
+        placeholder = { Text("https://huggingface.co/.../model.onnx") },
+        modifier = Modifier.fillMaxWidth(), singleLine = true
+    )
+    OutlinedTextField(
+        value = customFilename, onValueChange = { customFilename = it },
+        label = { Text("保存文件名") },
+        placeholder = { Text("my-model.onnx") },
+        modifier = Modifier.fillMaxWidth(), singleLine = true
+    )
+    if (customUrl.isNotBlank() && customFilename.isNotBlank()) {
+        val customModel = remember(customUrl, customFilename) {
+            AvailableModel(
+                id = "custom", name = customFilename, description = "自定义模型",
+                size = "未知", downloadUrl = customUrl, filename = customFilename
+            )
+        }
+        val existingPath = downloader.getExistingModelPath("custom")
+        if (existingPath != null) {
+            Button(onClick = {
+                onEdit(provider.copy(modelFilePath = existingPath))
+                toaster.show("已选择: $customFilename", type = ToastType.Success)
+            }) { Text("使用已下载的文件") }
+        } else {
+            Button(
+                onClick = {
+                    downloadingId = "custom"
+                    scope.launch {
+                        downloader.download(customModel).collect { progress ->
+                            when (progress) {
+                                is DownloadProgress.Completed -> {
+                                    downloadingId = null
+                                    onEdit(provider.copy(modelFilePath = progress.path))
+                                    toaster.show("下载完成", type = ToastType.Success)
+                                }
+                                is DownloadProgress.Error -> {
+                                    downloadingId = null
+                                    toaster.show(progress.message, type = ToastType.Error)
+                                }
+                                else -> {}
+                            }
+                        }
+                    }
+                },
+                enabled = downloadingId != "custom"
+            ) { Text(if (downloadingId == "custom") "下载中..." else "下载") }
+        }
+    }
+
     // === 模型文件选择器 ===
     Text("或选择已有文件", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
 
