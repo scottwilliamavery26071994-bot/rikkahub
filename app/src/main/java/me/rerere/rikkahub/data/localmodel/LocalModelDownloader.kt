@@ -10,7 +10,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -71,9 +70,7 @@ class LocalModelDownloader(
             .header("User-Agent", "Lingxi-Android/1.0")
             .build()
 
-        val response = withContext(Dispatchers.IO) {
-            client.newCall(request).execute()
-        }
+        val response = client.newCall(request).execute()
 
         // 检查 Content-Type，防止下载到 HTML 页面
         val contentType = response.header("Content-Type", "")
@@ -108,25 +105,23 @@ class LocalModelDownloader(
         var downloadedBytes = 0L
         val startTime = System.currentTimeMillis()
 
-        withContext(Dispatchers.IO) {
-            body.byteStream().use { input ->
-                FileOutputStream(outputFile).use { output ->
-                    val buffer = ByteArray(8192)
-                    var bytesRead: Int
-                    while (input.read(buffer).also { bytesRead = it } != -1) {
-                        output.write(buffer, 0, bytesRead)
-                        downloadedBytes += bytesRead
+        body.byteStream().use { input ->
+            FileOutputStream(outputFile).use { output ->
+                val buffer = ByteArray(8192)
+                var bytesRead: Int
+                while (input.read(buffer).also { bytesRead = it } != -1) {
+                    output.write(buffer, 0, bytesRead)
+                    downloadedBytes += bytesRead
 
-                        // 进度报告（每 5%）
-                        if (contentLength > 0 && downloadedBytes % (contentLength / 20) < 8192) {
-                            val pct = (downloadedBytes * 100 / contentLength).toInt()
-                            val elapsed = (System.currentTimeMillis() - startTime) / 1000
-                            emit(DownloadProgress.Progress(
-                                percent = pct,
-                                downloaded = downloadedBytes,
-                                total = contentLength
-                            ))
-                        }
+                    // 进度报告（每 5%）
+                    if (contentLength > 0 && downloadedBytes % (contentLength / 20) < 8192) {
+                        val pct = (downloadedBytes * 100 / contentLength).toInt()
+                        val elapsed = (System.currentTimeMillis() - startTime) / 1000
+                        emit(DownloadProgress.Progress(
+                            percent = pct,
+                            downloaded = downloadedBytes,
+                            total = contentLength
+                        ))
                     }
                 }
             }
