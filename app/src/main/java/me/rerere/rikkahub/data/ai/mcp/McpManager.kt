@@ -56,8 +56,6 @@ import me.rerere.rikkahub.data.event.AppEventBus
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.datastore.findProvider
-import me.rerere.rikkahub.data.datastore.getCurrentChatModel
-import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.saveUploadFromBytes
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
@@ -217,6 +215,7 @@ class McpManager(
         )
         list += me.rerere.rikkahub.data.ai.tools.buildTicket12306McpTools()
         list += me.rerere.rikkahub.data.ai.tools.buildApkReverseMcpTools(workspaceRepository)
+        list += me.rerere.rikkahub.data.ai.tools.buildHttpExecuteMcpTools()
         return list
     }
 
@@ -284,6 +283,12 @@ class McpManager(
                 name = "APK 逆向 MCP 🔧",
                 description = "内置 apktool 解码/打包 + jadx 反编译：读 smali/Java源码/Manifest/资源/搜索/分析",
                 toolCount = 12,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-http",
+                name = "HTTP 请求 MCP 🌐",
+                description = "内置通用HTTP请求工具：支持GET/POST/PUT/DELETE/PATCH + 自定义Header/Body",
+                toolCount = 1,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
