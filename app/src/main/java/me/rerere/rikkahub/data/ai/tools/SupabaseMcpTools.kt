@@ -56,7 +56,6 @@ fun buildSupabaseMcpTools(
     getApiKey: () -> String?,
 ): List<Tool> = buildList {
 
-    // === SQL 查询 (通过 RPC) ===
     add(Tool(
         name = "supabase_query",
         description = "执行 SQL 查询（通过 Supabase RPC）。需要先在 Supabase 创建名为 exec_sql 的 PostgreSQL 函数。Params: sql(SQL语句), limit(返回行数限制,默认100)。",
@@ -78,7 +77,6 @@ fun buildSupabaseMcpTools(
         },
     ))
 
-    // === 表数据查询 (PostgREST) ===
     add(Tool(
         name = "supabase_select",
         description = "查询表数据。Params: table(表名), columns(列名,默认*), filter(过滤条件如id=eq.1), limit(默认50), order(排序如id.desc)。",
@@ -87,10 +85,8 @@ fun buildSupabaseMcpTools(
             InputSchema.Obj(
                 properties = buildJsonObject {
                     put("table", buildJsonObject { put("type", "string"); put("description", "表名") })
-                    put("columns", buildJsonObject { put("type", "string"); put("description", "列名(默认*)"" })
-                    put("filter", buildJsonObject { put("type", "string"); put("description", "过滤如 id=eq.1" })
-                    put("limit", buildJsonObject { put("type", "integer"); put("description", "返回行数(默认50)" })
-                    put("order", buildJsonObject { put("type", "string"); put("description", "排序(如 id.desc)" })
+                    put("columns", buildJsonObject { put("type", "string"); put("description", "列名(默认*)") })
+                    put("filter", buildJsonObject { put("type", "string"); put("description", "过滤如 id=eq.1" }) }
                 },
                 required = listOf("table")
             )
@@ -109,7 +105,6 @@ fun buildSupabaseMcpTools(
         },
     ))
 
-    // === 插入数据 ===
     add(Tool(
         name = "supabase_insert",
         description = "向表中插入数据。Params: table(表名), data(JSON数组如[{\"name\":\"test\"}])。",
@@ -118,7 +113,7 @@ fun buildSupabaseMcpTools(
             InputSchema.Obj(
                 properties = buildJsonObject {
                     put("table", buildJsonObject { put("type", "string"); put("description", "表名") })
-                    put("data", buildJsonObject { put("type", "string"); put("description", "JSON数组" })
+                    put("data", buildJsonObject { put("type", "string"); put("description", "JSON数组") })
                 },
                 required = listOf("table", "data")
             )
@@ -134,7 +129,6 @@ fun buildSupabaseMcpTools(
         },
     ))
 
-    // === 更新数据 ===
     add(Tool(
         name = "supabase_update",
         description = "更新表数据。Params: table(表名), filter(过滤条件如id=eq.1), data(JSON如{\"name\":\"new\"})。",
@@ -143,8 +137,8 @@ fun buildSupabaseMcpTools(
             InputSchema.Obj(
                 properties = buildJsonObject {
                     put("table", buildJsonObject { put("type", "string"); put("description", "表名") })
-                    put("filter", buildJsonObject { put("type", "string"); put("description", "过滤条件" })
-                    put("data", buildJsonObject { put("type", "string"); put("description", "JSON" })
+                    put("filter", buildJsonObject { put("type", "string"); put("description", "过滤条件") })
+                    put("data", buildJsonObject { put("type", "string"); put("description", "JSON") })
                 },
                 required = listOf("table", "filter", "data")
             )
@@ -156,12 +150,11 @@ fun buildSupabaseMcpTools(
             val data = o["data"]?.jsonPrimitive?.contentOrNull ?: error("data required")
             val url = getProjectUrl() ?: return@Tool listOf(UIMessagePart.Text("""{"error":"未配置项目URL"}"""))
             val key = getApiKey() ?: return@Tool listOf(UIMessagePart.Text("""{"error":"未配置API Key"}"""))
-            listOf(UIMessagePart.Text(sbCall(url, "/rest/v1/$table?${"\$filter"}", "PATCH", key, data,
+            listOf(UIMessagePart.Text(sbCall(url, "/rest/v1/$table?$filter", "PATCH", key, data,
                 mapOf("Prefer" to "return=representation"))))
         },
     ))
 
-    // === 删除数据 ===
     add(Tool(
         name = "supabase_delete",
         description = "删除表数据。Params: table(表名), filter(过滤条件如id=eq.1)。",
@@ -170,7 +163,7 @@ fun buildSupabaseMcpTools(
             InputSchema.Obj(
                 properties = buildJsonObject {
                     put("table", buildJsonObject { put("type", "string"); put("description", "表名") })
-                    put("filter", buildJsonObject { put("type", "string"); put("description", "过滤条件" })
+                    put("filter", buildJsonObject { put("type", "string"); put("description", "过滤条件") })
                 },
                 required = listOf("table", "filter")
             )
@@ -181,11 +174,10 @@ fun buildSupabaseMcpTools(
             val filter = o["filter"]?.jsonPrimitive?.contentOrNull ?: error("filter required")
             val url = getProjectUrl() ?: return@Tool listOf(UIMessagePart.Text("""{"error":"未配置项目URL"}"""))
             val key = getApiKey() ?: return@Tool listOf(UIMessagePart.Text("""{"error":"未配置API Key"}"""))
-            listOf(UIMessagePart.Text(sbCall(url, "/rest/v1/$table?${"\$filter"}", "DELETE", key)))
+            listOf(UIMessagePart.Text(sbCall(url, "/rest/v1/$table?$filter", "DELETE", key)))
         },
     ))
 
-    // === 调用 RPC 函数 ===
     add(Tool(
         name = "supabase_rpc",
         description = "调用 Supabase RPC 函数。Params: function(函数名), params(JSON参数)。",
@@ -194,7 +186,7 @@ fun buildSupabaseMcpTools(
             InputSchema.Obj(
                 properties = buildJsonObject {
                     put("function", buildJsonObject { put("type", "string"); put("description", "函数名") })
-                    put("params", buildJsonObject { put("type", "string"); put("description", "JSON参数" })
+                    put("params", buildJsonObject { put("type", "string"); put("description", "JSON参数") })
                 },
                 required = listOf("function")
             )
@@ -209,7 +201,6 @@ fun buildSupabaseMcpTools(
         },
     ))
 
-    // === Auth: 列出用户 ===
     add(Tool(
         name = "supabase_list_users",
         description = "列出 Supabase Auth 用户。Params: limit(默认50), page(页码默认1)。需要 Service Role Key。",
@@ -217,8 +208,8 @@ fun buildSupabaseMcpTools(
         parameters = {
             InputSchema.Obj(
                 properties = buildJsonObject {
-                    put("limit", buildJsonObject { put("type", "integer"); put("description", "数量" })
-                    put("page", buildJsonObject { put("type", "integer"); put("description", "页码" })
+                    put("limit", buildJsonObject { put("type", "integer"); put("description", "数量") })
+                    put("page", buildJsonObject { put("type", "integer"); put("description", "页码") })
                 }
             )
         },
@@ -232,7 +223,6 @@ fun buildSupabaseMcpTools(
         },
     ))
 
-    // === Storage: 列出存储桶 ===
     add(Tool(
         name = "supabase_list_buckets",
         description = "列出 Supabase Storage 存储桶。",
@@ -247,7 +237,6 @@ fun buildSupabaseMcpTools(
         },
     ))
 
-    // === Storage: 上传文件 ===
     add(Tool(
         name = "supabase_upload",
         description = "上传文件到 Supabase Storage。Params: bucket(桶名), path(文件路径), content(文本内容)。",
@@ -256,8 +245,8 @@ fun buildSupabaseMcpTools(
             InputSchema.Obj(
                 properties = buildJsonObject {
                     put("bucket", buildJsonObject { put("type", "string"); put("description", "桶名") })
-                    put("path", buildJsonObject { put("type", "string"); put("description", "存储路径" })
-                    put("content", buildJsonObject { put("type", "string"); put("description", "文件内容" })
+                    put("path", buildJsonObject { put("type", "string"); put("description", "存储路径") })
+                    put("content", buildJsonObject { put("type", "string"); put("description", "文件内容") })
                 },
                 required = listOf("bucket", "path", "content")
             )
@@ -275,7 +264,6 @@ fun buildSupabaseMcpTools(
         },
     ))
 
-    // === 获取数据库 Schema ===
     add(Tool(
         name = "supabase_schema",
         description = "获取数据库表结构。返回所有表名和列信息。",
@@ -286,13 +274,11 @@ fun buildSupabaseMcpTools(
         execute = {
             val url = getProjectUrl() ?: return@Tool listOf(UIMessagePart.Text("""{"error":"未配置项目URL"}"""))
             val key = getApiKey() ?: return@Tool listOf(UIMessagePart.Text("""{"error":"未配置API Key"}"""))
-            // OpenAPI spec 包含所有表结构
             listOf(UIMessagePart.Text(sbCall(url, "/rest/v1/", "GET", key,
                 extraHeaders = mapOf("Accept" to "application/openapi+json"))))
         },
     ))
 
-    // === 配置检查 ===
     add(Tool(
         name = "supabase_status",
         description = "检查 Supabase 配置状态。",
