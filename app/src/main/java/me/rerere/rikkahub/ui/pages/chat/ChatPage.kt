@@ -441,43 +441,8 @@ private fun ChatPageContent(
                 errors = errors,
                 onDismissError = onDismissError,
                 onClearAllErrors = onClearAllErrors,
-                onPublishMessage = { msg -> vm.publishGroupMessage(msg.id { {) },
-                onRegenerate = { },
-                onEdit = { },
-                onForkMessage = { },
-                onDelete = { },
-                onCompressContext = { _, _, _ -> },
-                onTranslate = { _, _ -> },
-                onClearTranslation = { },
-                onToolApproval = { _, _, _ -> },
-                onToolAnswer = { },
-                onToggleFavorite = { },
-                onConversationSystemPromptChange = { null },
-                onClickSuggestion = { },
-                onUpdateMessage = { },
-                animatedVisibilityScope = Unit,
-                onSuggestion = { },
-                onNewPrompt = { },
-                onJumpToMessage = { }
-            ) },
-                onRegenerate = { },
-                onEdit = { },
-                onForkMessage = { },
-                onDelete = { },
-                onCompressContext = { _, _, _ -> },
-                onTranslate = { _, _ -> },
-                onClearTranslation = { },
-                onToolApproval = { _, _, _ -> },
-                onToolAnswer = { },
-                onToggleFavorite = { },
-                onConversationSystemPromptChange = { null },
-                onClickSuggestion = { },
-                onUpdateMessage = { },
-                animatedVisibilityScope = Unit,
-                onSuggestion = { },
-                onNewPrompt = { },
-                    vm.regenerateAtMessage(it)
-                },
+                onPublishMessage = { msg -> vm.publishGroupMessage(msg.id) },
+                onRegenerate = { vm.regenerateAtMessage(it) },
                 onEdit = {
                     inputState.editingMessage = it.id
                     inputState.setContents(it.parts)
@@ -495,34 +460,14 @@ private fun ChatPageContent(
                         vm.deleteMessage(it)
                     }
                 },
-                onUpdateMessage = { newNode ->
-                    vm.updateConversation(
-                        conversation.copy(
-                            messageNodes = conversation.messageNodes.map { node ->
-                                if (node.id == newNode.id) {
-                                    newNode
-                                } else {
-                                    node
-                                }
-                            }
-                        ))
-                    vm.saveConversationAsync()
-                },
-                onClickSuggestion = { suggestion ->
-                    inputState.editingMessage = null
-                    inputState.setMessageText(suggestion)
+                onCompressContext = { additionalPrompt, targetTokens, keepRecentMessages ->
+                    vm.handleCompressContext(additionalPrompt, targetTokens, keepRecentMessages)
                 },
                 onTranslate = { message, locale ->
                     vm.translateMessage(message, locale)
                 },
                 onClearTranslation = { message ->
                     vm.clearTranslationField(message.id)
-                },
-                onJumpToMessage = { index ->
-                    previewMode = false
-                    scope.launch {
-                        chatListState.animateScrollToItem(index)
-                    }
                 },
                 onToolApproval = { toolCallId, approved, reason ->
                     vm.handleToolApproval(toolCallId, approved, reason)
@@ -536,6 +481,32 @@ private fun ChatPageContent(
                 onConversationSystemPromptChange = { newPrompt ->
                     vm.updateConversation(conversation.copy(customSystemPrompt = newPrompt))
                     vm.saveConversationAsync()
+                },
+                onClickSuggestion = { suggestion ->
+                    inputState.editingMessage = null
+                    inputState.setMessageText(suggestion)
+                },
+                onUpdateMessage = { newNode ->
+                    vm.updateConversation(
+                        conversation.copy(
+                            messageNodes = conversation.messageNodes.map { node ->
+                                if (node.id == newNode.id) {
+                                    newNode
+                                } else {
+                                    node
+                                }
+                            }
+                        ))
+                    vm.saveConversationAsync()
+                },
+                animatedVisibilityScope = Unit,
+                onSuggestion = { },
+                onNewPrompt = { },
+                onJumpToMessage = { index ->
+                    previewMode = false
+                    scope.launch {
+                        chatListState.animateScrollToItem(index)
+                    }
                 },
             )
 

@@ -183,11 +183,9 @@ class WorkflowEngine(
 
         // Conditions
         if (def.conditions.isNotEmpty()) {
-
-            val ctx = contextProvider.snapshot()
-                needsLocation = ConditionEvaluator.needsLocation(def.conditions),
-                needsLastChat = ConditionEvaluator.needsLastChat(def.conditions),
-            )
+            val needsLocation = ConditionEvaluator.needsLocation(def.conditions)
+            val needsLastChat = ConditionEvaluator.needsLastChat(def.conditions)
+            val ctx = contextProvider.snapshot(needsLocation = needsLocation, needsLastChat = needsLastChat)
             val cr = ConditionEvaluator.evaluateAll(def.conditions, ctx)
             if (cr is ConditionEvaluator.Result.FailedAt) {
                 return persistAndReturn(
