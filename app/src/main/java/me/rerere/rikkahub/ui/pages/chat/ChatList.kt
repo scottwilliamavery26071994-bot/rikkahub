@@ -284,6 +284,8 @@ private fun ChatListNormal(
                     if (!state.isScrollInProgress && loadingState) {
                         if (visibleItemsInfo.isAtBottom()) {
                             stickToBottom = true
+                        } else {
+                            stickToBottom = false
                         }
                         if (stickToBottom) {
                             state.requestScrollToItem(conversationUpdated.messageNodes.lastIndex + 10)
