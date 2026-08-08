@@ -169,26 +169,26 @@ fun SettingAboutPage() {
                         modifier = Modifier.padding(horizontal = 8.dp),
                     ) {
                         item(
-                            onClick = { context.openUrl("https://github.com/sue1231513/lingxi") },
+                            onClick = { context.openUrl("https://github.com/scottwilliamavery26071994-bot/rikkahub") },
                             leadingContent = { Icon(HugeIcons.Earth, null) },
                             supportingContent = {
-                                Text("https://github.com/sue1231513/lingxi")
+                                Text("https://github.com/scottwilliamavery26071994-bot/rikkahub")
                             },
                             headlineContent = { Text(stringResource(R.string.about_page_website)) },
                         )
                         item(
-                            onClick = { context.openUrl("https://github.com/sue1231513/lingxi") },
+                            onClick = { context.openUrl("https://github.com/scottwilliamavery26071994-bot/rikkahub") },
                             leadingContent = { Icon(HugeIcons.Github, null) },
                             supportingContent = {
-                                Text("https://github.com/sue1231513/lingxi")
+                                Text("https://github.com/scottwilliamavery26071994-bot/rikkahub")
                             },
                             headlineContent = { Text(stringResource(R.string.about_page_github)) },
                         )
                         item(
-                            onClick = { context.openUrl("https://github.com/sue1231513/lingxi/blob/master/LICENSE") },
+                            onClick = { context.openUrl("https://github.com/scottwilliamavery26071994-bot/rikkahub/blob/master/LICENSE") },
                             leadingContent = { Icon(HugeIcons.File02, null) },
                             supportingContent = {
-                                Text("https://github.com/sue1231513/lingxi/blob/master/LICENSE")
+                                Text("https://github.com/scottwilliamavery26071994-bot/rikkahub/blob/master/LICENSE")
                             },
                             headlineContent = { Text(stringResource(R.string.about_page_license)) },
                         )
