@@ -188,16 +188,7 @@ class McpManager(
             getToken = { settings.githubToken },
             enabled = { settings.githubMcpEnabled },
         )
-        list += me.rerere.rikkahub.data.ai.tools.buildShannonPentestTools(
-            getApiKey = {
-                val model = settings.getCurrentChatModel()
-                model?.findProvider(settings.providers)?.apiKey
-            },
-            getBaseUrl = {
-                val model = settings.getCurrentChatModel()
-                model?.findProvider(settings.providers)?.baseUrl
-            },
-        )
+        list += me.rerere.rikkahub.data.ai.tools.buildShannonPentestTools()
         return list
     }
 
@@ -214,16 +205,7 @@ class McpManager(
             getToken = { settings.githubToken },
             enabled = { settings.githubMcpEnabled },
         )
-        val shannonTools = me.rerere.rikkahub.data.ai.tools.buildShannonPentestTools(
-            getApiKey = {
-                val model = settings.getCurrentChatModel()
-                model?.findProvider(settings.providers)?.apiKey
-            },
-            getBaseUrl = {
-                val model = settings.getCurrentChatModel()
-                model?.findProvider(settings.providers)?.baseUrl
-            },
-        )
+        val shannonTools = me.rerere.rikkahub.data.ai.tools.buildShannonPentestTools()
         val githubToolCount = builtinTools.count { it.name.startsWith("github_") }
         val fetchToolCount = builtinTools.count { it.name.startsWith("fetch_") }
         val imagesToolCount = builtinTools.count { it.name.startsWith("image_") }
