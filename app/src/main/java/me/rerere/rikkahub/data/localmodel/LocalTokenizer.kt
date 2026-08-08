@@ -12,11 +12,12 @@ import java.io.File
 private const val TAG = "LocalTokenizer"
 
 class LocalTokenizer(
-    private val vocabSize: Int = 32000,
+    private var _vocabSize: Int = 32000,
     val eosTokenId: Int = 2,
     val bosTokenId: Int = 1,
     private val unkTokenId: Int = 0,
 ) {
+    fun getVocabSize(): Int = _vocabSize
     private var vocab: MutableMap<String, Int> = mutableMapOf()
     private var reverseVocab: MutableMap<Int, String> = mutableMapOf()
     private var merges: List<Pair<String, String>> = emptyList()

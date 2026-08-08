@@ -13,47 +13,31 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import java.nio.FloatBuffer
 import java.nio.LongBuffer
 import kotlin.math.exp
 
 private const val TAG = "LocalModelEngine"
 
-/**
- * 本地模型推理引擎
- * 加载 ONNX 格式的量化模型文件，在设备端运行推理
- */
 class LocalModelEngine(
     private val modelPath: String,
     private val tokenizer: LocalTokenizer = LocalTokenizer()
 ) {
     private var session: OrtSession? = null
     private var env: OrtEnvironment? = null
-    private var kvCache: Map<String, OnnxTensor>? = null
 
     val isLoaded: Boolean get() = session != null
 
-    /**
-     * 加载模型文件
-     */
     fun load(): Result<Unit> = runCatching {
         env = OrtEnvironment.getEnvironment()
         val opts = OrtSession.SessionOptions().apply {
-            // 使用 CPU 执行，开启优化
             setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
-            // 设置线程数
             setIntraOpNumThreads(4)
             setInterOpNumThreads(2)
-            // 启用内存模式优化
-            setExecutionMode(OrtSession.SessionOptions.ExecutionMode.PARALLEL)
         }
-        session = env?.createSession(modelPath, opts)
+        session = env!!.createSession(modelPath, opts)
         Log.d(TAG, "Model loaded: $modelPath")
     }
 
-    /**
-     * 流式生成文本
-     */
     fun generate(
         prompt: String,
         maxTokens: Int = 256,
@@ -61,81 +45,50 @@ class LocalModelEngine(
         topP: Float = 0.9f,
         topK: Int = 40
     ): Flow<String> = flow {
-        require(isLoaded) { "Model not loaded. Call load() first." }
-
+        require(isLoaded) { "Model not loaded" }
         val ids = tokenizer.encode(prompt).toMutableList()
-        var generatedTokens = 0
-
-        while (generatedTokens < maxTokens) {
-            val logits = runInference(ids)
-            if (logits == null) {
-                Log.e(TAG, "Inference returned null logits")
-                break
-            }
-
-            val nextToken = sample(logits, temperature, topP, topK)
-            if (nextToken == tokenizer.eosTokenId) break
-
-            ids.add(nextToken)
-            generatedTokens++
-
-            val text = tokenizer.decode(listOf(nextToken))
-            if (text.isNotEmpty()) {
-                emit(text)
-            }
+        var count = 0
+        while (count < maxTokens) {
+            val logits = runInference(ids) ?: break
+            val next = sample(logits, temperature, topP, topK)
+            if (next == tokenizer.eosTokenId) break
+            ids.add(next)
+            count++
+            val text = tokenizer.decode(listOf(next))
+            if (text.isNotEmpty()) emit(text)
         }
     }.flowOn(Dispatchers.IO)
 
-    /**
-     * 运行一次推理
-     */
     private fun runInference(inputIds: List<Int>): FloatArray? {
         val ortEnv = env ?: return null
         val ortSession = session ?: return null
-
         return try {
-            val inputShape = longArrayOf(1, inputIds.size.toLong())
+            val shape = longArrayOf(1, inputIds.size.toLong())
             val inputTensor = OnnxTensor.createTensor(
                 ortEnv,
                 LongBuffer.wrap(inputIds.map { it.toLong() }.toLongArray()),
-                inputShape
+                shape
             )
-
-            val inputs = mutableMapOf<String, OnnxTensor>("input_ids" to inputTensor)
-            val outputs = mutableListOf("logits")
-
-            if (kvCache != null) {
-                inputs.putAll(kvCache!!)
-                outputs.addAll(kvCache!!.keys.filter { it.startsWith("present") })
-            } else {
-                outputs.addAll(ortSession.inputInfo.keys.filter { it.startsWith("present") })
-            }
-
-            val result = ortSession.run(inputs, outputs)
-            val logitsTensor = result.get("logits")?.get() as? OnnxTensor ?: return null
-
-            // Extract last token logits
-            val logitsData = logitsTensor.floatBuffer
-            val vocabSize = tokenizer.vocabSize
-            val offset = (inputIds.size - 1) * vocabSize
-            val logits = FloatArray(vocabSize) {
-                if (offset + it < logitsData.limit()) logitsData[offset + it] else Float.NEGATIVE_INFINITY
-            }
-
-            // Update KV cache
-            val newCache = mutableMapOf<String, OnnxTensor>()
-            result.forEach { (key, value) ->
-                if (key.startsWith("present") && value.isTensor) {
-                    newCache[key] = value as OnnxTensor
-                }
-            }
-            kvCache = newCache
-
-            // Close unused tensors
+            val inputs = mapOf("input_ids" to inputTensor)
+            val result = ortSession.run(inputs)
             inputTensor.close()
-            result.values.filter { it !is OnnxTensor || !it.info.name.startsWith("present") }
-                .forEach { if (it is OnnxTensor) it.close() }
 
+            // result.get(0) returns Optional, .get() unwraps Optional
+            val logitsTensor = result.get(0).get() as? OnnxTensor
+            if (logitsTensor == null) {
+                result.close()
+                return null
+            }
+
+            val data = logitsTensor.floatBuffer
+            val vocabSize = tokenizer.getVocabSize()
+            val offset = (inputIds.size - 1) * vocabSize
+            val logits = FloatArray(vocabSize) { i ->
+                val pos = offset + i
+                if (pos < data.limit()) data[pos] else Float.NEGATIVE_INFINITY
+            }
+            logitsTensor.close()
+            result.close()
             logits
         } catch (e: Exception) {
             Log.e(TAG, "Inference error", e)
@@ -143,44 +96,27 @@ class LocalModelEngine(
         }
     }
 
-    /**
-     * 采样下一个 token
-     */
     private fun sample(
         logits: FloatArray,
         temperature: Float,
         topP: Float,
         topK: Int
     ): Int {
-        val vocabSize = logits.size
-        val indices = (0 until vocabSize).toList()
+        val n = logits.size
+        val indices = (0 until n).toList()
 
-        // Apply temperature
-        val scaledLogits = if (temperature > 0) {
-            FloatArray(vocabSize) { logits[it] / temperature }
-        } else {
-            logits
-        }
+        val scaled = if (temperature > 0f) FloatArray(n) { logits[it] / temperature } else logits
+        val maxLogit = scaled.max()
+        val expSum = scaled.sumOf { exp((it - maxLogit).toDouble()) }
+        if (expSum.isInfinite() || expSum <= 0.0) return indices.maxByOrNull { scaled[it] } ?: 0
 
-        // Softmax
-        val maxLogit = scaledLogits.max()
-        val expSum = scaledLogits.sumOf { exp((it - maxLogit).toDouble()) }
-        if (expSum.isInfinite() || expSum <= 0.0) {
-            return indices.maxByOrNull { scaledLogits[it] } ?: 0
-        }
-        val probs = FloatArray(vocabSize) {
-            (exp((scaledLogits[it] - maxLogit).toDouble()) / expSum).toFloat()
-        }
+        val probs = FloatArray(n) { (exp((scaled[it] - maxLogit).toDouble()) / expSum).toFloat() }
 
-        // Top-K filtering
-        val topKIndices = if (topK > 0 && topK < vocabSize) {
+        val filtered = if (topK > 0 && topK < n) {
             indices.sortedByDescending { probs[it] }.take(topK)
-        } else {
-            indices
-        }
+        } else indices
 
-        // Top-P (nucleus) filtering
-        val sorted = topKIndices.sortedByDescending { probs[it] }
+        val sorted = filtered.sortedByDescending { probs[it] }
         var cumsum = 0f
         val nucleus = mutableListOf<Int>()
         for (idx in sorted) {
@@ -189,7 +125,6 @@ class LocalModelEngine(
             if (cumsum >= topP) break
         }
 
-        // Sample
         val nucleusProbs = nucleus.map { probs[it] }
         val nucleusSum = nucleusProbs.sum()
         if (nucleusSum <= 0f) return nucleus.firstOrNull() ?: 0
@@ -204,8 +139,6 @@ class LocalModelEngine(
     }
 
     fun close() {
-        kvCache?.values?.forEach { runCatching { it.close() } }
-        kvCache = null
         session?.close()
         session = null
         env?.close()
