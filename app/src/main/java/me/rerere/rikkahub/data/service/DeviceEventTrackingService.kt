@@ -62,8 +62,7 @@ class DeviceEventTrackingService : Service() {
                     val settings = settingsStore.settingsFlowRaw.first()
                     val s = settings.systemToolsSetting
                     if (s.deviceEventTrackingEnabled &&
-                        s.supabaseUrl.isNotBlank() &&
-                        s.supabaseKey.isNotBlank()
+                        s.supabaseApiKey.isNotBlank()
                     ) {
                         val intent = Intent(context, DeviceEventTrackingService::class.java)
                         try {
@@ -166,18 +165,16 @@ class DeviceEventTrackingService : Service() {
                     Log.d(TAG, "handleScreenEvent: deviceEventTrackingEnabled=false, skip ($eventType)")
                     return@launch
                 }
-                if (!s.supabaseUrl.isNotBlank() || !s.supabaseKey.isNotBlank()) {
+                if (!s.supabaseApiKey.isNotBlank()) {
                     Log.w(
                         TAG,
                         "handleScreenEvent: supabase config incomplete, skip " +
-                            "(supabaseUrlBlank=${s.supabaseUrl.isNotBlank()}, " +
-                            "keyBlank=${s.supabaseKey.isNotBlank()}), eventType=$eventType"
+                            "(apiKeyBlank=${s.supabaseApiKey.isNotBlank()}), eventType=$eventType"
                     )
                     return@launch
                 }
                 val service = SupabaseService(
-                    supabaseUrl = s.supabaseUrl,
-                    supabaseKey = s.supabaseKey,
+                    supabaseApiKey = s.supabaseApiKey,
                     tableName = s.supabaseTableName
                 )
                 val result = service.insertDeviceEvent(eventType)

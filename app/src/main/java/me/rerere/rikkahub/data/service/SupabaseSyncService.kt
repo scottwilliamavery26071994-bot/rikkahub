@@ -132,10 +132,9 @@ class SupabaseSyncService : Service() {
                         }
                         val settings = settingsStore.settingsFlowRaw.first()
                         val systemTools = settings.systemToolsSetting
-                        if (systemTools.supabaseUrl.isNotBlank() && systemTools.supabaseKey.isNotBlank()) {
+                        if (systemTools.supabaseApiKey.isNotBlank()) {
                             val service = SupabaseService(
-                                supabaseUrl = systemTools.supabaseUrl,
-                                supabaseKey = systemTools.supabaseKey,
+                                supabaseApiKey = systemTools.supabaseApiKey,
                                 tableName = systemTools.supabaseTableName
                             )
                             val result = service.collectAndUpload(context)
@@ -161,7 +160,7 @@ class SupabaseSyncService : Service() {
                     val settingsStore = GlobalContext.get().get<SettingsStore>()
                     val settings = settingsStore.settingsFlowRaw.first()
                     val systemTools = settings.systemToolsSetting
-                    if (systemTools.supabaseUrl.isNotBlank() && systemTools.supabaseKey.isNotBlank()) {
+                    if (systemTools.supabaseApiKey.isNotBlank()) {
                         scheduleNext(context)
                         Log.d(TAG, "Rescheduled Supabase sync")
                     }
@@ -195,8 +194,7 @@ class SupabaseSyncService : Service() {
                 val systemTools = settings.systemToolsSetting
 
                 val service = SupabaseService(
-                    supabaseUrl = systemTools.supabaseUrl,
-                    supabaseKey = systemTools.supabaseKey,
+                    supabaseApiKey = systemTools.supabaseApiKey,
                     tableName = systemTools.supabaseTableName
                 )
 
@@ -257,13 +255,9 @@ class SupabaseSyncReceiver : BroadcastReceiver() {
                             val settingsStore = GlobalContext.get().get<SettingsStore>()
                             val settings = settingsStore.settingsFlowRaw.first()
                             val systemTools = settings.systemToolsSetting
-                            if (systemTools.deviceEventTrackingEnabled &&
-                                systemTools.supabaseUrl.isNotBlank() &&
-                                systemTools.supabaseKey.isNotBlank()
-                            ) {
+                            if (systemTools.supabaseApiKey.isNotBlank()) {
                                 val service = SupabaseService(
-                                    supabaseUrl = systemTools.supabaseUrl,
-                                    supabaseKey = systemTools.supabaseKey,
+                                    supabaseApiKey = systemTools.supabaseApiKey,
                                     tableName = systemTools.supabaseTableName
                                 )
                                 val result = service.insertDeviceEvent("boot")
