@@ -734,6 +734,7 @@ class ChatCompletionsAPI(
         appendLine("在回答之前，请先进行逐步推理思考。")
         appendLine("将你的思考过程放在 <thinking>...</thinking> 标签中。")
         appendLine("然后在标签外给出最终回答。")
+        appendLine("注意：所有思考内容必须使用中文，禁止使用英文。")
         appendLine("示例格式：")
         appendLine("<thinking>")
         appendLine("1. 分析问题...")
