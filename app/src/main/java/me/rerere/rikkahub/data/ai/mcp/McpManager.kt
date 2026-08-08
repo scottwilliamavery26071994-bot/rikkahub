@@ -224,6 +224,7 @@ class McpManager(
             },
         )
         list += me.rerere.rikkahub.data.ai.tools.buildContext7McpTools()
+        list += me.rerere.rikkahub.data.ai.tools.buildPlaywrightMcpTools()
         return list
     }
 
@@ -308,6 +309,12 @@ class McpManager(
                 name = "Context7 文档 MCP 📚",
                 description = "内置最新库文档查询：解析库名/获取文档（React/Vue/Kotlin/Next.js等，数据来自Context7）",
                 toolCount = 2,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-playwright",
+                name = "Playwright 浏览器 MCP 🌐",
+                description = "内置浏览器自动化：导航/点击/输入/截图/执行JS/表单/快照（通过Playwright+Chromium）",
+                toolCount = 12,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
