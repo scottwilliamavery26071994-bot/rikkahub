@@ -49,7 +49,7 @@ val AVAILABLE_MODELS = listOf(
     AvailableModel(
         id = "glm-5.2",
         name = "GLM 5.2 (GGUF Q4)",
-        description = "智谱AI通用模型，GGUF格式",
+        description = "智谱AI · 需libllama.so",
         size = "~3.5GB",
         downloadUrl = "https://huggingface.co/unsloth/GLM-5.2-GGUF/resolve/main/UD-IQ4_XS/GLM-5.2-UD-IQ4_XS-00001-of-00009.gguf",
         filename = "glm-5.2-q4.gguf",
