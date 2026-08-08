@@ -76,3 +76,22 @@
 | getByKey 在 JsonElement/JsonObject 用法 | 先转 JsonObject 再调用 |
 | 编译错误反复出现 | 增量修复，逐个提交验证 |
 | 本地模型功能完整移除 | 删除 5 个源文件 + 10 个文件的 when 分支/引用 |
+| 系统工具页迁移字段损坏 | .bak 文件 Supabase 字段名全损(5处)，修复后恢复完整版 |
+| 上游页面缺失字符串资源 | 8 个页面已删除(未引用)，字符串资源不存在 |
+
+---
+
+## 已知已简化/未迁移的内容
+
+| 项目 | 状态 |
+|------|------|
+| SettingThemePage | ❌ 已删除 — 缺少字符串资源 |
+| SettingPreferencesPage | ❌ 已删除 — 缺少字符串资源 |
+| SettingPreferencesUIPage | ❌ 已删除 — 缺少字符串资源 |
+| SettingPreferencesThemePage | ❌ 已删除 — 缺少字符串资源 |
+| SettingPreferencesGeneralPage | ❌ 已删除 — 缺少字符串资源 |
+| SettingPreferencesNotificationPage | ❌ 已删除 — 缺少字符串资源 |
+| SettingModelPromptPage | ❌ 已删除 — 缺少字符串资源 |
+| CustomThemeButton | ❌ 已删除 — 缺少字符串资源 |
+| 系统工具页 | ✅ 已恢复完整版（1289行） |
+| 本地模型 | 🗑️ 已主动删除 |
