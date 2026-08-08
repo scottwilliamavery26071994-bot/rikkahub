@@ -276,7 +276,7 @@ class McpManager(
                 id = "builtin-12306",
                 name = "12306 火车票 🚄",
                 description = "内置12306查票/中转/经停站/跨站/车站代码查询（源自 Joooook/12306-mcp）",
-                toolCount = 5,
+                toolCount = 6,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
