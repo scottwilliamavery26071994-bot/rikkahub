@@ -309,24 +309,8 @@ val DEFAULT_PROVIDERS = listOf(
         models = listOf(
             Model(
                 id = Uuid.parse("d9e8f7a6-b5c4-3d2e-1f01-2a3b4c5d6e7f"),
-                modelId = "llama3.2",
-                displayName = "Llama 3.2 (3B)",
-                inputModalities = listOf(Modality.TEXT),
-                outputModalities = listOf(Modality.TEXT),
-                abilities = listOf(ModelAbility.TOOL),
-            ),
-            Model(
-                id = Uuid.parse("e8f7a6b5-c4d3-2e1f-0012-3b4c5d6e7f8a"),
-                modelId = "qwen2.5:7b",
-                displayName = "Qwen 2.5 (7B)",
-                inputModalities = listOf(Modality.TEXT),
-                outputModalities = listOf(Modality.TEXT),
-                abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
-            ),
-            Model(
-                id = Uuid.parse("f7a6b5c4-d3e2-1f00-1234-5c6d7e8f9a0b"),
-                modelId = "phi4:14b",
-                displayName = "Phi-4 (14B)",
+                modelId = "DeepSeek R1 0528",
+                displayName = "DeepSeek R1 0528 (1.5B)",
                 inputModalities = listOf(Modality.TEXT),
                 outputModalities = listOf(Modality.TEXT),
                 abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
