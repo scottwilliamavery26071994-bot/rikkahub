@@ -5,7 +5,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import java.util.UUID
+import me.rerere.ai.ui.UIMessage
+import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.data.model.MessageNode
+import me.rerere.rikkahub.data.datastore.Settings
+import me.rerere.rikkahub.service.ChatError
+import androidx.compose.foundation.lazy.LazyListState
+import kotlin.uuid.Uuid
 
 @Composable
 fun ChatList(
