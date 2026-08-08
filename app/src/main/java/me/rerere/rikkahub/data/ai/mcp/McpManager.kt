@@ -217,6 +217,12 @@ class McpManager(
         list += me.rerere.rikkahub.data.ai.tools.buildTicket12306McpTools()
         list += me.rerere.rikkahub.data.ai.tools.buildApkReverseMcpTools(workspaceRepository)
         list += me.rerere.rikkahub.data.ai.tools.buildHttpExecuteMcpTools()
+        list += me.rerere.rikkahub.data.ai.tools.buildFirecrawlMcpTools(
+            getApiKey = {
+                val model = settings.getCurrentChatModel()
+                model?.findProvider(settings.providers)?.apiKey
+            },
+        )
         return list
     }
 
@@ -289,6 +295,12 @@ class McpManager(
                 name = "HTTP 请求 MCP 🌐",
                 description = "内置通用HTTP请求工具：支持GET/POST/PUT/DELETE/PATCH + 自定义Header/Body",
                 toolCount = 1,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-firecrawl",
+                name = "Firecrawl MCP 🔥",
+                description = "内置网页抓取/搜索/爬取/站点地图/AI提取（Firecrawl API，自动复用模型Key）",
+                toolCount = 5,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
