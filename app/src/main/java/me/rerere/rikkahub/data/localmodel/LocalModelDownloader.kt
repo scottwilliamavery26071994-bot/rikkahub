@@ -46,14 +46,6 @@ val AVAILABLE_MODELS = listOf(
         downloadUrl = "https://huggingface.co/onnx-community/DeepSeek-R1-Distill-Qwen-1.5B-ONNX/resolve/main/onnx/model_q4.onnx",
         filename = "deepseek-r1-1.5b-q4.onnx",
     ),
-    AvailableModel(
-        id = "glm-5.2",
-        name = "GLM 5.2 (GGUF Q4)",
-        description = "智谱AI · 需libllama.so",
-        size = "~3.5GB",
-        downloadUrl = "https://huggingface.co/unsloth/GLM-5.2-GGUF/resolve/main/UD-IQ4_XS/GLM-5.2-UD-IQ4_XS-00001-of-00009.gguf",
-        filename = "glm-5.2-q4.gguf",
-    ),
 )
 
 class LocalModelDownloader(
