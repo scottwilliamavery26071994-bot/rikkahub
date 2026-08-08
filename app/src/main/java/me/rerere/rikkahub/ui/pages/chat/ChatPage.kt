@@ -469,11 +469,11 @@ private fun ChatPageContent(
                 onClearTranslation = { message ->
                     vm.clearTranslationField(message.id)
                 },
-                onToolApproval = { toolCallId, approved: Int, reason: String ->
+                onToolApproval = { toolCallId, approved: Boolean, reason: String ->
                     vm.handleToolApproval(toolCallId, approved, reason)
                 },
-                onToolAnswer = { toolCallId: String, answer: String ->
-                    vm.handleToolAnswer(toolCallId, answer)
+                onToolAnswer = { answer: String ->
+                    vm.handleToolAnswer(answer)
                 },
                 onToggleFavorite = { node ->
                     vm.toggleMessageFavorite(node)
