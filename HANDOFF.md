@@ -34,10 +34,12 @@
 - OpenAI / Claude / Google 全部接入
 - ProviderSetting 强制 apiKey/baseUrl 抽象属性
 
-### 五、系统工具页面
-- CardGroup + ListItem + Switch 风格 (与原版设置页一致)
-- 27 个开关分 6 组 (设备信息/控制/通知/媒体/应用/高级)
-- TopAppBar + BackButton
+### 七、系统工具页面迁移 ✅
+- 从上游完整版恢复 SettingSystemToolsPage.kt（1289行）
+- 30+ 个系统工具卡片，每个带图标/权限检测/详细说明
+- 新增：安全提示/后台保活/SAF文件夹/位置服务+高德API/通知服务/应用统计/探索周边/Supabase同步/相机/Gadgetbridge/闹钟/定时器/电量/音乐控制/短信/手电筒/Toast/震动/亮度/音量/WiFi/电话/分享/壁纸/唤醒屏幕/媒体扫描/发送通知/存储信息/应用切换/App锁定/指纹验证
+- 修复 Supabase 部分损坏字段（supabaseEnabled/supabaseUrl）
+- SystemToolsSetting 新增 supabaseUrl/supabaseEnabled 字段
 
 ### 六、类型系统
 - apiKey/baseUrl 升级为 ProviderSetting 抽象属性

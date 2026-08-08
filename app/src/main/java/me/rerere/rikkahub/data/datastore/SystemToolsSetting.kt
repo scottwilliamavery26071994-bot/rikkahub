@@ -34,6 +34,8 @@ data class SystemToolsSetting(
     val cameraOcrEnabled: Boolean = false,
 
     val supabaseApiKey: String = "",
+    val supabaseUrl: String = "",
+    val supabaseEnabled: Boolean = false,
     val supabaseTableName: String = "device_data",
 
     // Feature 22: Boot/Screen event tracking (realtime push to Supabase)
