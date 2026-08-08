@@ -463,17 +463,17 @@ private fun ChatPageContent(
                 onCompressContext = { additionalPrompt, targetTokens, keepRecentMessages ->
                     vm.handleCompressContext(additionalPrompt, targetTokens, keepRecentMessages)
                 },
-                onTranslate = { message, locale: String ->
+                onTranslate = { message, locale: Locale ->
                     vm.translateMessage(message, locale)
                 },
                 onClearTranslation = { message ->
                     vm.clearTranslationField(message.id)
                 },
-                onToolApproval = { toolCallId, approved: Boolean, reason: String ->
+                onToolApproval = { toolCallId, approved, reason: String ->
                     vm.handleToolApproval(toolCallId, approved, reason)
                 },
-                onToolAnswer = { answer: String ->
-                    vm.handleToolAnswer(answer)
+                onToolAnswer = { toolCallId, answer: String ->
+                    vm.handleToolAnswer(toolCallId, answer)
                 },
                 onToggleFavorite = { node ->
                     vm.toggleMessageFavorite(node)
