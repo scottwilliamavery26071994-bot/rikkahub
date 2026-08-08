@@ -281,7 +281,7 @@ private fun ChatListNormal(
             var stickToBottom by remember { mutableStateOf(true) }
             LaunchedEffect(state) {
                 snapshotFlow { state.layoutInfo.visibleItemsInfo }.collect { visibleItemsInfo ->
-                    if (!state.isScrollInProgress && loadingState.value) {
+                    if (!state.isScrollInProgress && loadingState) {
                         if (visibleItemsInfo.isAtBottom()) {
                             stickToBottom = true
                         }
