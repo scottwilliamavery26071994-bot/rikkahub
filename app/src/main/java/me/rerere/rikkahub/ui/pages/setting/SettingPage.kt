@@ -68,7 +68,6 @@ import me.rerere.hugeicons.stroke.SmartPhone01
 import me.rerere.hugeicons.stroke.Settings01
 import me.rerere.hugeicons.stroke.Grid
 import me.rerere.hugeicons.stroke.Tools
-import me.rerere.hugeicons.stroke.Train01
 import me.rerere.hugeicons.stroke.MessageMultiple01
 import me.rerere.hugeicons.stroke.Pulse01
 import me.rerere.rikkahub.R
@@ -274,12 +273,6 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         leadingContent = { Icon(HugeIcons.MessageMultiple01, null) },
                         supportingContent = { Text("把微信号变成 AI 入口，扫码登录后用微信收发消息") },
                         headlineContent = { Text("微信 Bot") },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.SettingRailGo) },
-                        leadingContent = { Icon(HugeIcons.Train01, null) },
-                        supportingContent = { Text("RailGo：查车站、查车次、看时刻表") },
-                        headlineContent = { Text("火车查询") },
                     )
                     item(
                         onClick = { navController.navigate(Screen.SettingApiExplorer) },

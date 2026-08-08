@@ -167,7 +167,6 @@ import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
 
 import me.rerere.rikkahub.ui.pages.setting.SecuritySettingPage
 import me.rerere.rikkahub.ui.pages.setting.SettingWeixinBotPage
-import me.rerere.rikkahub.ui.pages.setting.SettingRailGoPage
 import me.rerere.rikkahub.ui.pages.setting.SettingApiExplorerPage
 import me.rerere.rikkahub.ui.pages.setting.SettingGomokuPage
 import me.rerere.rikkahub.ui.pages.setting.SettingToolboxPage
@@ -725,8 +724,6 @@ entry<Screen.Extensions> {
                                 SettingWeixinBotPage()
                             }
 
-                            entry<Screen.SettingRailGo> {
-                                SettingRailGoPage()
                             }
 
                             entry<Screen.SettingApiExplorer> {
@@ -1120,7 +1117,6 @@ sealed interface Screen : NavKey {
     @Serializable
     data object SettingSecurity : Screen
     @Serializable
-    data object SettingRailGo : Screen
     @Serializable
     data object SettingWeixinBot : Screen
 
