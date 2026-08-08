@@ -1042,8 +1042,8 @@ private fun McpImportModal(
 }
 
 /**
- * 内置 MCP 服务器卡片（移植自 Kelivo）：显示名称/描述/工具数/启用状态。
- * GitHub MCP 可点击打开 token 配置。
+ * 内置 MCP 服务器卡片：所有内置服务器统一显示启用开关。
+ * GitHub 类服务器点击开关可打开 Token 配置弹窗。
  */
 @Composable
 private fun BuiltinMcpServerCard(
@@ -1058,6 +1058,10 @@ private fun BuiltinMcpServerCard(
     var showGithubConfig by remember { mutableStateOf(false) }
     var githubTokenInput by remember(settings.githubToken) { mutableStateOf(settings.githubToken ?: "") }
 
+    val isGithubType = info.id == "builtin-github" || info.id == "builtin-analyzer"
+    // 非 GitHub 类服务器的本地开关状态
+    var localEnabled by remember { mutableStateOf(enabled) }
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = CustomColors.listItemColors.containerColor
@@ -1068,7 +1072,7 @@ private fun BuiltinMcpServerCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(HugeIcons.Folder01, null, tint = MaterialTheme.colorScheme.primary)
@@ -1079,12 +1083,13 @@ private fun BuiltinMcpServerCard(
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(text = info.name, style = MaterialTheme.typography.titleMedium)
                     Tag(type = TagType.INFO) { Text("内置") }
-                    if (enabled) Tag(type = TagType.SUCCESS) { Text("已启用") } else Tag(type = TagType.DEFAULT) { Text("未启用") }
                 }
                 Text(
                     text = info.description,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = "${info.toolCount} 个工具",
@@ -1092,15 +1097,33 @@ private fun BuiltinMcpServerCard(
                     color = MaterialTheme.colorScheme.secondary,
                 )
             }
-            if (info.id == "builtin-github" || info.id == "builtin-analyzer") {
-                TextButton(onClick = { showGithubConfig = true }) {
-                    Text(if (enabled) "配置" else "启用")
-                }
-            }
+            // 所有内置服务器统一显示启用开关
+            Switch(
+                checked = if (isGithubType) enabled else localEnabled,
+                onCheckedChange = { newChecked ->
+                    if (isGithubType) {
+                        // GitHub 类：开关控制 Token 配置
+                        if (!enabled && newChecked) {
+                            showGithubConfig = true
+                        } else if (enabled && !newChecked) {
+                            scope.launch {
+                                vm.updateSettings(settings.copy(
+                                    githubToken = null,
+                                    githubMcpEnabled = false,
+                                ))
+                            }
+                        }
+                    } else {
+                        // 非 GitHub 类：本地开关
+                        localEnabled = newChecked
+                    }
+                },
+            )
         }
     }
 
-    if (showGithubConfig && (info.id == "builtin-github" || info.id == "builtin-analyzer")) {
+    // GitHub Token 配置弹窗
+    if (showGithubConfig && isGithubType) {
         AlertDialog(
             onDismissRequest = { showGithubConfig = false },
             title = { Text("GitHub MCP 配置") },
@@ -1120,7 +1143,10 @@ private fun BuiltinMcpServerCard(
                 TextButton(onClick = {
                     val newToken = githubTokenInput.trim().ifEmpty { null }
                     scope.launch {
-                        vm.updateSettings(settings.copy(githubToken = newToken, githubMcpEnabled = newToken != null))
+                        vm.updateSettings(settings.copy(
+                            githubToken = newToken,
+                            githubMcpEnabled = newToken != null,
+                        ))
                     }
                     showGithubConfig = false
                 }) { Text("保存") }
