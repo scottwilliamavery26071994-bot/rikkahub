@@ -31,7 +31,7 @@ fun ChatList(
     onEdit: (UIMessage) -> Unit,
     onForkMessage: (UIMessage) -> Unit,
     onDelete: (UIMessage) -> Unit,
-    onCompressContext: (String, Int, Boolean) -> Unit,
+    onCompressContext: (String, Int, Int) -> Unit,
     onTranslate: (UIMessage, String) -> Unit,
     onClearTranslation: (UIMessage) -> Unit,
     onToolApproval: (String, Boolean, String) -> Unit,

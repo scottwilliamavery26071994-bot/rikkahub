@@ -464,8 +464,8 @@ private fun ChatPageContent(
                 onCompressContext = { additionalPrompt, targetTokens, keepRecentMessages ->
                     vm.handleCompressContext(additionalPrompt, targetTokens, keepRecentMessages)
                 },
-                onTranslate = { message, locale: Locale ->
-                    vm.translateMessage(message, locale)
+                onTranslate = { message, locale: String ->
+                    vm.translateMessage(message, Locale.forLanguageTag(locale))
                 },
                 onClearTranslation = { message ->
                     vm.clearTranslationField(message.id)
