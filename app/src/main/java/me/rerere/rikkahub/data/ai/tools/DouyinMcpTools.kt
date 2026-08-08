@@ -47,23 +47,30 @@ fun buildDouyinMcpTools(getCookie: () -> String): List<Tool> = buildList {
 
     // ===== 登录 =====
     add(Tool(name="douyin_login",
-        description="获取抖音扫码登录二维码。返回二维码图片URL，AI可直接展示给用户扫描。扫码成功后自动保存Cookie。",
+        description="获取抖音扫码登录二维码图片。AI可直接展示二维码给用户扫描。",
         needsApproval=false,
         parameters={ InputSchema.Obj(properties=buildJsonObject{}) },
         execute={
-            // 获取登录页HTML，提取二维码URL
+            // 获取登录页，提取二维码URL，下载为图片直接展示
             val html = fetch("$DY/login")
             val qrMatch = Regex("""qrcode[^"']*["']([^"']+)["']""").find(html)
                 ?: Regex("""src=["']([^"']*qrcode[^"']*)["']""").find(html)
             val qrUrl = qrMatch?.groupValues?.get(1)?.let { if(it.startsWith("http")) it else "https:$it" }
-            listOf(UIMessagePart.Text(buildJsonObject{
-                put("login_url","$DY/login")
-                put("qr_code_url",qrUrl ?: "请访问 $DY/login 扫码")
-                put("step1","请用户扫描二维码登录抖音网页版")
-                put("step2","登录后在浏览器中按F12→Application→Cookies→复制全部Cookie")
-                put("step3","用 douyin_set_cookie 工具设置Cookie")
-                put("cookie_hint","需要包含 sessionid 字段")
-            }.toString()))
+            val parts = mutableListOf<UIMessagePart>(
+                UIMessagePart.Text(buildJsonObject{
+                    put("action","请扫描下方二维码登录抖音")
+                    put("login_page","$DY/login")
+                    put("step1","打开手机抖音扫描二维码")
+                    put("step2","扫码确认后在浏览器按F12→Application→Cookies→复制douyin.com的全部Cookie")
+                    put("step3","用 douyin_set_cookie 设置Cookie即可")
+                }.toString())
+            )
+            // 如果能拿到二维码URL，直接展示图片
+            if (qrUrl != null) {
+                parts.add(UIMessagePart.Image(url = qrUrl))
+                parts.add(UIMessagePart.Text("""{"qr_code_url":"$qrUrl","show_to_user":"请扫描上方二维码"}"""))
+            }
+            parts
         },
     ))
 
