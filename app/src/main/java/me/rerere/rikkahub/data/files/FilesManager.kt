@@ -645,6 +645,7 @@ data class ZipExtractResult(
 
 object FileFolders {
     const val UPLOAD = "upload"
+    const val FONTS = "fonts"
     const val SKILLS = "skills"
 }
 
