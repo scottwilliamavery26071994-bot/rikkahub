@@ -92,7 +92,6 @@ fun ProviderConfigure(
             }
 
             is ProviderSetting.LocalModel -> {
-                ProviderConfigureOpenAI(provider, onEdit)
                 ProviderConfigureLocalModel(provider, onEdit)
             }
         }
@@ -121,6 +120,7 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
         ProviderSetting.OpenAI::class -> ProviderSetting.OpenAI().baseUrl
         ProviderSetting.Google::class -> ProviderSetting.Google().baseUrl
         ProviderSetting.Claude::class -> ProviderSetting.Claude().baseUrl
+        ProviderSetting.LocalModel::class -> ProviderSetting.LocalModel().baseUrl
         else -> error("Unsupported provider type: $type")
     }
     val convertedBaseUrl = sourceBaseUrl.convertToTargetBaseUrl(targetDefaultBaseUrl)
@@ -165,6 +165,19 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
             baseUrl = convertedBaseUrl
         )
 
+        ProviderSetting.LocalModel::class -> ProviderSetting.LocalModel(
+            id = this.id,
+            enabled = this.enabled,
+            name = this.name,
+            models = this.models,
+            balanceOption = this.balanceOption,
+            builtIn = this.builtIn,
+            description = this.description,
+            shortDescription = this.shortDescription,
+            apiKey = apiKey,
+            baseUrl = convertedBaseUrl
+        )
+
         else -> error("Unsupported provider type: $type")
     }
 }
@@ -176,6 +189,7 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
             is ProviderSetting.OpenAI -> if (defaultProvider is ProviderSetting.OpenAI) return defaultProvider.baseUrl
             is ProviderSetting.Google -> if (defaultProvider is ProviderSetting.Google) return defaultProvider.baseUrl
             is ProviderSetting.Claude -> if (defaultProvider is ProviderSetting.Claude) return defaultProvider.baseUrl
+            is ProviderSetting.LocalModel -> if (defaultProvider is ProviderSetting.LocalModel) return defaultProvider.baseUrl
         }
     }
 
@@ -183,6 +197,7 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
         is ProviderSetting.OpenAI -> ProviderSetting.OpenAI().baseUrl
         is ProviderSetting.Google -> ProviderSetting.Google().baseUrl
         is ProviderSetting.Claude -> ProviderSetting.Claude().baseUrl
+        is ProviderSetting.LocalModel -> ProviderSetting.LocalModel().baseUrl
     }
 }
 
@@ -192,6 +207,7 @@ internal fun ProviderSetting.resetBaseUrlToDefault(): ProviderSetting {
         is ProviderSetting.OpenAI -> this.copy(baseUrl = defaultBaseUrl)
         is ProviderSetting.Google -> this.copy(baseUrl = defaultBaseUrl)
         is ProviderSetting.Claude -> this.copy(baseUrl = defaultBaseUrl)
+        is ProviderSetting.LocalModel -> this.copy(baseUrl = defaultBaseUrl)
     }
 }
 
@@ -200,6 +216,7 @@ internal fun ProviderSetting.isUsingDefaultBaseUrl(): Boolean {
         is ProviderSetting.OpenAI -> this.baseUrl
         is ProviderSetting.Google -> this.baseUrl
         is ProviderSetting.Claude -> this.baseUrl
+        is ProviderSetting.LocalModel -> this.baseUrl
     }
     return baseUrl == defaultBaseUrlForReset()
 }
@@ -645,6 +662,22 @@ private fun ColumnScope.ProviderConfigureLocalModel(
     onEdit: (ProviderSetting.LocalModel) -> Unit
 ) {
     val toaster = LocalToaster.current
+
+    provider.description()
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text("启用", modifier = Modifier.weight(1f))
+        Checkbox(checked = provider.enabled, onCheckedChange = { onEdit(provider.copy(enabled = it)) })
+    }
+
+    OutlinedTextField(
+        value = provider.name, onValueChange = { onEdit(provider.copy(name = it.trim())) },
+        label = { Text("名称") }, modifier = Modifier.fillMaxWidth()
+    )
+
+    // 模型文件选择器
+    Text("本地模型文件", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
+
     val modelFileLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -657,12 +690,6 @@ private fun ColumnScope.ProviderConfigureLocalModel(
             toaster.show("选择失败: ${e.message}", type = ToastType.Error)
         }
     }
-
-    Text(
-        text = "本地模型文件",
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(top = 8.dp)
-    )
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -678,29 +705,35 @@ private fun ColumnScope.ProviderConfigureLocalModel(
             readOnly = true,
             placeholder = { Text("未选择") }
         )
-        OutlinedButton(
-            onClick = { modelFileLauncher.launch(arrayOf("*/*")) }
-        ) {
+        OutlinedButton(onClick = { modelFileLauncher.launch(arrayOf("*/*")) }) {
             Text("选择文件")
         }
     }
 
     if (provider.modelFilePath.isNotBlank()) {
         Text(
-            text = "已选择: ${provider.modelFilePath.substringAfterLast("/")}",
+            text = "已选: ${provider.modelFilePath.substringAfterLast("/")}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.primary
         )
     }
 
-    Text(
-        text = "原生推理引擎 (ONNX Runtime)",
-        style = MaterialTheme.typography.titleMedium,
-        modifier = Modifier.padding(top = 12.dp)
+    // 远程 API 地址（可选，当使用 Ollama 等远程服务时）
+    Text("远程推理服务 (可选)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
+
+    OutlinedTextField(
+        value = provider.baseUrl, onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
+        label = { Text("服务地址") }, placeholder = { Text("http://localhost:11434/v1") },
+        modifier = Modifier.fillMaxWidth(), singleLine = true
+    )
+
+    OutlinedTextField(
+        value = provider.apiKey, onValueChange = { onEdit(provider.copy(apiKey = it.trim())) },
+        label = { Text("API Key (可留空)") }, modifier = Modifier.fillMaxWidth(), maxLines = 1
     )
 
     Text(
-        text = "选择 .onnx 模型文件后，将使用 ONNX Runtime 在设备端直接运行。",
+        text = "提示：模型文件为空时将使用远程推理服务地址；填写了模型文件则使用 ONNX Runtime 本地推理。",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )

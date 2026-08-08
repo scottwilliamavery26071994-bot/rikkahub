@@ -250,11 +250,7 @@ sealed class ProviderSetting {
     }
 
     /**
-     * 本地模型提供商（兼容 OpenAI API 格式）
-     *
-     * 适用于：Ollama / llama.cpp server / vLLM / text-generation-webui 等本地推理服务。
-     * 默认地址 http://localhost:11434/v1 指向 Ollama 默认端口，
-     * 用户可修改 baseUrl 适配不同推理引擎。
+     * 本地模型提供商 — 设备端 ONNX 推理
      */
     @Serializable
     @SerialName("local_model")
@@ -267,22 +263,24 @@ sealed class ProviderSetting {
         @Transient override val builtIn: Boolean = false,
         @Transient override val description: @Composable (() -> Unit) = {},
         @Transient override val shortDescription: @Composable (() -> Unit) = {},
-        override var apiKey: String = "",
-        override var baseUrl: String = "http://localhost:11434/v1",
-        /** 本地模型文件路径（.gguf / .bin 等），选填 */
+        var apiKey: String = "",
+        var baseUrl: String = "http://localhost:11434/v1",
         var modelFilePath: String = "",
-    ) : OpenAI(
-        id = id,
-        enabled = enabled,
-        name = name,
-        models = models,
-        balanceOption = balanceOption,
-        builtIn = builtIn,
-        description = description,
-        shortDescription = shortDescription,
-        apiKey = apiKey,
-        baseUrl = baseUrl,
-    )
+    ) : ProviderSetting() {
+        override fun addModel(model: Model): ProviderSetting = copy(models = models + model)
+        override fun editModel(model: Model): ProviderSetting = copy(models = models.map { if (it.id == model.id) model.copy() else it })
+        override fun delModel(model: Model): ProviderSetting = copy(models = models.filter { it.id != model.id })
+        override fun moveMove(from: Int, to: Int): ProviderSetting = copy(models = models.toMutableList().apply { add(to, removeAt(from)) })
+        override fun copyProvider(
+            id: Uuid, enabled: Boolean, name: String, models: List<Model>,
+            balanceOption: BalanceOption, builtIn: Boolean,
+            description: @Composable (() -> Unit), shortDescription: @Composable (() -> Unit),
+        ): ProviderSetting = this.copy(
+            id = id, enabled = enabled, name = name, models = models,
+            balanceOption = balanceOption, builtIn = builtIn,
+            description = description, shortDescription = shortDescription
+        )
+    }
     
 
     companion object {

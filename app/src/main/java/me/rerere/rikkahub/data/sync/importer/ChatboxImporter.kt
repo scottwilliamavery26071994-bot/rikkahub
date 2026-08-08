@@ -400,6 +400,7 @@ object ChatboxImporter {
         is ProviderSetting.OpenAI -> "openai"
         is ProviderSetting.Google -> "gemini"
         is ProviderSetting.Claude -> "claude"
+        is ProviderSetting.LocalModel -> "local_model"
     }
 
     private fun millisToLocalDateTime(timestamp: Long?) =
