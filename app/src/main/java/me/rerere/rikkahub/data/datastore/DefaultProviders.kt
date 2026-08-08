@@ -296,12 +296,12 @@ val DEFAULT_PROVIDERS = listOf(
     ProviderSetting.LocalModel(
         id = Uuid.parse("c8e1f2a3-4b5c-6d7e-8f90-1a2b3c4d5e6f"),
         name = "本地模型",
-        baseUrl = "http://localhost:11434/v1",
-        apiKey = "not-needed",
+        baseUrl = "",
+        apiKey = "",
         enabled = true,
         builtIn = true,
         description = {
-            Text("运行在设备本地的 LLM 推理服务（Ollama / llama.cpp / vLLM）")
+            Text("运行在设备本地的 ONNX 推理引擎")
         },
         shortDescription = {
             Text("本地模型 · 无需联网")
