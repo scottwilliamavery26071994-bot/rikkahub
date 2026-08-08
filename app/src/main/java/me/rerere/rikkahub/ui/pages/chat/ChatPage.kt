@@ -441,7 +441,7 @@ private fun ChatPageContent(
                 errors = errors,
                 onDismissError = onDismissError,
                 onClearAllErrors = onClearAllErrors,
-                onPublishMessage = { msg -> vm.publishGroupMessage(msg.id) },
+                onPublishMessage = { msg -> vm.publishGroupMessage(msg.id { {) },
                 onRegenerate = { },
                 onEdit = { },
                 onForkMessage = { },
