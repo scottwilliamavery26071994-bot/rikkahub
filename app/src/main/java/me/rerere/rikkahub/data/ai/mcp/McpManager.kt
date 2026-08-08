@@ -223,6 +223,7 @@ class McpManager(
                 model?.findProvider(settings.providers)?.apiKey
             },
         )
+        list += me.rerere.rikkahub.data.ai.tools.buildContext7McpTools()
         return list
     }
 
@@ -301,6 +302,12 @@ class McpManager(
                 name = "Firecrawl MCP 🔥",
                 description = "内置网页抓取/搜索/爬取/站点地图/AI提取（Firecrawl API，自动复用模型Key）",
                 toolCount = 5,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-context7",
+                name = "Context7 文档 MCP 📚",
+                description = "内置最新库文档查询：解析库名/获取文档（React/Vue/Kotlin/Next.js等，数据来自Context7）",
+                toolCount = 2,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
