@@ -1,107 +1,103 @@
-﻿/*
- * 灵犀 Lingxi
- * 衍生自 Lingxi (https://github.com/scottwilliamavery26071994-bot/rikkahub)，原作者 RE
- * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
- */
-
 package me.rerere.rikkahub.ui.pages.chat
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.Arrangement
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.PermanentNavigationDrawer
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.adaptive.currentWindowDpSize
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import com.dokar.sonner.ToastType
+import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import java.util.Locale
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import me.rerere.ai.provider.Model
 import me.rerere.ai.ui.UIMessagePart
+import me.rerere.common.android.appTempFolder
 import me.rerere.hugeicons.HugeIcons
 import me.rerere.hugeicons.stroke.Cancel01
-import me.rerere.hugeicons.stroke.ChartColumn
-import me.rerere.hugeicons.stroke.MessageMultiple01
 import me.rerere.hugeicons.stroke.LeftToRightListBullet
 import me.rerere.hugeicons.stroke.Menu03
 import me.rerere.hugeicons.stroke.MessageAdd01
-import me.rerere.hugeicons.stroke.Voice
 import me.rerere.rikkahub.R
-import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.Settings
-import me.rerere.rikkahub.data.datastore.findModelById
 import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.datastore.getCurrentAssistant
 import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.files.FilesManager
+import me.rerere.rikkahub.data.model.Assistant
 import me.rerere.rikkahub.data.model.Conversation
+import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.service.ChatError
-import me.rerere.rikkahub.service.VoiceCallService
 import me.rerere.rikkahub.ui.components.ai.ChatInput
+import me.rerere.rikkahub.ui.components.ai.FilesPicker
+import me.rerere.rikkahub.ui.components.ai.completion.WorkspaceCompletionProvider
+import me.rerere.rikkahub.ui.components.ai.useCropLauncher
+import me.rerere.rikkahub.ui.components.ui.permission.PermissionCamera
+import me.rerere.rikkahub.ui.components.ui.permission.PermissionManager
+import me.rerere.rikkahub.ui.components.ui.permission.rememberPermissionState
 import me.rerere.rikkahub.ui.context.LocalNavController
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.context.Navigator
 import me.rerere.rikkahub.ui.hooks.ChatInputState
 import me.rerere.rikkahub.ui.hooks.EditStateContent
 import me.rerere.rikkahub.ui.hooks.useEditState
+import me.rerere.rikkahub.utils.ImageUtils
 import me.rerere.rikkahub.utils.base64Decode
+import me.rerere.rikkahub.utils.isAllowedFileType
 import me.rerere.rikkahub.utils.navigateToChatPage
 import org.koin.androidx.compose.koinViewModel
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
+import java.io.File
 import kotlin.uuid.Uuid
 
 @Composable
-fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null, autoStartVoice: Boolean = false) {
+fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null) {
     val vm: ChatVM = koinViewModel(
         parameters = {
             parametersOf(id.toString())
@@ -139,6 +135,14 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null, au
     val windowAdaptiveInfo = currentWindowDpSize()
     val isBigScreen =
         windowAdaptiveInfo.width > windowAdaptiveInfo.height && windowAdaptiveInfo.width >= 1100.dp
+
+    // 进入大屏（永久抽屉）模式时重置抽屉状态为关闭，
+    // 避免从横屏旋转回竖屏后，模态抽屉残留为打开状态且无法关闭（#1304）
+    LaunchedEffect(isBigScreen) {
+        if (isBigScreen && drawerState.isOpen) {
+            drawerState.close()
+        }
+    }
 
     val inputState = vm.inputState
 
@@ -210,7 +214,6 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null, au
                     enableWebSearch = enableWebSearch,
                     currentChatModel = currentChatModel,
                     bigScreen = true,
-                    autoStartVoice = autoStartVoice,
                     errors = errors,
                     onDismissError = { vm.dismissError(it) },
                     onClearAllErrors = { vm.clearAllErrors() },
@@ -243,7 +246,6 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null, au
                     enableWebSearch = enableWebSearch,
                     currentChatModel = currentChatModel,
                     bigScreen = false,
-                    autoStartVoice = autoStartVoice,
                     errors = errors,
                     onDismissError = { vm.dismissError(it) },
                     onClearAllErrors = { vm.clearAllErrors() },
@@ -254,7 +256,6 @@ fun ChatPage(id: Uuid, text: String?, files: List<Uri>, nodeId: Uuid? = null, au
             }
         }
     }
-
 }
 
 @Composable
@@ -271,17 +272,29 @@ private fun ChatPageContent(
     chatListState: LazyListState,
     enableWebSearch: Boolean,
     currentChatModel: Model?,
-    autoStartVoice: Boolean = false,
     errors: List<ChatError>,
     onDismissError: (Uuid) -> Unit,
     onClearAllErrors: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
+    val workspaceRepository: WorkspaceRepository = koinInject()
     var previewMode by rememberSaveable { mutableStateOf(false) }
-    var showGroupChatDialog by remember { mutableStateOf(false) }
-    var showTokenStats by remember { mutableStateOf(false) }
     val hazeState = rememberHazeState()
+    val assistant = setting.getCurrentAssistant()
+    var showFilesSheet by remember { mutableStateOf(false) }
+
+    val completionProviders = remember(assistant.workspaceId, conversation.workspaceCwd, workspaceRepository) {
+        assistant.workspaceId?.let { workspaceId ->
+            listOf(
+                WorkspaceCompletionProvider(
+                    workspaceId = workspaceId.toString(),
+                    repository = workspaceRepository,
+                    currentCwd = conversation.workspaceCwd,
+                )
+            )
+        }.orEmpty()
+    }
 
     TTSAutoPlay(vm = vm, setting = setting, conversation = conversation)
 
@@ -289,7 +302,7 @@ private fun ChatPageContent(
         color = MaterialTheme.colorScheme.background,
         modifier = Modifier.fillMaxSize()
     ) {
-        AssistantBackground(setting = setting)
+        AssistantBackground(setting = setting, modifier = Modifier.hazeSource(hazeState))
         Scaffold(
             topBar = {
                 TopBar(
@@ -306,27 +319,7 @@ private fun ChatPageContent(
                     },
                     onUpdateTitle = {
                         vm.updateTitle(it)
-                    },
-                    onVoiceCall = {
-                        val activeId = VoiceCallService.activeConversationId.value
-                        when {
-                            activeId == null -> navController.navigate(
-                                Screen.VoiceCall(conversation.id.toString())
-                            )
-                            activeId == conversation.id.toString() -> navController.navigate(
-                                Screen.VoiceCall(conversation.id.toString())
-                            )
-                            else -> {
-                                toaster.show("当前有通话进行中，请先挂断", type = ToastType.Warning)
-                            }
-                        }
-                    },
-                    onGroupChat = {
-                        showGroupChatDialog = true
-                    },
-                    onTokenStats = {
-                        showTokenStats = true
-                    },
+                    }
                 )
             },
             bottomBar = {
@@ -334,16 +327,25 @@ private fun ChatPageContent(
                     state = inputState,
                     loading = loadingJob != null,
                     settings = setting,
-                    conversation = conversation,
-                    mcpManager = vm.mcpManager,
                     hazeState = hazeState,
-                    autoStartVoice = autoStartVoice,
+                    completionProviders = completionProviders,
                     onCancelClick = {
                         vm.stopGeneration()
                     },
                     enableSearch = enableWebSearch,
                     onToggleSearch = {
-                        vm.updateSettings(setting.copy(enableWebSearch = !enableWebSearch))
+                        val current = setting.getCurrentAssistant()
+                        vm.updateSettings(
+                            setting.copy(
+                                assistants = setting.assistants.map { assistant ->
+                                    if (assistant.id == current.id) {
+                                        assistant.copy(enableWebSearch = !enableWebSearch)
+                                    } else {
+                                        assistant
+                                    }
+                                }
+                            )
+                        )
                     },
                     onSendClick = {
                         if (currentChatModel == null) {
@@ -362,27 +364,6 @@ private fun ChatPageContent(
                             }
                         }
                         inputState.clearInput()
-                    },
-                    onVoiceMessage = { url, duration, transcript ->
-                        if (currentChatModel == null) {
-                            toaster.show("请先选择模型", type = ToastType.Error)
-                            return@ChatInput
-                        }
-                        vm.handleMessageSend(
-                            listOf(
-                                UIMessagePart.VoiceMessage(
-                                    url = url,
-                                    duration = duration,
-                                    transcript = transcript,
-                                )
-                            )
-                        )
-                        scope.launch {
-                            // 延迟滚动：等语音消息真正加入会话后再触底，
-                            // 避免键盘收起/消息未入库时滚动位置失效（#967）
-                            delay(300)
-                            chatListState.requestScrollToItem(Int.MAX_VALUE)
-                        }
                     },
                     onLongSendClick = {
                         if (inputState.isEditing()) {
@@ -421,8 +402,8 @@ private fun ChatPageContent(
                             )
                         )
                     },
-                    onCompressContext = { additionalPrompt, targetTokens, keepRecentMessages ->
-                        vm.handleCompressContext(additionalPrompt, targetTokens, keepRecentMessages)
+                    onMoreClick = {
+                        showFilesSheet = true
                     },
                 )
             },
@@ -440,8 +421,9 @@ private fun ChatPageContent(
                 errors = errors,
                 onDismissError = onDismissError,
                 onClearAllErrors = onClearAllErrors,
-                onPublishMessage = { msg -> vm.publishGroupMessage(msg.id) },
-                onRegenerate = { vm.regenerateAtMessage(it) },
+                onRegenerate = {
+                    vm.regenerateAtMessage(it)
+                },
                 onEdit = {
                     inputState.editingMessage = it.id
                     inputState.setContents(it.parts)
@@ -459,32 +441,6 @@ private fun ChatPageContent(
                         vm.deleteMessage(it)
                     }
                 },
-                onCompressContext = { additionalPrompt, targetTokens, keepRecentMessages ->
-                    vm.handleCompressContext(additionalPrompt, targetTokens, keepRecentMessages)
-                },
-                onTranslate = { message, locale: String ->
-                    vm.translateMessage(message, Locale.forLanguageTag(locale))
-                },
-                onClearTranslation = { message ->
-                    vm.clearTranslationField(message.id)
-                },
-                onToolApproval = { toolCallId, approved: Boolean, reason: String ->
-                    vm.handleToolApproval(toolCallId, approved, reason)
-                },
-                onToolAnswer = { toolCallId, answer: String ->
-                    vm.handleToolAnswer(toolCallId, answer)
-                },
-                onToggleFavorite = { node ->
-                    vm.toggleMessageFavorite(node)
-                },
-                onConversationSystemPromptChange = { newPrompt ->
-                    vm.updateConversation(conversation.copy(customSystemPrompt = newPrompt))
-                    vm.saveConversationAsync()
-                },
-                onClickSuggestion = { suggestion ->
-                    inputState.editingMessage = null
-                    inputState.setMessageText(suggestion)
-                },
                 onUpdateMessage = { newNode ->
                     vm.updateConversation(
                         conversation.copy(
@@ -498,42 +454,253 @@ private fun ChatPageContent(
                         ))
                     vm.saveConversationAsync()
                 },
-                animatedVisibilityScope = Unit,
-                onSuggestion = { },
-                onNewPrompt = { },
+                onClickSuggestion = { suggestion ->
+                    inputState.editingMessage = null
+                    inputState.setMessageText(suggestion)
+                },
+                onTranslate = { message, locale ->
+                    vm.translateMessage(message, locale)
+                },
+                onClearTranslation = { message ->
+                    vm.clearTranslationField(message.id)
+                },
                 onJumpToMessage = { index ->
                     previewMode = false
                     scope.launch {
-                        chatListState.animateScrollToItem(index)
+                        chatListState.requestScrollToItem(index)
                     }
                 },
+                onToolApproval = { toolCallId, approved, reason ->
+                    vm.handleToolApproval(toolCallId, approved, reason)
+                },
+                onToolAnswer = { toolCallId, answer ->
+                    vm.handleToolAnswer(toolCallId, answer)
+                },
+                onToggleFavorite = { node ->
+                    vm.toggleMessageFavorite(node)
+                },
+                onConversationSystemPromptChange = { newPrompt ->
+                    vm.updateConversation(conversation.copy(customSystemPrompt = newPrompt))
+                    vm.saveConversationAsync()
+                },
             )
+        }
 
-            // Token 统计弹窗（#43）
-            if (showTokenStats) {
-                TokenStatsDialog(
-                    conversation = conversation,
-                    onDismiss = { showTokenStats = false }
-                )
+        if (showFilesSheet) {
+            ChatFilesPickerSheet(
+                inputState = inputState,
+                setting = setting,
+                conversation = conversation,
+                assistant = assistant,
+                vm = vm,
+                onDismiss = { showFilesSheet = false },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ChatFilesPickerSheet(
+    inputState: ChatInputState,
+    setting: Settings,
+    conversation: Conversation,
+    assistant: Assistant,
+    vm: ChatVM,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val toaster = LocalToaster.current
+    val filesManager: FilesManager = koinInject()
+    var showInjectionSheet by remember { mutableStateOf(false) }
+    var showCompressDialog by remember { mutableStateOf(false) }
+
+    fun dismissAll() {
+        showInjectionSheet = false
+        showCompressDialog = false
+        onDismiss()
+    }
+
+    val cameraPermission = rememberPermissionState(PermissionCamera)
+    PermissionManager(permissionState = cameraPermission)
+
+    var cameraOutputUri by remember { mutableStateOf<Uri?>(null) }
+    var cameraOutputFile by remember { mutableStateOf<File?>(null) }
+    val (_, launchCameraCrop) = useCropLauncher(
+        onCroppedImageReady = { croppedUri ->
+            inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedUri)))
+            dismissAll()
+        },
+        onCleanup = {
+            cameraOutputFile?.delete()
+            cameraOutputFile = null
+            cameraOutputUri = null
+        }
+    )
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captureSuccessful ->
+        if (captureSuccessful && cameraOutputUri != null) {
+            if (setting.displaySetting.skipCropImage) {
+                inputState.addImages(filesManager.createChatFilesByContents(listOf(cameraOutputUri!!)))
+                cameraOutputFile?.delete()
+                cameraOutputFile = null
+                cameraOutputUri = null
+                dismissAll()
+            } else {
+                launchCameraCrop(cameraOutputUri!!)
             }
+        } else {
+            cameraOutputFile?.delete()
+            cameraOutputFile = null
+            cameraOutputUri = null
+        }
+    }
+    val onLaunchCamera: () -> Unit = {
+        if (cameraPermission.allRequiredPermissionsGranted) {
+            cameraOutputFile = context.cacheDir.resolve("camera_${Uuid.random()}.jpg")
+            cameraOutputUri = FileProvider.getUriForFile(
+                context, "${context.packageName}.fileprovider", cameraOutputFile!!
+            )
+            cameraLauncher.launch(cameraOutputUri!!)
+        } else {
+            cameraPermission.requestPermissions()
+        }
+    }
 
-            // 群聊成员选择弹窗
-            if (showGroupChatDialog) {
-                GroupChatMemberDialog(
-                    settings = setting,
-                    currentAssistantIds = conversation.assistantIds.ifEmpty { listOf(conversation.assistantId) },
-                    onDismiss = { showGroupChatDialog = false },
-                    onConfirm = { ids ->
-                        vm.updateConversationAssistantIds(ids)
-                        showGroupChatDialog = false
-                        toaster.show(
-                            if (ids.size > 1) "群聊模式已开启（${ids.size} 个 AI）" else "已切换为单聊",
-                            type = ToastType.Success
-                        )
+    var preCropTempFile by remember { mutableStateOf<File?>(null) }
+    val (_, launchImageCrop) = useCropLauncher(
+        onCroppedImageReady = { croppedUri ->
+            inputState.addImages(filesManager.createChatFilesByContents(listOf(croppedUri)))
+            dismissAll()
+        },
+        onCleanup = {
+            preCropTempFile?.delete()
+            preCropTempFile = null
+        }
+    )
+    val imagePickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { selectedUris ->
+            if (selectedUris.isNotEmpty()) {
+                Log.d("ImagePickButton", "Selected URIs: $selectedUris")
+                if (setting.displaySetting.skipCropImage) {
+                    inputState.addImages(filesManager.createChatFilesByContents(selectedUris))
+                    dismissAll()
+                } else if (selectedUris.size == 1) {
+                    val tempFile = File(context.appTempFolder, "pick_temp_${System.currentTimeMillis()}.jpg")
+                    runCatching {
+                        val source = selectedUris.first()
+                        // HEIF/HEIC（尤其 HDR HEIF）交给 UCrop 前先解码转为 JPEG，规避裁剪解码失败
+                        val converted = ImageUtils.isHeifImage(context, source) &&
+                            ImageUtils.convertHeifToJpeg(context, source, tempFile)
+                        if (!converted) {
+                            context.contentResolver.openInputStream(source)?.use { input ->
+                                tempFile.outputStream().use { output -> input.copyTo(output) }
+                            }
+                        }
+                        preCropTempFile = tempFile
+                        launchImageCrop(tempFile.toUri())
+                    }.onFailure {
+                        Log.e("ImagePickButton", "Failed to copy image to temp, falling back", it)
+                        launchImageCrop(selectedUris.first())
                     }
-                )
+                } else {
+                    inputState.addImages(filesManager.createChatFilesByContents(selectedUris))
+                    dismissAll()
+                }
+            } else {
+                Log.d("ImagePickButton", "No images selected")
             }
         }
+
+    val videoPickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { selectedUris ->
+            if (selectedUris.isNotEmpty()) {
+                inputState.addVideos(filesManager.createChatFilesByContents(selectedUris))
+                dismissAll()
+            }
+        }
+
+    val audioPickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.GetMultipleContents()) { selectedUris ->
+            if (selectedUris.isNotEmpty()) {
+                inputState.addAudios(filesManager.createChatFilesByContents(selectedUris))
+                dismissAll()
+            }
+        }
+
+    val filePickerLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+            if (uris.isNotEmpty()) {
+                val documents = uris.mapNotNull { uri ->
+                    val fileName = filesManager.getFileNameFromUri(uri) ?: "file"
+                    val mime = filesManager.getFileMimeType(uri) ?: "text/plain"
+                    if (isAllowedFileType(fileName, mime)) {
+                        val localUri = filesManager.createChatFilesByContents(listOf(uri)).firstOrNull()
+                            ?: run {
+                                toaster.show(
+                                    context.getString(R.string.chat_input_file_read_failed, fileName),
+                                    type = ToastType.Error
+                                )
+                                return@mapNotNull null
+                            }
+                        UIMessagePart.Document(url = localUri.toString(), fileName = fileName, mime = mime)
+                    } else {
+                        toaster.show(
+                            context.getString(R.string.chat_input_unsupported_file_type, fileName),
+                            type = ToastType.Error
+                        )
+                        null
+                    }
+                }
+                if (documents.isNotEmpty()) {
+                    inputState.addFiles(documents)
+                    dismissAll()
+                }
+            }
+        }
+
+    val filesSheetState = rememberBottomSheetState(
+        initialValue = SheetValue.Hidden,
+        enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded)
+    )
+    ModalBottomSheet(
+        sheetState = filesSheetState,
+        onDismissRequest = { dismissAll() },
+    ) {
+        FilesPicker(
+            conversation = conversation,
+            state = inputState,
+            assistant = assistant,
+            mcpManager = vm.mcpManager,
+            onCompressContext = { additionalPrompt, targetTokens, keepRecentMessages ->
+                vm.handleCompressContext(additionalPrompt, targetTokens, keepRecentMessages)
+            },
+            onUpdateAssistant = {
+                vm.updateSettings(
+                    setting.copy(
+                        assistants = setting.assistants.map { assistant ->
+                            if (assistant.id == it.id) {
+                                it
+                            } else {
+                                assistant
+                            }
+                        }
+                    )
+                )
+            },
+            onUpdateConversation = {
+                vm.updateConversation(it)
+                vm.saveConversationAsync()
+            },
+            showInjectionSheet = showInjectionSheet,
+            onShowInjectionSheetChange = { showInjectionSheet = it },
+            showCompressDialog = showCompressDialog,
+            onShowCompressDialogChange = { showCompressDialog = it },
+            onDismiss = { dismissAll() },
+            onTakePic = onLaunchCamera,
+            onPickImage = { imagePickerLauncher.launch("image/*") },
+            onPickVideo = { videoPickerLauncher.launch("video/*") },
+            onPickAudio = { audioPickerLauncher.launch("audio/*") },
+            onPickFile = { filePickerLauncher.launch(arrayOf("*/*")) },
+        )
     }
 }
 
@@ -546,10 +713,7 @@ private fun TopBar(
     previewMode: Boolean,
     onClickMenu: () -> Unit,
     onNewChat: () -> Unit,
-    onUpdateTitle: (String) -> Unit,
-    onVoiceCall: () -> Unit,
-    onGroupChat: () -> Unit,
-    onTokenStats: () -> Unit,
+    onUpdateTitle: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val toaster = LocalToaster.current
@@ -609,30 +773,6 @@ private fun TopBar(
         actions = {
             IconButton(
                 onClick = {
-                    onVoiceCall()
-                }
-            ) {
-                Icon(HugeIcons.Voice, "Voice Call")
-            }
-
-            IconButton(
-                onClick = {
-                    onGroupChat()
-                }
-            ) {
-                Icon(HugeIcons.MessageMultiple01, "Group Chat")
-            }
-
-            IconButton(
-                onClick = {
-                    onTokenStats()
-                }
-            ) {
-                Icon(HugeIcons.ChartColumn, "Token Stats")
-            }
-
-            IconButton(
-                onClick = {
                     onClickMenu()
                 }
             ) {
@@ -684,143 +824,4 @@ private fun TopBar(
             }
         )
     }
-}
-/**
- * 群聊成员选择弹窗：勾选多个 AI 进入群聊模式。
- */
-@Composable
-private fun GroupChatMemberDialog(
-    settings: Settings,
-    currentAssistantIds: List<Uuid>,
-    onDismiss: () -> Unit,
-    onConfirm: (List<Uuid>) -> Unit,
-) {
-    val assistants = settings.assistants
-    val selected = remember(currentAssistantIds) {
-        mutableStateListOf<Uuid>().apply {
-            addAll(assistants.filter { it.id in currentAssistantIds }.map { it.id })
-        }
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("群聊成员") },
-        text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    "勾选多个 AI 后，发送的问题所有成员可见；每个 AI 的回复默认私有，可通过公开操作让全体可见。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(Modifier.height(8.dp))
-                if (assistants.isEmpty()) {
-                    Text("暂无可用助手，请先在设置中创建助手")
-                }
-                assistants.forEach { assistant ->
-                    val model = settings.findModelById(assistant.chatModelId ?: settings.chatModelId)
-                    val label = assistant.name.ifBlank { "未命名助手" } +
-                        (model?.displayName?.let { "（$it）" } ?: "")
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                if (assistant.id in selected) {
-                                    selected.remove(assistant.id)
-                                } else {
-                                    selected.add(assistant.id)
-                                }
-                            }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = assistant.id in selected,
-                            onCheckedChange = { checked ->
-                                if (checked) {
-                                    if (assistant.id !in selected) selected.add(assistant.id)
-                                } else {
-                                    selected.remove(assistant.id)
-                                }
-                            }
-                        )
-                        Text(label, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                enabled = selected.isNotEmpty(),
-                onClick = {
-                    onConfirm(selected.toList())
-                }
-            ) {
-                Text(if (selected.size > 1) "开启群聊" else "确定")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
-        }
-    )
-}
-
-/**
- * Token 统计弹窗（#43）：聚合当前对话的 token 消耗并显示条形图。
- */
-@Composable
-private fun TokenStatsDialog(
-    conversation: Conversation,
-    onDismiss: () -> Unit,
-) {
-    val usages = remember(conversation.messageNodes) {
-        conversation.currentMessages.mapNotNull { it.usage }.takeIf { it.isNotEmpty() } ?: emptyList()
-    }
-    val totalPrompt = usages.sumOf { it.promptTokens.toLong() }
-    val totalCompletion = usages.sumOf { it.completionTokens.toLong() }
-    val totalCached = usages.sumOf { it.cachedTokens.toLong() }
-    val totalAll = totalPrompt + totalCompletion
-    val barColor = MaterialTheme.colorScheme.primary
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Token 统计") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("本对话 Token 消耗", style = MaterialTheme.typography.bodyMedium)
-                Text("输入: $totalPrompt  tokens")
-                Text("输出: $totalCompletion  tokens")
-                if (totalCached > 0) Text("缓存: $totalCached  tokens")
-                Text("合计: $totalAll  tokens")
-
-                Spacer(Modifier.height(8.dp))
-                Text("各轮次输出 Token", style = MaterialTheme.typography.labelMedium)
-                Canvas(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp)
-                ) {
-                    if (usages.isNotEmpty()) {
-                        val max = usages.maxOf { it.completionTokens.toFloat().coerceAtLeast(1f) }
-                        val barWidth = size.width / usages.size
-                        usages.forEachIndexed { index, usage ->
-                            val barHeight = size.height * (usage.completionTokens / max)
-                            drawRect(
-                                color = barColor,
-                                topLeft = Offset(index * barWidth, size.height - barHeight),
-                                size = Size(barWidth * 0.7f, barHeight)
-                            )
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("关闭") }
-        }
-    )
 }
