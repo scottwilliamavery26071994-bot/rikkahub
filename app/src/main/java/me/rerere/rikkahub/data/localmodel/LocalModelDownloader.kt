@@ -50,6 +50,14 @@ val AVAILABLE_MODELS = listOf(
         downloadUrl = "https://huggingface.co/microsoft/Phi-3.5-mini-instruct-onnx/resolve/main/cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4/phi3.5-mini-instruct-cpu-int4-rtn-block-32-acc-level-4.onnx",
         filename = "phi3.5-mini-q4.onnx",
     ),
+    AvailableModel(
+        id = "deepseek-r1-1.5b",
+        name = "DeepSeek R1 (1.5B)",
+        description = "蒸馏版推理模型，逻辑能力强",
+        size = "~900MB",
+        downloadUrl = "https://huggingface.co/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B/resolve/main/onnx/model.onnx",
+        filename = "deepseek-r1-1.5b.onnx",
+    ),
 )
 
 class LocalModelDownloader(
