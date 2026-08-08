@@ -58,6 +58,7 @@ import me.rerere.rikkahub.data.datastore.getCurrentChatModel
 import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.saveUploadFromBytes
+import me.rerere.rikkahub.data.repository.WorkspaceRepository
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.checkDifferent
 import okhttp3.OkHttpClient
@@ -85,6 +86,7 @@ class McpManager(
     private val appScope: AppScope,
     private val filesManager: FilesManager,
     private val appEventBus: AppEventBus,
+    private val workspaceRepository: WorkspaceRepository,
 ) {
     private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
@@ -188,7 +190,7 @@ class McpManager(
             getToken = { settings.githubToken },
             enabled = { settings.githubMcpEnabled },
         )
-        list += me.rerere.rikkahub.data.ai.tools.buildShannonPentestTools()
+        list += me.rerere.rikkahub.data.ai.tools.buildShannonPentestTools(workspaceRepository)
         return list
     }
 
@@ -205,7 +207,7 @@ class McpManager(
             getToken = { settings.githubToken },
             enabled = { settings.githubMcpEnabled },
         )
-        val shannonTools = me.rerere.rikkahub.data.ai.tools.buildShannonPentestTools()
+        val shannonTools = me.rerere.rikkahub.data.ai.tools.buildShannonPentestTools(workspaceRepository)
         val githubToolCount = builtinTools.count { it.name.startsWith("github_") }
         val fetchToolCount = builtinTools.count { it.name.startsWith("fetch_") }
         val imagesToolCount = builtinTools.count { it.name.startsWith("image_") }
