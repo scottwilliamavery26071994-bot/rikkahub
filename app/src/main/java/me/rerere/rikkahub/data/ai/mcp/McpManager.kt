@@ -216,6 +216,7 @@ class McpManager(
         list += me.rerere.rikkahub.data.ai.tools.buildTicket12306McpTools()
         list += me.rerere.rikkahub.data.ai.tools.buildApkReverseMcpTools(workspaceRepository)
         list += me.rerere.rikkahub.data.ai.tools.buildHttpExecuteMcpTools()
+        list += me.rerere.rikkahub.data.ai.tools.buildExecutionMcpTools()
         return list
     }
 
@@ -288,6 +289,12 @@ class McpManager(
                 name = "HTTP 请求 MCP 🌐",
                 description = "内置通用HTTP请求工具：支持GET/POST/PUT/DELETE/PATCH + 自定义Header/Body",
                 toolCount = 1,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-execution",
+                name = "被执行信息查询 ⚖️",
+                description = "内置失信被执行人/限制消费令/被执行人信息查询（中国执行信息公开网）",
+                toolCount = 3,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
