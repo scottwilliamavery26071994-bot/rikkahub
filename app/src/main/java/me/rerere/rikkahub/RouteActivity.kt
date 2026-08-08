@@ -1115,7 +1115,6 @@ sealed interface Screen : NavKey {
     @Serializable
     data object SettingSecurity : Screen
     @Serializable
-    @Serializable
     data object SettingWeixinBot : Screen
 
     @Serializable
