@@ -478,9 +478,9 @@ private fun AddButton(onAdd: (ProviderSetting) -> Unit) {
             },
             text = {
                 dialogState.currentState?.let {
-                    ProviderConfigure(it) { newState ->
+                    ProviderConfigure(it, onEdit = { newState ->
                         dialogState.currentState = newState
-                    }
+                    })
                 }
             },
             confirmButton = {
