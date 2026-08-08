@@ -168,12 +168,44 @@ fun buildTicket12306McpTools(): List<Tool> = buildList {
             val train=o["train_no"]?.jsonPrimitive?.contentOrNull?:error("train_no")
             val date=o["date"]?.jsonPrimitive?.contentOrNull?:error("date")
             call12306("/otn/leftTicket/init", mapOf())
-            // 搜索车次获取train_no
-            val sResp=call12306("https://search.12306.cn/search/v1/train/search", mapOf("keyword" to train,"date" to date.replace("-","")))
-            val trainNo=Regex(""""train_no"\s*:\s*"([^"]+)"""").find(sResp)?.groupValues?.get(1)
-            if(trainNo==null) return@Tool listOf(UIMessagePart.Text("未找到车次 $train"))
-            val params=mapOf("leftTicketDTO.train_no" to trainNo,"leftTicketDTO.train_date" to date,"rand_code" to "")
-            listOf(UIMessagePart.Text(call12306("/otn/queryTrainInfo/query", params).take(5000)))
+
+    add(Tool(name="ticket_station_trains",
+        description="查询经过某站的所有车次（跨站查询）。Params: station(站名), date(日期yyyy-MM-dd可选)。返回该站所有出发/到达/经过的车次。",
+        needsApproval=false,
+        parameters={ InputSchema.Obj(properties=buildJsonObject{
+            put("station",buildJsonObject{put("type","string");put("description","站名如'济南西'")})
+            put("date",buildJsonObject{put("type","string");put("description","日期 yyyy-MM-dd（可选）")})
+        },required=listOf("station")) },
+        execute={ args ->
+            initStations()
+            val st=args.jsonObject["station"]?.jsonPrimitive?.contentOrNull?:error("station")
+            val date=args.jsonObject["date"]?.jsonPrimitive?.contentOrNull?:""
+            val code=resolveCode(st)
+            val s=tStations?:return@Tool listOf(UIMessagePart.Text("""{"error":"车站数据未加载"}"""))
+            val name=s[code]?.first?:st
+            call12306("/otn/leftTicket/init", mapOf())
+            // 查询经过该站的车次
+            val params= mutableMapOf("train_station_code" to code)
+            if(date.isNotBlank()) params["train_start_date"]=date
+            val resp=call12306("/otn/czxx/query", params)
+            var text=resp.take(5000)
+            try {
+                val json=Json.parseToJsonElement(resp).jsonObject
+                val data=json["data"]?.jsonObject?.get("data")?.jsonArray
+                if(data!=null&&data.isNotEmpty()){
+                    text="【${name}】站出发/经过车次：\n车次|始发→终到|出发时间|到达时间\n"
+                    data.take(30).forEach{ item->
+                        val obj=item.jsonObject
+                        val tc=obj["station_train_code"]?.jsonPrimitive?.content?:""
+                        val ss=obj["start_station_name"]?.jsonPrimitive?.content?:""
+                        val es=obj["end_station_name"]?.jsonPrimitive?.content?:""
+                        val stt=obj["start_time"]?.jsonPrimitive?.content?:""
+                        val arr=obj["arrive_time"]?.jsonPrimitive?.content?:""
+                        text+="$tc|$ss→$es|$stt|$arr\n"
+                    }
+                }
+            } catch(_:Exception){}
+            listOf(UIMessagePart.Text(text))
         },
     ))
 }
