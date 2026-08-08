@@ -1,9 +1,3 @@
-﻿/*
- * 灵犀 Lingxi
- * 衍生自 Lingxi (https://github.com/scottwilliamavery26071994-bot/rikkahub)，原作者 RE
- * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
- */
-
 package me.rerere.rikkahub.ui.pages.setting
 
 import androidx.compose.foundation.layout.Arrangement
@@ -102,7 +96,7 @@ private fun DonateMethodsCardGroup() {
         title = { Text(stringResource(R.string.donate_page_donation_methods)) },
     ) {
         item(
-            onClick = { context.openUrl("https://github.com/sue1231513/lingxi") },
+            onClick = { context.openUrl("https://ko-fi.com/reovodev") },
             leadingContent = {
                 AsyncImage(
                     model = R.drawable.kofi,
@@ -111,10 +105,10 @@ private fun DonateMethodsCardGroup() {
                 )
             },
             supportingContent = { Text(stringResource(R.string.donate_page_kofi_desc)) },
-            headlineContent = { Text("GitHub") },
+            headlineContent = { Text("Kofi") },
         )
         item(
-            onClick = { context.openUrl("https://github.com/sue1231513/lingxi") },
+            onClick = { context.openUrl("https://afdian.com/a/reovo") },
             leadingContent = {
                 Icon(
                     painter = painterResource(R.drawable.afdian),
@@ -122,7 +116,7 @@ private fun DonateMethodsCardGroup() {
                 )
             },
             supportingContent = { Text(stringResource(R.string.donate_page_afdian_desc)) },
-            headlineContent = { Text("项目主页") },
+            headlineContent = { Text("爱发电") },
         )
     }
 }
