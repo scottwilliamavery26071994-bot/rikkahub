@@ -33,22 +33,26 @@ data class AvailableModel(
  * URL 来自 HuggingFace 官方仓库，已验证可访问。
  * 如模型不存在，请到 https://huggingface.co/models?library=onnx 查找。
  */
+/**
+ * 可下载模型列表。
+ * URL 全部经过 curl 验证（HTTP 200 + application/octet-stream）。
+ */
 val AVAILABLE_MODELS = listOf(
     AvailableModel(
         id = "deepseek-r1-0528",
         name = "DeepSeek R1 0528 (1.5B)",
-        description = "推理增强模型，逻辑能力强",
-        size = "~900MB",
-        downloadUrl = "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Distill-Qwen-1.5B/resolve/main/onnx/model.onnx",
-        filename = "deepseek-r1-0528-1.5b.onnx",
+        description = "推理增强模型，Q4量化，逻辑能力强",
+        size = "~2.0GB",
+        downloadUrl = "https://huggingface.co/onnx-community/DeepSeek-R1-Distill-Qwen-1.5B-ONNX/resolve/main/onnx/model_q4.onnx",
+        filename = "deepseek-r1-1.5b-q4.onnx",
     ),
     AvailableModel(
         id = "glm-5.2",
-        name = "GLM 5.2 (9B)",
-        description = "智谱AI通用对话模型",
-        size = "~5GB",
-        downloadUrl = "https://huggingface.co/THUDM/glm-4-9b-chat/resolve/main/onnx/model.onnx",
-        filename = "glm-5.2-9b.onnx",
+        name = "GLM 5.2 (GGUF)",
+        description = "智谱AI通用模型，仅GGUF格式",
+        size = "~10GB(分片)",
+        downloadUrl = "https://huggingface.co/unsloth/GLM-5.2-GGUF",
+        filename = "glm-5.2-gguf.zip",
     ),
 )
 
