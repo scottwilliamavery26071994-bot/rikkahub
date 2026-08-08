@@ -145,7 +145,6 @@ import me.rerere.rikkahub.ui.pages.setting.SettingDisplayNotificationPage
 import me.rerere.rikkahub.ui.pages.setting.SettingDisplayPage
 import me.rerere.rikkahub.ui.pages.setting.SettingDisplayThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingDisplayTransparencyPage
-import me.rerere.rikkahub.ui.pages.setting.SettingThemePage
 import me.rerere.rikkahub.ui.pages.setting.SettingDonatePage
 import me.rerere.rikkahub.ui.pages.setting.SettingFilesPage
 import me.rerere.rikkahub.ui.pages.setting.SettingMcpPage
@@ -549,7 +548,6 @@ class RouteActivity : ComponentActivity() {
                             }
 
                             entry<Screen.SettingTheme> {
-                                SettingThemePage()
                             }
 
                             entry<Screen.SettingDisplayTheme> {
