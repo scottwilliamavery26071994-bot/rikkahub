@@ -406,7 +406,7 @@ class ChatCompletionsAPI(
         val host = providerSetting.baseUrl.toHttpUrl().host
         return buildJsonObject {
             put("model", params.model.modelId)
-            put("messages", buildMessages(messages, params.model, providerSetting, params.tools))
+            put("messages", buildMessages(messages, params.model, providerSetting, params.tools, effectivePromptToolCalling))
 
             // 智谱 GLM 等 thinking 模型在开启深度思考时不允许设置 temperature/top_p,
             // 否则触发 "Invalid request body" (InvalidParameter) 400。
@@ -603,7 +603,12 @@ class ChatCompletionsAPI(
                 }
             }
 
-            if (params.model.abilities.contains(ModelAbility.TOOL) && params.tools.isNotEmpty() && !providerSetting.promptToolCalling) {
+            // 工具调用: 模型原生支持则用原生, 否则自动降级为提示词式工具调用
+            val useNativeTools = params.model.abilities.contains(ModelAbility.TOOL) && params.tools.isNotEmpty()
+            val usePromptTools = !useNativeTools && params.tools.isNotEmpty()
+            val effectivePromptToolCalling = providerSetting.promptToolCalling || usePromptTools
+
+            if (useNativeTools && !providerSetting.promptToolCalling) {
                 putJsonArray("tools") {
                     params.tools.forEach { tool ->
                         add(buildJsonObject {
@@ -644,15 +649,13 @@ class ChatCompletionsAPI(
         messages: List<UIMessage>,
         model: Model,
         providerSetting: ProviderSetting.OpenAI = ProviderSetting.OpenAI(),
-        tools: List<Tool> = emptyList()
+        tools: List<Tool> = emptyList(),
+        usePromptTools: Boolean = false,
     ) = buildJsonArray {
         val supportsImage = model.inputModalities.contains(Modality.IMAGE)
         var filteredMessages = messages.filter { it.isValidToUpload() }
 
-        // 提示词式工具调用 (免 Key 服务如 Pollinations 不支持原生 tools 参数,
-        // 且匿名免费不支持 system 消息 -> 返回 402):
-        // 把工具说明 + 原 system 提示词合并进第一条 user 消息
-        if (providerSetting.promptToolCalling) {
+        if (usePromptTools) {
             // 免Key免费服务(如 Pollinations 匿名)检测到任何工具调用说明即返回 402,
             // 因此这里不注入工具说明, 保证免Key对话可用。
             // 工具调用功能请使用填了 API Key 的模型(设置里已预置智谱免费Key入口)。
@@ -665,7 +668,7 @@ class ChatCompletionsAPI(
                         } else part
                     })
                 }
-            val toolPrompt = null
+            val toolPrompt = if (tools.isNotEmpty()) buildPromptToolCallingSystem(tools) else null
             val systemTexts = filteredMessages
                 .filter { it.role == MessageRole.SYSTEM }
                 .flatMap { it.parts.filterIsInstance<UIMessagePart.Text>() }
