@@ -34,11 +34,18 @@ data class AvailableModel(
  * 如模型不存在，请到 https://huggingface.co/models?library=onnx 查找。
  */
 /**
- * 可下载模型列表为空 — 用户自行提供 ONNX 文件。
- * 推荐去 HuggingFace 搜索 "ONNX" 模型：
- * https://huggingface.co/models?library=onnx
+ * 可下载模型列表 — URL 均已 curl 验证。
  */
-val AVAILABLE_MODELS = emptyList<AvailableModel>()
+val AVAILABLE_MODELS = listOf(
+    AvailableModel(
+        id = "deepseek-r1-0528",
+        name = "DeepSeek R1 0528 (8B) ONNX",
+        description = "推理增强 · INT4量化 · ~7.3GB",
+        size = "~7.3GB(需同时下载2个文件)",
+        downloadUrl = "https://huggingface.co/keisuke-miyako/DeepSeek-R1-0528-Qwen3-8B-onnx-int4/resolve/main/model.onnx",
+        filename = "deepseek-r1-0528-8b.onnx",
+    ),
+)
 
 class LocalModelDownloader(
     private val context: Context,
