@@ -87,6 +87,7 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
     }
 }
 
+@Composable
 private fun CardGroupScope.sw(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
     item(
         headlineContent = { Text(title) },
