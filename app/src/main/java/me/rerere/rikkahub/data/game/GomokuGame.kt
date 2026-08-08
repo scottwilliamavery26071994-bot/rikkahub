@@ -2,17 +2,17 @@
  * 灵犀 Lingxi
  * 衍生自 Lingxi (https://github.com/scottwilliamavery26071994-bot/rikkahub)，原作者 RE
  * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
- *
- * 本文件由 APK 反编译逆向还原（GomokuGame：五子棋游戏引擎，15x15 + 评分制 AI）
  */
 
 package me.rerere.rikkahub.data.game
 
+import android.graphics.Bitmap
+import android.graphics.Color as AndroidColor
+
 /**
- * 五子棋游戏引擎（单例）.
+ * 五子棋游戏引擎 — 支持对战、残局求解、拍照识别.
  *
  * 棋盘 15x15；EMPTY=0, BLACK=1, WHITE=2。
- * AI 采用「候选点 + 评分 + alpha-beta 剪枝」策略。
  */
 object GomokuGame {
     const val BOARD_SIZE = 15
@@ -20,7 +20,7 @@ object GomokuGame {
     const val BLACK = 1
     const val WHITE = 2
 
-    // 评分常量（与 APK 一致）
+    // 评分常量
     private const val SCORE_FIVE = 10000000
     private const val SCORE_LIVE_FOUR = 100000
     private const val SCORE_RUSH_FOUR = 50000
@@ -29,7 +29,6 @@ object GomokuGame {
     private const val SCORE_LIVE_TWO = 1000
     private const val SCORE_SLEEP_TWO = 200
 
-    // 八个方向
     private val DIRS = arrayOf(
         intArrayOf(0, 1), intArrayOf(1, 0), intArrayOf(1, 1), intArrayOf(1, -1),
         intArrayOf(0, -1), intArrayOf(-1, 0), intArrayOf(-1, -1), intArrayOf(-1, 1),
@@ -37,49 +36,44 @@ object GomokuGame {
 
     fun inBoard(x: Int, y: Int): Boolean = x in 0 until BOARD_SIZE && y in 0 until BOARD_SIZE
 
-    /** 棋盘是否已满 */
     fun isBoardFull(board: Array<IntArray>): Boolean {
         for (row in board) for (c in row) if (c == EMPTY) return false
         return true
     }
 
-    /** 检查 (x,y) 落子后 player 是否获胜（四个方向任一连续 5 子） */
     fun checkWin(board: Array<IntArray>, player: Int, x: Int, y: Int): Boolean {
         for (d in 0..3) {
             val dx = DIRS[d][0]
             val dy = DIRS[d][1]
             var count = 1
-            // 正向
-            var nx = x + dx
-            var ny = y + dy
-            while (inBoard(nx, ny) && board[nx][ny] == player) {
-                count++
-                nx += dx
-                ny += dy
-            }
-            // 反向
-            nx = x - dx
-            ny = y - dy
-            while (inBoard(nx, ny) && board[nx][ny] == player) {
-                count++
-                nx -= dx
-                ny -= dy
-            }
+            var nx = x + dx; var ny = y + dy
+            while (inBoard(nx, ny) && board[nx][ny] == player) { count++; nx += dx; ny += dy }
+            nx = x - dx; ny = y - dy
+            while (inBoard(nx, ny) && board[nx][ny] == player) { count++; nx -= dx; ny -= dy }
             if (count >= 5) return true
         }
         return false
     }
 
-    /** 该落子是否获胜 */
     fun isWinningMove(board: Array<IntArray>, player: Int, x: Int, y: Int): Boolean =
         checkWin(board, player, x, y)
 
-    /** 计算 AI 最佳落子位置 */
+    /** 检查任意玩家是否已获胜（用于残局验证） */
+    fun checkAnyWin(board: Array<IntArray>): Int {
+        for (x in 0 until BOARD_SIZE) {
+            for (y in 0 until BOARD_SIZE) {
+                if (board[x][y] != EMPTY && checkWin(board, board[x][y], x, y))
+                    return board[x][y]
+            }
+        }
+        return 0
+    }
+
+    /** AI 最佳落子 */
     fun getBestMove(board: Array<IntArray>, player: Int): Pair<Int, Int>? {
         val candidates = generateCandidates(board)
         if (candidates.isEmpty()) return null
 
-        // 评估每个候选点（一层前瞻：己方落子评分 + 对方应手威胁）
         var best = candidates.first()
         var bestScore = Int.MIN_VALUE
         val opponent = if (player == BLACK) WHITE else BLACK
@@ -87,12 +81,10 @@ object GomokuGame {
         for ((x, y) in candidates) {
             board[x][y] = player
             val myScore = evaluatePoint(board, player, x, y)
-            // 若直接获胜，必选
             if (checkWin(board, player, x, y)) {
                 board[x][y] = EMPTY
                 return x to y
             }
-            // 简单防守：评估对手在此点落子的威胁
             val oppScore = evaluatePoint(board, opponent, x, y)
             board[x][y] = EMPTY
             val score = myScore + oppScore / 2
@@ -104,15 +96,104 @@ object GomokuGame {
         return best
     }
 
-    /** 生成候选落子点（已有棋子周围一圈） */
+    /**
+     * 残局求解：给定棋盘和当前轮到的一方，返回最佳落子 + 若干候选.
+     * 返回 [MoveResult] 列表，按评分降序。
+     */
+    fun solveEndgame(board: Array<IntArray>, player: Int, topN: Int = 5): List<MoveResult> {
+        val candidates = generateCandidates(board)
+        if (candidates.isEmpty()) return emptyList()
+
+        val results = mutableListOf<MoveResult>()
+        val opponent = if (player == BLACK) WHITE else BLACK
+
+        for ((x, y) in candidates) {
+            board[x][y] = player
+            val myScore = evaluatePoint(board, player, x, y)
+            val isWinning = checkWin(board, player, x, y)
+            board[x][y] = EMPTY
+
+            // 也评估防守价值
+            board[x][y] = opponent
+            val oppThreat = evaluatePoint(board, opponent, x, y)
+            val oppWinning = checkWin(board, opponent, x, y)
+            board[x][y] = EMPTY
+
+            val totalScore = myScore * 2 + oppThreat
+            results.add(
+                MoveResult(
+                    x = x, y = y,
+                    score = totalScore,
+                    isWinning = isWinning,
+                    isBlocking = oppWinning,
+                    attackScore = myScore,
+                    defenseScore = oppThreat,
+                )
+            )
+        }
+        return results.sortedByDescending { it.score }.take(topN)
+    }
+
+    /**
+     * 拍照识别棋盘：从 Bitmap 中检测棋盘网格和棋子.
+     *
+     * 算法：将图片等分为 15x15 网格，在每个交叉点采样像素，
+     * 根据亮度判断是黑子/白子/空位。
+     */
+    fun recognizeBoard(bitmap: Bitmap): BoardRecognitionResult {
+        val scaled = Bitmap.createScaledBitmap(bitmap, 450, 450, true)
+        val board = Array(BOARD_SIZE) { IntArray(BOARD_SIZE) { EMPTY } }
+        val cellSize = 450f / (BOARD_SIZE + 1)
+        val confidenceScores = mutableListOf<Float>()
+
+        for (x in 0 until BOARD_SIZE) {
+            for (y in 0 until BOARD_SIZE) {
+                val px = ((x + 1) * cellSize).toInt().coerceIn(0, 449)
+                val py = ((y + 1) * cellSize).toInt().coerceIn(0, 449)
+
+                // 采样 3x3 区域取平均值
+                var rSum = 0; var gSum = 0; var bSum = 0; var samples = 0
+                for (dx in -2..2) {
+                    for (dy in -2..2) {
+                        val sx = (px + dx).coerceIn(0, 449)
+                        val sy = (py + dy).coerceIn(0, 449)
+                        val pixel = scaled.getPixel(sx, sy)
+                        rSum += AndroidColor.red(pixel)
+                        gSum += AndroidColor.green(pixel)
+                        bSum += AndroidColor.blue(pixel)
+                        samples++
+                    }
+                }
+                val avgR = rSum / samples
+                val avgG = gSum / samples
+                val avgB = bSum / samples
+                val brightness = (avgR + avgG + avgB) / 3f
+
+                // 判断：暗色→黑子，亮色→白子（需足够偏离背景）
+                if (brightness < 80) {
+                    board[x][y] = BLACK
+                    confidenceScores.add((80 - brightness) / 80f)
+                } else if (brightness > 200) {
+                    board[x][y] = WHITE
+                    confidenceScores.add((brightness - 200) / 55f)
+                } else {
+                    board[x][y] = EMPTY
+                    confidenceScores.add(1f - kotlin.math.abs(brightness - 140) / 140f)
+                }
+            }
+        }
+
+        val avgConfidence = if (confidenceScores.isNotEmpty()) confidenceScores.average().toFloat() else 0f
+        return BoardRecognitionResult(board, avgConfidence)
+    }
+
     private fun generateCandidates(board: Array<IntArray>): List<Pair<Int, Int>> {
         val set = LinkedHashSet<Pair<Int, Int>>()
         for (x in 0 until BOARD_SIZE) {
             for (y in 0 until BOARD_SIZE) {
                 if (board[x][y] != EMPTY) {
                     for (d in DIRS) {
-                        val nx = x + d[0]
-                        val ny = y + d[1]
+                        val nx = x + d[0]; val ny = y + d[1]
                         if (inBoard(nx, ny) && board[nx][ny] == EMPTY) set.add(nx to ny)
                     }
                 }
@@ -122,44 +203,21 @@ object GomokuGame {
         return set.toList()
     }
 
-    /** 评估在 (x,y) 落子的分值 */
     private fun evaluatePoint(board: Array<IntArray>, player: Int, x: Int, y: Int): Int {
         var score = 0
-        for (d in 0..3) {
-            score += evaluateDirection(board, player, x, y, d)
-        }
+        for (d in 0..3) score += evaluateDirection(board, player, x, y, d)
         return score
     }
 
-    /** 评估单个方向的分值 */
     private fun evaluateDirection(board: Array<IntArray>, player: Int, x: Int, y: Int, d: Int): Int {
-        val dx = DIRS[d][0]
-        val dy = DIRS[d][1]
-        val opponent = if (player == BLACK) WHITE else BLACK
-
-        var count = 1
-        var openEnds = 0
-
-        // 正向
-        var nx = x + dx
-        var ny = y + dy
-        while (inBoard(nx, ny) && board[nx][ny] == player) {
-            count++
-            nx += dx
-            ny += dy
-        }
+        val dx = DIRS[d][0]; val dy = DIRS[d][1]
+        var count = 1; var openEnds = 0
+        var nx = x + dx; var ny = y + dy
+        while (inBoard(nx, ny) && board[nx][ny] == player) { count++; nx += dx; ny += dy }
         if (inBoard(nx, ny) && board[nx][ny] == EMPTY) openEnds++
-
-        // 反向
-        nx = x - dx
-        ny = y - dy
-        while (inBoard(nx, ny) && board[nx][ny] == player) {
-            count++
-            nx -= dx
-            ny -= dy
-        }
+        nx = x - dx; ny = y - dy
+        while (inBoard(nx, ny) && board[nx][ny] == player) { count++; nx -= dx; ny -= dy }
         if (inBoard(nx, ny) && board[nx][ny] == EMPTY) openEnds++
-
         return when {
             count >= 5 -> SCORE_FIVE
             count == 4 -> if (openEnds == 2) SCORE_LIVE_FOUR else SCORE_RUSH_FOUR
@@ -168,24 +226,20 @@ object GomokuGame {
             else -> 0
         }
     }
-
-    /** 评估整个棋盘（供 AI 使用） */
-    private fun evaluateBoard(board: Array<IntArray>, player: Int): Int {
-        var score = 0
-        val opponent = if (player == BLACK) WHITE else BLACK
-        for (x in 0 until BOARD_SIZE) {
-            for (y in 0 until BOARD_SIZE) {
-                if (board[x][y] == player) {
-                    for (d in 0..3) {
-                        score += evaluateDirection(board, player, x, y, d)
-                    }
-                } else if (board[x][y] == opponent) {
-                    for (d in 0..3) {
-                        score -= evaluateDirection(board, opponent, x, y, d)
-                    }
-                }
-            }
-        }
-        return score
-    }
 }
+
+/** 落子结果 */
+data class MoveResult(
+    val x: Int, val y: Int,
+    val score: Int,
+    val isWinning: Boolean,
+    val isBlocking: Boolean,
+    val attackScore: Int,
+    val defenseScore: Int,
+)
+
+/** 拍照识别结果 */
+data class BoardRecognitionResult(
+    val board: Array<IntArray>,
+    val confidence: Float, // 0-1
+)
