@@ -6,6 +6,7 @@
 
 ## 当前任务
 
+- ✅ GitHub 代码分析 Agent（内置 MCP）—— 已完成代码编写，待编译验证
 - 等待 GitHub Actions 编译验证
 - 发行版 v2.4.5 已发布到 GitHub Releases
 
@@ -77,6 +78,28 @@
 - 火车查询（RailGo）已删除
 - 清理 4 个上游迁移遗留的损坏 .bak 文件
 - 新增 46 条中/英/繁字符串资源
+
+### 十二、GitHub 代码分析 Agent（内置 MCP）🔍
+
+**新增文件：**
+- `GitHubAnalyzerTools.kt`（~800行）— 6 个内置分析工具
+
+**修改文件：**
+- `McpManager.kt` — `getBuiltinServerTools()` 注册分析工具 + `getBuiltinServerInfos()` 新增"GitHub 代码分析 Agent"卡片
+
+**6 个 MCP 工具：**
+
+| 工具 | 功能 |
+|------|------|
+| `repo_quick_scan` | 一键扫描仓库：基本信息+README+目录树+语言+提交+CI+依赖文件列表 |
+| `scan_security_patterns` | 安全漏洞扫描：硬编码密钥/SQL注入/XSS/命令注入/弱加密/不安全配置 |
+| `scan_bug_patterns` | Bug 模式检测：空指针/空catch/eval/var滥用/TODO未解决等 |
+| `analyze_dependency_file` | 依赖风险分析：支持 9 种包管理文件，内置已知漏洞数据库 |
+| `generate_fix_suggestion` | 修复建议模板生成 |
+| `create_analysis_report` | 结构化分析报告生成 + 询问用户是否修复 |
+
+**安全漏洞规则库（17 条）：** Secrets(6) + Injection(4) + Crypto(3) + Config(4)
+**Bug 检测规则库（10 条）：** Kotlin(4) + Python(3) + JS(3) + 通用(2)
 
 ---
 
