@@ -279,8 +279,7 @@ private fun SettingProviderConfigPage(
     ) {
         ProviderConfigure(
             provider = internalProvider,
-            onEdit = { internalProvider = it },
-            onInstantSave = { onEdit(it) }  // 本地模型的选择/下载立即保存
+            onEdit = { internalProvider = it }
         )
 
         if (internalProvider is ProviderSetting.OpenAI) {
@@ -297,9 +296,7 @@ private fun SettingProviderConfigPage(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (internalProvider !is ProviderSetting.LocalModel) {
-                ProviderConnectionTester(internalProvider)
-            }
+            ProviderConnectionTester(internalProvider)
 
             Spacer(Modifier.weight(1f))
 
@@ -313,13 +310,11 @@ private fun SettingProviderConfigPage(
                 }
             }
 
-            if (internalProvider !is ProviderSetting.LocalModel) {
-                IconButton(
-                    onClick = { internalProvider = internalProvider.resetBaseUrlToDefault() },
-                    enabled = !internalProvider.isUsingDefaultBaseUrl(),
-                ) {
-                    Icon(HugeIcons.Refresh03, stringResource(R.string.setting_model_page_reset_to_default))
-                }
+            IconButton(
+                onClick = { internalProvider = internalProvider.resetBaseUrlToDefault() },
+                enabled = !internalProvider.isUsingDefaultBaseUrl(),
+            ) {
+                Icon(HugeIcons.Refresh03, stringResource(R.string.setting_model_page_reset_to_default))
             }
 
             Button(

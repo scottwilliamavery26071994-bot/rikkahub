@@ -54,10 +54,6 @@ import me.rerere.ai.provider.Modality
 import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
-import me.rerere.rikkahub.data.localmodel.AVAILABLE_MODELS
-import me.rerere.rikkahub.data.localmodel.AvailableModel
-import me.rerere.rikkahub.data.localmodel.DownloadProgress
-import me.rerere.rikkahub.data.localmodel.LocalModelDownloader
 import me.rerere.rikkahub.ui.context.LocalToaster
 import me.rerere.rikkahub.ui.theme.JetbrainsMono
 import kotlin.uuid.Uuid
@@ -73,7 +69,6 @@ fun ProviderConfigure(
     provider: ProviderSetting,
     modifier: Modifier = Modifier,
     onEdit: (provider: ProviderSetting) -> Unit,
-    onInstantSave: (provider: ProviderSetting) -> Unit = {},
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -118,10 +113,6 @@ fun ProviderConfigure(
             is ProviderSetting.Claude -> {
                 ProviderConfigureClaude(provider, onEdit)
             }
-
-            is ProviderSetting.LocalModel -> {
-                ProviderConfigureLocalModel(provider, onEdit, onInstantSave)
-            }
         }
     }
 }
@@ -135,20 +126,17 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
         is ProviderSetting.OpenAI -> this.apiKey
         is ProviderSetting.Google -> this.apiKey
         is ProviderSetting.Claude -> this.apiKey
-        is ProviderSetting.LocalModel -> this.apiKey
     }
 
     val sourceBaseUrl = when (this) {
         is ProviderSetting.OpenAI -> this.baseUrl
         is ProviderSetting.Google -> this.baseUrl
         is ProviderSetting.Claude -> this.baseUrl
-        is ProviderSetting.LocalModel -> this.baseUrl
     }
     val targetDefaultBaseUrl = when (type) {
         ProviderSetting.OpenAI::class -> ProviderSetting.OpenAI().baseUrl
         ProviderSetting.Google::class -> ProviderSetting.Google().baseUrl
         ProviderSetting.Claude::class -> ProviderSetting.Claude().baseUrl
-        ProviderSetting.LocalModel::class -> ProviderSetting.LocalModel().baseUrl
         else -> error("Unsupported provider type: $type")
     }
     val convertedBaseUrl = sourceBaseUrl.convertToTargetBaseUrl(targetDefaultBaseUrl)
@@ -193,19 +181,6 @@ fun ProviderSetting.convertTo(type: KClass<out ProviderSetting>): ProviderSettin
             baseUrl = convertedBaseUrl
         )
 
-        ProviderSetting.LocalModel::class -> ProviderSetting.LocalModel(
-            id = this.id,
-            enabled = this.enabled,
-            name = this.name,
-            models = this.models,
-            balanceOption = this.balanceOption,
-            builtIn = this.builtIn,
-            description = this.description,
-            shortDescription = this.shortDescription,
-            apiKey = apiKey,
-            baseUrl = convertedBaseUrl
-        )
-
         else -> error("Unsupported provider type: $type")
     }
 }
@@ -217,7 +192,6 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
             is ProviderSetting.OpenAI -> if (defaultProvider is ProviderSetting.OpenAI) return defaultProvider.baseUrl
             is ProviderSetting.Google -> if (defaultProvider is ProviderSetting.Google) return defaultProvider.baseUrl
             is ProviderSetting.Claude -> if (defaultProvider is ProviderSetting.Claude) return defaultProvider.baseUrl
-            is ProviderSetting.LocalModel -> if (defaultProvider is ProviderSetting.LocalModel) return defaultProvider.baseUrl
         }
     }
 
@@ -225,7 +199,6 @@ internal fun ProviderSetting.defaultBaseUrlForReset(): String {
         is ProviderSetting.OpenAI -> ProviderSetting.OpenAI().baseUrl
         is ProviderSetting.Google -> ProviderSetting.Google().baseUrl
         is ProviderSetting.Claude -> ProviderSetting.Claude().baseUrl
-        is ProviderSetting.LocalModel -> ProviderSetting.LocalModel().baseUrl
     }
 }
 
@@ -235,7 +208,6 @@ internal fun ProviderSetting.resetBaseUrlToDefault(): ProviderSetting {
         is ProviderSetting.OpenAI -> this.copy(baseUrl = defaultBaseUrl)
         is ProviderSetting.Google -> this.copy(baseUrl = defaultBaseUrl)
         is ProviderSetting.Claude -> this.copy(baseUrl = defaultBaseUrl)
-        is ProviderSetting.LocalModel -> this.copy(baseUrl = defaultBaseUrl)
     }
 }
 
@@ -244,7 +216,6 @@ internal fun ProviderSetting.isUsingDefaultBaseUrl(): Boolean {
         is ProviderSetting.OpenAI -> this.baseUrl
         is ProviderSetting.Google -> this.baseUrl
         is ProviderSetting.Claude -> this.baseUrl
-        is ProviderSetting.LocalModel -> this.baseUrl
     }
     return baseUrl == defaultBaseUrlForReset()
 }
@@ -681,265 +652,5 @@ private fun ColumnScope.ProviderConfigureGoogle(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-    }
-}
-
-@Composable
-private fun ColumnScope.ProviderConfigureLocalModel(
-    provider: ProviderSetting.LocalModel,
-    onEdit: (ProviderSetting.LocalModel) -> Unit,
-    onInstantSave: (ProviderSetting) -> Unit = {},
-) {
-    val context = LocalContext.current
-    val toaster = LocalToaster.current
-    val scope = rememberCoroutineScope()
-    val downloader = remember { LocalModelDownloader(context) }
-    var downloadingId by remember { mutableStateOf<String?>(null) }
-
-    // 自动将模型文件名同步到模型列表
-    fun autoSyncModel(provider: ProviderSetting.LocalModel, modelName: String): ProviderSetting.LocalModel {
-        val exists = provider.models.any { it.modelId == modelName }
-        return if (exists) provider else provider.addModel(
-            Model(
-                modelId = modelName,
-                displayName = modelName,
-                inputModalities = listOf(Modality.TEXT),
-                outputModalities = listOf(Modality.TEXT),
-                abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
-            )
-        ) as ProviderSetting.LocalModel
-    }
-
-    provider.description()
-
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("启用", modifier = Modifier.weight(1f))
-        Checkbox(checked = provider.enabled, onCheckedChange = { onEdit(provider.copy(enabled = it)) })
-    }
-
-    OutlinedTextField(
-        value = provider.name, onValueChange = { onEdit(provider.copy(name = it.trim())) },
-        label = { Text("名称") }, modifier = Modifier.fillMaxWidth()
-    )
-
-    // === 下载模型 ===
-    Text("下载模型", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
-
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.heightIn(max = 300.dp)
-    ) {
-            // 当前已选的本地模型
-            if (provider.modelFilePath.isNotBlank()) {
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("当前使用", style = MaterialTheme.typography.titleSmall,
-                                color = MaterialTheme.colorScheme.primary)
-                            Text(
-                                provider.modelFilePath.substringAfterLast("/"),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Text("已选择", style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline)
-                        }
-                        OutlinedButton(onClick = {
-                            val updated = provider.copy(modelFilePath = "")
-                            onEdit(updated)
-                            onInstantSave(updated)
-                            toaster.show("已清除", type = ToastType.Success)
-                        }) {
-                            Text("清除", fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-        }
-
-        items(AVAILABLE_MODELS) { model ->
-            val isDownloading = downloadingId == model.id
-            val existingPath = downloader.getExistingModelPath(model.id)
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (existingPath != null)
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                    else MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(model.name, style = MaterialTheme.typography.titleSmall)
-                            Text(model.description, style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text(model.size, style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.outline)
-                        }
-                        if (existingPath != null) {
-                            Button(
-                                onClick = {
-                                    val updated = autoSyncModel(provider.copy(modelFilePath = existingPath), model.name)
-                                    onEdit(updated)
-                                    onInstantSave(updated)
-                                    toaster.show("已选择: ${model.name}", type = ToastType.Success)
-                                },
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Text("使用", fontSize = 12.sp)
-                            }
-                        } else {
-                            Button(
-                                onClick = {
-                                    downloadingId = model.id
-                                    scope.launch {
-                                        downloader.download(model).collect { progress ->
-                                            when (progress) {
-                                                is DownloadProgress.Completed -> {
-                                                    downloadingId = null
-                                                    val updated = autoSyncModel(provider.copy(modelFilePath = progress.path), model.name)
-                                                    onEdit(updated)
-                                                    onInstantSave(updated)
-                                                    toaster.show("下载完成: ${model.name}", type = ToastType.Success)
-                                                }
-                                                is DownloadProgress.Error -> {
-                                                    downloadingId = null
-                                                    toaster.show(progress.message, type = ToastType.Error)
-                                                }
-                                                else -> {}
-                                            }
-                                        }
-                                    }
-                                },
-                                enabled = !isDownloading,
-                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Text(if (isDownloading) "下载中..." else "下载", fontSize = 12.sp)
-                            }
-                        }
-                    }
-                    if (isDownloading) {
-                        Spacer(Modifier.height(4.dp))
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                    }
-                }
-            }
-        }
-    }
-
-    // 自定义 URL 下载
-    Text("或粘贴模型下载链接", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-    var customUrl by remember { mutableStateOf("") }
-    var customFilename by remember { mutableStateOf("") }
-    OutlinedTextField(
-        value = customUrl, onValueChange = { customUrl = it },
-        label = { Text("HuggingFace 模型链接") },
-        placeholder = { Text("https://huggingface.co/.../model.onnx") },
-        modifier = Modifier.fillMaxWidth(), singleLine = true
-    )
-    OutlinedTextField(
-        value = customFilename, onValueChange = { customFilename = it },
-        label = { Text("保存文件名") },
-        placeholder = { Text("my-model.onnx") },
-        modifier = Modifier.fillMaxWidth(), singleLine = true
-    )
-    if (customUrl.isNotBlank() && customFilename.isNotBlank()) {
-        val customModel = remember(customUrl, customFilename) {
-            AvailableModel(
-                id = "custom", name = customFilename, description = "自定义模型",
-                size = "未知", downloadUrl = customUrl, filename = customFilename
-            )
-        }
-        val existingPath = downloader.getExistingModelPath("custom")
-        if (existingPath != null) {
-            Button(onClick = {
-                val updated = autoSyncModel(provider.copy(modelFilePath = existingPath), customFilename)
-                onEdit(updated)
-                onInstantSave(updated)
-                toaster.show("已选择: $customFilename", type = ToastType.Success)
-            }) { Text("使用已下载的文件") }
-        } else {
-            Button(
-                onClick = {
-                    downloadingId = "custom"
-                    scope.launch {
-                        downloader.download(customModel).collect { progress ->
-                            when (progress) {
-                                is DownloadProgress.Completed -> {
-                                    downloadingId = null
-                                    val updated = autoSyncModel(provider.copy(modelFilePath = progress.path), customFilename)
-                                    onEdit(updated)
-                                    onInstantSave(updated)
-                                    toaster.show("下载完成", type = ToastType.Success)
-                                }
-                                is DownloadProgress.Error -> {
-                                    downloadingId = null
-                                    toaster.show(progress.message, type = ToastType.Error)
-                                }
-                                else -> {}
-                            }
-                        }
-                    }
-                },
-                enabled = downloadingId != "custom"
-            ) { Text(if (downloadingId == "custom") "下载中..." else "下载") }
-        }
-    }
-
-    // === 模型文件选择器 ===
-    Text("或选择已有文件", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-
-    val modelFileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri ?: return@rememberLauncherForActivityResult
-        try {
-            val fileName = uri.lastPathSegment ?: "model.onnx"
-            val updated = autoSyncModel(provider.copy(modelFilePath = uri.toString()), fileName)
-            onEdit(updated)
-            onInstantSave(updated)
-            toaster.show("已选择模型文件", type = ToastType.Success)
-        } catch (e: Exception) {
-            toaster.show("选择失败: ${e.message}", type = ToastType.Error)
-        }
-    }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        OutlinedTextField(
-            value = if (provider.modelFilePath.startsWith("content://"))
-                provider.modelFilePath.substringAfterLast("/") else provider.modelFilePath,
-            onValueChange = {},
-            label = { Text("模型文件") },
-            modifier = Modifier.weight(1f),
-            readOnly = true,
-            placeholder = { Text("未选择") }
-        )
-        OutlinedButton(onClick = { modelFileLauncher.launch(arrayOf("*/*")) }) {
-            Text("浏览")
-        }
-    }
-
-    if (provider.modelFilePath.isNotBlank()) {
-        Text("已选: ${provider.modelFilePath.substringAfterLast("/")}",
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
     }
 }

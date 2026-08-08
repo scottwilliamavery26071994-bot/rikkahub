@@ -293,28 +293,4 @@ val DEFAULT_PROVIDERS = listOf(
             )
         }
     ),
-    ProviderSetting.LocalModel(
-        id = Uuid.parse("c8e1f2a3-4b5c-6d7e-8f90-1a2b3c4d5e6f"),
-        name = "本地模型",
-        baseUrl = "",
-        apiKey = "",
-        enabled = true,
-        builtIn = true,
-        description = {
-            Text("运行在设备本地的 ONNX 推理引擎")
-        },
-        shortDescription = {
-            Text("本地模型 · 无需联网")
-        },
-        models = listOf(
-            Model(
-                id = Uuid.parse("d9e8f7a6-b5c4-3d2e-1f01-2a3b4c5d6e7f"),
-                modelId = "DeepSeek R1 0528",
-                displayName = "DeepSeek R1 0528 (1.5B)",
-                inputModalities = listOf(Modality.TEXT),
-                outputModalities = listOf(Modality.TEXT),
-                abilities = listOf(ModelAbility.TOOL, ModelAbility.REASONING),
-            ),
-        ),
-    ),
 )
