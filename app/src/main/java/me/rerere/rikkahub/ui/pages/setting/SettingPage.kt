@@ -63,6 +63,14 @@ import me.rerere.hugeicons.stroke.Settings03
 import me.rerere.hugeicons.stroke.Share04
 import me.rerere.hugeicons.stroke.Sun01
 import me.rerere.hugeicons.stroke.WavingHand01
+import me.rerere.hugeicons.stroke.Shield02
+import me.rerere.hugeicons.stroke.SmartPhone01
+import me.rerere.hugeicons.stroke.Settings01
+import me.rerere.hugeicons.stroke.Grid
+import me.rerere.hugeicons.stroke.Tools
+import me.rerere.hugeicons.stroke.Train01
+import me.rerere.hugeicons.stroke.MessageMultiple01
+import me.rerere.hugeicons.stroke.Pulse01
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.isNotConfigured
@@ -188,6 +196,18 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         headlineContent = { Text(stringResource(R.string.setting_page_preferences)) },
                     )
                     item(
+                        onClick = { navController.navigate(Screen.SettingPlugins) },
+                        leadingContent = { Icon(HugeIcons.Package, null) },
+                        supportingContent = { Text("管理本地插件，导入ZIP插件包") },
+                        headlineContent = { Text("插件管理") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingSecurity) },
+                        leadingContent = { Icon(HugeIcons.Shield02, null) },
+                        supportingContent = { Text("工具调用确认、自动批准、工作流拦截等安全选项") },
+                        headlineContent = { Text("安全设置") },
+                    )
+                    item(
                         onClick = { navController.navigate(Screen.Assistant) },
                         leadingContent = { Icon(HugeIcons.LookTop, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_assistant_desc)) },
@@ -242,6 +262,54 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         leadingContent = { Icon(HugeIcons.ServerStack01, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_web_server_desc)) },
                         headlineContent = { Text(stringResource(R.string.setting_page_web_server)) },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingSystemTools) },
+                        leadingContent = { Icon(HugeIcons.SmartPhone01, null) },
+                        supportingContent = { Text("位置、通知、日历、闹钟等系统工具") },
+                        headlineContent = { Text("系统工具") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingWeixinBot) },
+                        leadingContent = { Icon(HugeIcons.MessageMultiple01, null) },
+                        supportingContent = { Text("把微信号变成 AI 入口，扫码登录后用微信收发消息") },
+                        headlineContent = { Text("微信 Bot") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingRailGo) },
+                        leadingContent = { Icon(HugeIcons.Train01, null) },
+                        supportingContent = { Text("RailGo：查车站、查车次、看时刻表") },
+                        headlineContent = { Text("火车查询") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingApiExplorer) },
+                        leadingContent = { Icon(HugeIcons.Settings01, null) },
+                        supportingContent = { Text("输入网址自动发现 API 接口") },
+                        headlineContent = { Text("API 探索器") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingGomoku) },
+                        leadingContent = { Icon(HugeIcons.Grid, null) },
+                        supportingContent = { Text("15x15 棋盘，人机对战五子棋") },
+                        headlineContent = { Text("五子棋") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.SettingToolbox) },
+                        leadingContent = { Icon(HugeIcons.Tools, null) },
+                        supportingContent = { Text("Base64/时间戳/密码/JSON/颜色/进制/正则") },
+                        headlineContent = { Text("工具箱") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.Workflows) },
+                        leadingContent = { Icon(HugeIcons.SmartPhone01, null) },
+                        supportingContent = { Text("Tasker 风格自动化：触发器 + 条件 -> 执行动作，由 AI 编写") },
+                        headlineContent = { Text("工作流") },
+                    )
+                    item(
+                        onClick = { navController.navigate(Screen.Health) },
+                        leadingContent = { Icon(HugeIcons.Pulse01, null) },
+                        supportingContent = { Text("Gadgetbridge 健康数据查看") },
+                        headlineContent = { Text("健康数据") },
                     )
                 }
             }
