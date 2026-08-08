@@ -40,10 +40,18 @@ val AVAILABLE_MODELS = listOf(
     AvailableModel(
         id = "deepseek-r1-0528",
         name = "DeepSeek R1 0528 (8B) ONNX",
-        description = "推理增强 · INT4量化 · ~7.3GB",
-        size = "~7.3GB(需同时下载2个文件)",
+        description = "推理增强 · INT4量化 · ~7.7GB",
+        size = "model.onnx 418KB + model.onnx.data 7.3GB",
         downloadUrl = "https://huggingface.co/keisuke-miyako/DeepSeek-R1-0528-Qwen3-8B-onnx-int4/resolve/main/model.onnx",
-        filename = "deepseek-r1-0528-8b.onnx",
+        filename = "model.onnx",
+    ),
+    AvailableModel(
+        id = "deepseek-r1-0528-data",
+        name = "DeepSeek R1 0528 权重文件",
+        description = "⚠️ 必须下载！与model.onnx放在同一目录",
+        size = "model.onnx.data 7.3GB",
+        downloadUrl = "https://huggingface.co/keisuke-miyako/DeepSeek-R1-0528-Qwen3-8B-onnx-int4/resolve/main/model.onnx.data",
+        filename = "model.onnx.data",
     ),
 )
 
