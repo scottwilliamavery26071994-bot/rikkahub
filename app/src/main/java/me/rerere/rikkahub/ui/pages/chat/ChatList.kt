@@ -194,6 +194,12 @@ fun ChatList(
 
 @Composable
 private fun ChatListNormal(
+    fun List<LazyListItemInfo>.isAtBottom(): Boolean {
+        val lastItem = lastOrNull() ?: return false
+        val lastPos = lastItem.offset + lastItem.size
+        return lastPos <= state.layoutInfo.viewportEndOffset - 8
+    }
+
     innerPadding: PaddingValues,
     conversation: Conversation,
     state: LazyListState,
@@ -244,7 +250,6 @@ private fun ChatListNormal(
         }
     }
 
-    fun List<LazyListItemInfo>.isAtBottom(): Boolean {
         val lastItem = lastOrNull() ?: return false
         val lastPos = lastItem.offset + lastItem.size
         return lastPos <= state.layoutInfo.viewportEndOffset - 8
