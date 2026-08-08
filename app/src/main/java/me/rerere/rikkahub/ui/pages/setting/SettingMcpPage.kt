@@ -1092,7 +1092,7 @@ private fun BuiltinMcpServerCard(
                     color = MaterialTheme.colorScheme.secondary,
                 )
             }
-            if (info.id == "builtin-github") {
+            if (info.id == "builtin-github" || info.id == "builtin-analyzer") {
                 TextButton(onClick = { showGithubConfig = true }) {
                     Text(if (enabled) "配置" else "启用")
                 }
@@ -1100,7 +1100,7 @@ private fun BuiltinMcpServerCard(
         }
     }
 
-    if (showGithubConfig && info.id == "builtin-github") {
+    if (showGithubConfig && (info.id == "builtin-github" || info.id == "builtin-analyzer")) {
         AlertDialog(
             onDismissRequest = { showGithubConfig = false },
             title = { Text("GitHub MCP 配置") },
