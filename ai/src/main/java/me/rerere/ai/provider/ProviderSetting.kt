@@ -248,6 +248,41 @@ sealed class ProviderSetting {
             )
         }
     }
+
+    /**
+     * 本地模型提供商（兼容 OpenAI API 格式）
+     *
+     * 适用于：Ollama / llama.cpp server / vLLM / text-generation-webui 等本地推理服务。
+     * 默认地址 http://localhost:11434/v1 指向 Ollama 默认端口，
+     * 用户可修改 baseUrl 适配不同推理引擎。
+     */
+    @Serializable
+    @SerialName("local_model")
+    data class LocalModel(
+        override var id: Uuid = Uuid.random(),
+        override var enabled: Boolean = true,
+        override var name: String = "本地模型",
+        override var models: List<Model> = emptyList(),
+        override val balanceOption: BalanceOption = BalanceOption(),
+        @Transient override val builtIn: Boolean = false,
+        @Transient override val description: @Composable (() -> Unit) = {},
+        @Transient override val shortDescription: @Composable (() -> Unit) = {},
+        override var apiKey: String = "",
+        override var baseUrl: String = "http://localhost:11434/v1",
+        /** 本地模型文件路径（.gguf / .bin 等），选填 */
+        var modelFilePath: String = "",
+    ) : OpenAI(
+        id = id,
+        enabled = enabled,
+        name = name,
+        models = models,
+        balanceOption = balanceOption,
+        builtIn = builtIn,
+        description = description,
+        shortDescription = shortDescription,
+        apiKey = apiKey,
+        baseUrl = baseUrl,
+    )
     
 
     companion object {
@@ -256,6 +291,7 @@ sealed class ProviderSetting {
                 OpenAI::class,
                 Google::class,
                 Claude::class,
+                LocalModel::class,
             )
         }
     }
