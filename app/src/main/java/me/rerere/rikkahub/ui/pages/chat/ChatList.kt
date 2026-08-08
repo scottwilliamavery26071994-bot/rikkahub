@@ -220,7 +220,7 @@ private fun ChatListNormal(
     onPublishMessage: (UIMessage) -> Unit = {},
 ) {
     val scope = rememberCoroutineScope()
-    val loadingState.value by rememberUpdatedState(loading)
+    val loadingState by rememberUpdatedState(loading)
     var isRecentScroll by remember { mutableStateOf(false) }
     val conversationUpdated by rememberUpdatedState(conversation)
     val density = LocalDensity.current
