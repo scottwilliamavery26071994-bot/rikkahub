@@ -174,6 +174,7 @@ class DeviceEventTrackingService : Service() {
                     return@launch
                 }
                 val service = SupabaseService(
+                    supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
                     supabaseApiKey = s.supabaseApiKey,
                     tableName = s.supabaseTableName
                 )

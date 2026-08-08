@@ -134,6 +134,7 @@ class SupabaseSyncService : Service() {
                         val systemTools = settings.systemToolsSetting
                         if (systemTools.supabaseApiKey.isNotBlank()) {
                             val service = SupabaseService(
+                                supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
                                 supabaseApiKey = systemTools.supabaseApiKey,
                                 tableName = systemTools.supabaseTableName
                             )
@@ -160,12 +161,25 @@ class SupabaseSyncService : Service() {
                     val settingsStore = GlobalContext.get().get<SettingsStore>()
                     val settings = settingsStore.settingsFlowRaw.first()
                     val systemTools = settings.systemToolsSetting
-                    if (systemTools.supabaseApiKey.isNotBlank()) {
-                        scheduleNext(context)
-                        Log.d(TAG, "Rescheduled Supabase sync")
+                    val service = SupabaseService(
+                        supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
+                        supabaseApiKey = systemTools.supabaseApiKey,
+                        tableName = systemTools.supabaseTableName
+                    )
+                    val result = service.collectAndUpload(context)
+                    if (result.isSuccess) {
+                        Log.d(TAG, "Supabase sync completed successfully")
+                    } else {
+                        Log.e(TAG, "Supabase sync failed", result.exceptionOrNull())
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Failed to reschedule Supabase sync", e)
+                    Log.e(TAG, "Supabase sync error", e)
+                } finally {
+                    // 安排下一次同步
+                    scheduleNext(this@SupabaseSyncService)
+                    // 同步完成，清除同步中标记
+                    markSyncing(this@SupabaseSyncService, false)
+                    stopSelf()
                 }
             }
         }
@@ -192,12 +206,11 @@ class SupabaseSyncService : Service() {
                 val settingsStore = GlobalContext.get().get<SettingsStore>()
                 val settings = settingsStore.settingsFlowRaw.first()
                 val systemTools = settings.systemToolsSetting
-
                 val service = SupabaseService(
+                    supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
                     supabaseApiKey = systemTools.supabaseApiKey,
                     tableName = systemTools.supabaseTableName
                 )
-
                 val result = service.collectAndUpload(this@SupabaseSyncService)
                 if (result.isSuccess) {
                     Log.d(TAG, "Supabase sync completed successfully")
@@ -255,12 +268,12 @@ class SupabaseSyncReceiver : BroadcastReceiver() {
                             val settingsStore = GlobalContext.get().get<SettingsStore>()
                             val settings = settingsStore.settingsFlowRaw.first()
                             val systemTools = settings.systemToolsSetting
-                            if (systemTools.supabaseApiKey.isNotBlank()) {
-                                val service = SupabaseService(
-                                    supabaseApiKey = systemTools.supabaseApiKey,
-                                    tableName = systemTools.supabaseTableName
-                                )
-                                val result = service.insertDeviceEvent("boot")
+                            val service = SupabaseService(
+                                supabaseUrl = "https://your-project.supabase.co", // TODO: 从设置中获取
+                                supabaseApiKey = systemTools.supabaseApiKey,
+                                tableName = systemTools.supabaseTableName
+                            )
+                            val result = service.insertDeviceEvent("boot")
                                 if (result.isSuccess) {
                                     Log.d("SupabaseSyncService", "Boot: pushed boot event")
                                 } else {
