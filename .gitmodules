@@ -1,3 +1,6 @@
 # Submodules removed:
 # - ai/src/main/cpp/mnn (native build disabled, not needed)
 # - material3/material-color-utilities (source vendored locally under material3/material-color-utilities/kotlin)
+[submodule "external/llama.cpp"]
+	path = external/llama.cpp
+	url = https://github.com/ggerganov/llama.cpp.git
