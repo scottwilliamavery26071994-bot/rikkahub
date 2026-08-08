@@ -168,7 +168,7 @@ val dataSourceModule = module {
         MessageFtsManager(get())
     }
 
-    single { McpManager(settingsStore = get(), appScope = get(), filesManager = get(), appEventBus = get(), workspaceRepository = get()) }
+    single { McpManager(settingsStore = get(), appScope = get(), filesManager = get(), appEventBus = get(), workspaceRepository = get(), context = get()) }
 
     single {
         MemoryBankService(

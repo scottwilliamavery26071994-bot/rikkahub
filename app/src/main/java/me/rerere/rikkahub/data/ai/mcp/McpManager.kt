@@ -59,6 +59,7 @@ import me.rerere.rikkahub.data.datastore.findProvider
 import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.files.saveUploadFromBytes
 import me.rerere.rikkahub.data.repository.WorkspaceRepository
+import android.content.Context
 import me.rerere.rikkahub.utils.JsonInstant
 import me.rerere.rikkahub.utils.checkDifferent
 import okhttp3.OkHttpClient
@@ -87,6 +88,7 @@ class McpManager(
     private val filesManager: FilesManager,
     private val appEventBus: AppEventBus,
     private val workspaceRepository: WorkspaceRepository,
+    private val context: Context,
 ) {
     private val okHttpClient: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
@@ -234,8 +236,9 @@ class McpManager(
             },
         )
         list += me.rerere.rikkahub.data.ai.tools.buildFigmaMcpTools(
-            getToken = { settings.githubToken }, // 复用 GitHub Token 设置项作为通用 Token
+            getToken = { settings.githubToken },
         )
+        list += me.rerere.rikkahub.data.ai.tools.buildXingceMcpTools(context)
         return list
     }
 
@@ -338,6 +341,12 @@ class McpManager(
                 name = "Figma MCP 🎨",
                 description = "内置 Figma 设计文件操作：文件/节点/组件/样式/变量/评论/导出图片（Figma API）",
                 toolCount = 9,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-xingce",
+                name = "花生十三行测 MCP 📝",
+                description = "内置442张行测方法卡片：搜索/分类/解题引导（资料分析/数量关系/判断推理/言语理解）",
+                toolCount = 5,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
