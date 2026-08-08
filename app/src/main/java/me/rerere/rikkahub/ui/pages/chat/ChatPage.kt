@@ -442,7 +442,22 @@ private fun ChatPageContent(
                 onDismissError = onDismissError,
                 onClearAllErrors = onClearAllErrors,
                 onPublishMessage = { msg -> vm.publishGroupMessage(msg.id) },
-                onRegenerate = {
+                onRegenerate = { },
+                onEdit = { },
+                onForkMessage = { },
+                onDelete = { },
+                onCompressContext = { _, _, _ -> },
+                onTranslate = { _, _ -> },
+                onClearTranslation = { },
+                onToolApproval = { _, _, _ -> },
+                onToolAnswer = { },
+                onToggleFavorite = { },
+                onConversationSystemPromptChange = { null },
+                onClickSuggestion = { },
+                onUpdateMessage = { },
+                animatedVisibilityScope = Unit,
+                onSuggestion = { },
+                onNewPrompt = { },
                     vm.regenerateAtMessage(it)
                 },
                 onEdit = {
