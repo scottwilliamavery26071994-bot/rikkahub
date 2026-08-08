@@ -52,6 +52,7 @@ import me.rerere.ai.provider.ProviderSetting
 import me.rerere.rikkahub.R
 import me.rerere.rikkahub.data.datastore.DEFAULT_PROVIDERS
 import me.rerere.rikkahub.data.localmodel.AVAILABLE_MODELS
+import me.rerere.rikkahub.data.localmodel.AvailableModel
 import me.rerere.rikkahub.data.localmodel.DownloadProgress
 import me.rerere.rikkahub.data.localmodel.LocalModelDownloader
 import me.rerere.rikkahub.ui.context.LocalToaster

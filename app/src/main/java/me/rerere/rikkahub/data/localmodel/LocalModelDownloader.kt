@@ -77,7 +77,7 @@ class LocalModelDownloader(
 
         // 检查 Content-Type，防止下载到 HTML 页面
         val contentType = response.header("Content-Type", "")
-        if (contentType.contains("text/html") || contentType.contains("text/plain")) {
+        if (contentType != null && (contentType.contains("text/html") || contentType.contains("text/plain"))) {
             response.close()
             emit(DownloadProgress.Error("下载链接无效，返回了网页而非模型文件。请到 HuggingFace 查找正确链接。"))
             return@flow

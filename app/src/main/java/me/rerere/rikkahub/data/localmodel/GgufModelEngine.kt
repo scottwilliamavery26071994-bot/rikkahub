@@ -13,6 +13,10 @@
 package me.rerere.rikkahub.data.localmodel
 
 import android.util.Log
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 
 private const val TAG = "GgufModelEngine"
 
@@ -41,11 +45,10 @@ class GgufModelEngine(
         prompt: String,
         maxTokens: Int = 256,
         temperature: Float = 0.7f
-    ): kotlinx.coroutines.flow.Flow<String> = kotlinx.coroutines.flow.flow {
+    ): Flow<String> = flow {
         require(isLoaded) { "GGUF model not loaded" }
-        // TODO: JNI 调用 llama.cpp 推理
         emit("")
-    }.flowOn(kotlinx.coroutines.Dispatchers.IO)
+    }.flowOn(Dispatchers.IO)
 
     fun close() { loaded = false }
 }
