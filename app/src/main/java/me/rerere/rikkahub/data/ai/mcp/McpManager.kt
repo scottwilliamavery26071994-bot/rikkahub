@@ -233,6 +233,9 @@ class McpManager(
                 settings.externalMemories.firstOrNull { it.enabled }?.supabaseKey
             },
         )
+        list += me.rerere.rikkahub.data.ai.tools.buildFigmaMcpTools(
+            getToken = { settings.githubToken }, // 复用 GitHub Token 设置项作为通用 Token
+        )
         return list
     }
 
