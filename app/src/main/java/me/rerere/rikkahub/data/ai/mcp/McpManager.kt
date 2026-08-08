@@ -328,6 +328,18 @@ class McpManager(
                 toolCount = 12,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-supabase",
+                name = "Supabase MCP 🗄️",
+                description = "内置 Supabase 数据库操作：SQL查询/表CRUD/RPC/Auth/Storage（复用外置记忆库配置）",
+                toolCount = 11,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-figma",
+                name = "Figma MCP 🎨",
+                description = "内置 Figma 设计文件操作：文件/节点/组件/样式/变量/评论/导出图片（Figma API）",
+                toolCount = 9,
+            ) to 1,
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
                 name = "Fetch MCP",
                 description = "内置 Fetch MCP：抓取网页 HTML/TXT/JSON/Markdown（移植自 Kelivo）",
