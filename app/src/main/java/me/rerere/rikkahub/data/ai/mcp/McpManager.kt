@@ -186,6 +186,7 @@ class McpManager(
             getToken = { settings.githubToken },
             enabled = { settings.githubMcpEnabled },
         )
+        list += me.rerere.rikkahub.data.ai.tools.buildShannonPentestTools()
         return list
     }
 
@@ -202,6 +203,7 @@ class McpManager(
             getToken = { settings.githubToken },
             enabled = { settings.githubMcpEnabled },
         )
+        val shannonTools = me.rerere.rikkahub.data.ai.tools.buildShannonPentestTools()
         val githubToolCount = builtinTools.count { it.name.startsWith("github_") }
         val fetchToolCount = builtinTools.count { it.name.startsWith("fetch_") }
         val imagesToolCount = builtinTools.count { it.name.startsWith("image_") }
@@ -219,6 +221,12 @@ class McpManager(
                 description = "内置代码安全扫描/依赖分析/Bug 检测/修复建议（自动分析 Agent）",
                 toolCount = analyzerToolCount,
             ) to (if (settings.githubMcpEnabled) 1 else 0),
+            me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
+                id = "builtin-shannon",
+                name = "Shannon AI Pentester 🛡️",
+                description = "内置 AI 渗透测试：攻击面映射/OWASP漏洞扫描/利用验证/安全报告（源自 KeygraphHQ/shannon AGPL-3.0）",
+                toolCount = shannonTools.size,
+            ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-fetch",
                 name = "Fetch MCP",
