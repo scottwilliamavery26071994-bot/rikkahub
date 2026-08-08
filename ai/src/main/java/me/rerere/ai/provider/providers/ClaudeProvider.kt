@@ -297,13 +297,17 @@ class ClaudeProvider(private val client: OkHttpClient, context: Context? = null)
             // system prompt
             val systemMessage = messages.firstOrNull { it.role == MessageRole.SYSTEM }
             val systemTextParts = systemMessage?.parts?.filterIsInstance<UIMessagePart.Text>().orEmpty()
-            if (systemTextParts.isNotEmpty()) {
+            val hasReasoning = params.reasoningLevel != ReasoningLevel.OFF
+            // 深度思考中文指令
+            val thinkingInstruction = if (hasReasoning) "请在思考过程中使用中文。" else null
+            val allSystemTexts = systemTextParts.map { it.text } + listOfNotNull(thinkingInstruction)
+            if (allSystemTexts.isNotEmpty()) {
                 put("system", buildJsonArray {
-                    systemTextParts.forEachIndexed { index, part ->
+                    allSystemTexts.forEachIndexed { index, part ->
                         add(buildJsonObject {
                             put("type", "text")
-                            put("text", part.text)
-                            if (providerSetting.promptCaching && index == systemTextParts.lastIndex) {
+                            put("text", part)
+                            if (providerSetting.promptCaching && index == allSystemTexts.lastIndex) {
                                 put("cache_control", cacheControlEphemeral(providerSetting.promptCacheTtl))
                             }
                         })

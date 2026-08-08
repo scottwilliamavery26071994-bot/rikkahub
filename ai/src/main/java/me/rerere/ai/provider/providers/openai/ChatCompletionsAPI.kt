@@ -677,7 +677,10 @@ class ChatCompletionsAPI(
                 .flatMap { it.parts.filterIsInstance<UIMessagePart.Text>() }
                 .map { it.text }
             val reasoningPrompt = if (usePromptReasoning) buildPromptReasoningSystem() else null
-            val extra = (listOfNotNull(reasoningPrompt, toolPrompt) + systemTexts)
+            // 中文思考指令: 对所有推理模式生效(原生+提示词式)
+            val chineseThinkingPrompt = if (usePromptReasoning || useNativeReasoning)
+                "请在思考过程中使用中文。" else null
+            val extra = (listOfNotNull(chineseThinkingPrompt, reasoningPrompt, toolPrompt) + systemTexts)
                 .filter { it.isNotBlank() }
                 .joinToString("\n\n")
             filteredMessages = filteredMessages.filter { it.role != MessageRole.SYSTEM }
@@ -742,6 +745,8 @@ class ChatCompletionsAPI(
         appendLine("</thinking>")
         appendLine("最终回答内容...")
     }
+
+    /** 注入中文思考指令到系统消息 */
 
     private fun JsonArrayBuilder.addAssistantMessages(message: UIMessage, includeReasoning: Boolean, supportsImage: Boolean = true) {
         val groups = groupPartsByToolBoundary(message.parts)

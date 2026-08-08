@@ -363,17 +363,17 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
     ): JsonObject = buildJsonObject {
         // System message if available
         val systemMessage = messages.firstOrNull { it.role == MessageRole.SYSTEM }
-        if (systemMessage != null && !params.model.outputModalities.contains(Modality.IMAGE)) {
+        if (systemMessage != null || (params.reasoningLevel != ReasoningLevel.OFF)) {
+            val systemText = systemMessage?.parts?.filterIsInstance<UIMessagePart.Text>()?.joinToString { it.text } ?: ""
+            val thinkingInstruction = if (params.reasoningLevel != ReasoningLevel.OFF) "\n请在思考过程中使用中文。" else ""
+            val combined = (systemText + thinkingInstruction).trim()
+            if (combined.isNotEmpty()) {
             put("systemInstruction", buildJsonObject {
                 putJsonArray("parts") {
-                    add(buildJsonObject {
-                        put(
-                            "text",
-                            systemMessage.parts.filterIsInstance<UIMessagePart.Text>()
-                                .joinToString { it.text })
-                    })
+                    add(buildJsonObject { put("text", combined) })
                 }
             })
+        }
         }
 
         // Generation config
