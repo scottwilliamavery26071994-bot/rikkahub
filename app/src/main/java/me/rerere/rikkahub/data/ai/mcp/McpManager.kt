@@ -244,7 +244,6 @@ class McpManager(
             },
         )
         val githubToolCount = builtinTools.count { it.name.startsWith("github_") }
-        val fetchToolCount = builtinTools.count { it.name.startsWith("fetch_") }
         val imagesToolCount = builtinTools.count { it.name.startsWith("image_") }
         val analyzerToolCount = analyzerTools.size
         return listOf(

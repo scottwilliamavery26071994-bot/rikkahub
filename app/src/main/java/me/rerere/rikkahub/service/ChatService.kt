@@ -78,7 +78,6 @@ import me.rerere.rikkahub.data.ai.tools.ToolNaming
 import me.rerere.rikkahub.data.ai.tools.createSearchTools
 import me.rerere.rikkahub.data.ai.tools.createKnowledgeBaseTools
 import me.rerere.rikkahub.data.ai.tools.createTodoTools
-import me.rerere.rikkahub.data.ai.tools.createHttpPostTool
 import me.rerere.rikkahub.data.ai.tools.createReadPendingMessagesTool
 import me.rerere.rikkahub.data.ai.tools.createSendMessageBridgeTool
 import me.rerere.rikkahub.data.ai.tools.createRegisterPollingTaskTool
@@ -835,7 +834,6 @@ class ChatService(
                         }
                     })
                     // 自定义 HTTP 请求（#602）
-                    add(createHttpPostTool(context))
                     // 内置 MCP 服务器（移植自 Kelivo）：GitHub/Files/Memory
                     addAll(mcpManager.getBuiltinServerTools())
 addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tools.ToolInvocationContext(
@@ -1213,7 +1211,6 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
                         }
                     })
                     // 自定义 HTTP 请求（#602）
-                    add(createHttpPostTool(context))
                     // 内置 MCP 服务器（移植自 Kelivo）：GitHub/Files/Memory
                     addAll(mcpManager.getBuiltinServerTools())
                     addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tools.ToolInvocationContext(
