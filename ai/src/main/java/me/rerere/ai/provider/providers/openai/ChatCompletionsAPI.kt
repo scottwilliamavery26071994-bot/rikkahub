@@ -406,7 +406,7 @@ class ChatCompletionsAPI(
         val host = providerSetting.baseUrl.toHttpUrl().host
         return buildJsonObject {
             put("model", params.model.modelId)
-            put("messages", buildMessages(messages, params.model, providerSetting, params.tools, effectivePromptToolCalling))
+            put("messages", buildMessages(messages, params.model, providerSetting, params.tools, effectivePromptToolCalling, usePromptReasoning))
 
             // 智谱 GLM 等 thinking 模型在开启深度思考时不允许设置 temperature/top_p,
             // 否则触发 "Invalid request body" (InvalidParameter) 400。
@@ -608,6 +608,10 @@ class ChatCompletionsAPI(
             val usePromptTools = !useNativeTools && params.tools.isNotEmpty()
             val effectivePromptToolCalling = providerSetting.promptToolCalling || usePromptTools
 
+            // 推理: 原生支持则用原生，否则用提示词式推理
+            val useNativeReasoning = params.reasoningLevel != ReasoningLevel.OFF && thinkingEnabled
+            val usePromptReasoning = params.reasoningLevel != ReasoningLevel.OFF && !thinkingEnabled
+
             if (useNativeTools && !providerSetting.promptToolCalling) {
                 putJsonArray("tools") {
                     params.tools.forEach { tool ->
@@ -651,6 +655,7 @@ class ChatCompletionsAPI(
         providerSetting: ProviderSetting.OpenAI = ProviderSetting.OpenAI(),
         tools: List<Tool> = emptyList(),
         usePromptTools: Boolean = false,
+        usePromptReasoning: Boolean = false,
     ) = buildJsonArray {
         val supportsImage = model.inputModalities.contains(Modality.IMAGE)
         var filteredMessages = messages.filter { it.isValidToUpload() }
@@ -673,7 +678,8 @@ class ChatCompletionsAPI(
                 .filter { it.role == MessageRole.SYSTEM }
                 .flatMap { it.parts.filterIsInstance<UIMessagePart.Text>() }
                 .map { it.text }
-            val extra = (listOfNotNull(toolPrompt) + systemTexts)
+            val reasoningPrompt = if (usePromptReasoning) buildPromptReasoningSystem() else null
+            val extra = (listOfNotNull(reasoningPrompt, toolPrompt) + systemTexts)
                 .filter { it.isNotBlank() }
                 .joinToString("\n\n")
             filteredMessages = filteredMessages.filter { it.role != MessageRole.SYSTEM }
@@ -721,8 +727,21 @@ class ChatCompletionsAPI(
         appendLine("工具结果会返回给你，请基于结果继续回答。无需调用工具时直接回答。")
         appendLine("可用工具：")
         tools.forEach { tool ->
-            appendLine("- ${tool.name}: ${tool.description.replace('\n', ' ').take(60)}")
+            appendLine("- ${tool.name}: ${tool.description.replace('\\n', ' ').take(60)}")
         }
+    }
+
+    /** 提示词式推理: 不支持原生thinking的模型通过<thinking>标签实现思考链 */
+    private fun buildPromptReasoningSystem(): String = buildString {
+        appendLine("在回答之前，请先进行逐步推理思考。")
+        appendLine("将你的思考过程放在 <thinking>...</thinking> 标签中。")
+        appendLine("然后在标签外给出最终回答。")
+        appendLine("示例格式：")
+        appendLine("<thinking>")
+        appendLine("1. 分析问题...")
+        appendLine("2. 推理过程...")
+        appendLine("</thinking>")
+        appendLine("最终回答内容...")
     }
 
     private fun JsonArrayBuilder.addAssistantMessages(message: UIMessage, includeReasoning: Boolean, supportsImage: Boolean = true) {
