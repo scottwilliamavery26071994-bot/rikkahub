@@ -184,7 +184,7 @@ class WorkflowEngine(
         // Conditions
         if (def.conditions.isNotEmpty()) {
 
-            val ctx = contextProvider.snapshot(
+            val ctx = contextProvider.snapshot()
                 needsLocation = ConditionEvaluator.needsLocation(def.conditions),
                 needsLastChat = ConditionEvaluator.needsLastChat(def.conditions),
             )

@@ -5,6 +5,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import java.util.UUID
 
 @Composable
 fun ChatList(
@@ -35,7 +36,8 @@ fun ChatList(
     onUpdateMessage: (Any) -> Unit,
     animatedVisibilityScope: Any,
     onSuggestion: (Any) -> Unit,
-    onNewPrompt: (String) -> Unit
+    onNewPrompt: (String) -> Unit,
+    onJumpToMessage: (Int) -> Unit
 ) {
     Box(
         modifier = Modifier
