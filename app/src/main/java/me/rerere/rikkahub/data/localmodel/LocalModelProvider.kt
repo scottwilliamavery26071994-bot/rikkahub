@@ -8,6 +8,7 @@ package me.rerere.rikkahub.data.localmodel
 import android.util.Log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import me.rerere.ai.core.MessageRole
 import me.rerere.ai.core.Tool
 import me.rerere.ai.provider.*
 import me.rerere.ai.ui.ImageGenerationResult

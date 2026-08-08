@@ -114,6 +114,8 @@ dependencies {
     implementation(libs.androidx.localbroadcastmanager)
     // 本地推理引擎（ONNX Runtime，有 Java API，开箱即用）
     implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
+    // llama.cpp Android 绑定（GGUF 格式本地推理）
+    implementation("com.github.de.kherud.llama:llama-android:1.3.3")
 
     // ===== Compose =====
     implementation(platform(libs.androidx.compose.bom))
