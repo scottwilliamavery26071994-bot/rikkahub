@@ -1,14 +1,9 @@
-﻿/*
- * 灵犀 Lingxi
- * 衍生自 Lingxi (https://github.com/scottwilliamavery26071994-bot/rikkahub)，原作者 RE
- * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
- */
-
 package me.rerere.rikkahub.ui.pages.setting
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,14 +23,16 @@ import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,23 +43,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.*
 import me.rerere.hugeicons.stroke.AiMagic
-import me.rerere.hugeicons.stroke.AiInnovation01
-import me.rerere.hugeicons.stroke.Tools
-import me.rerere.hugeicons.stroke.Grid
-import me.rerere.hugeicons.stroke.Archive01
-import me.rerere.hugeicons.stroke.Settings01
-import me.rerere.hugeicons.stroke.Train01
 import me.rerere.hugeicons.stroke.Alert01
-import me.rerere.hugeicons.stroke.CloudServer
 import me.rerere.hugeicons.stroke.Book01
 import me.rerere.hugeicons.stroke.Book03
 import me.rerere.hugeicons.stroke.Bookshelf01
 import me.rerere.hugeicons.stroke.Brain02
 import me.rerere.hugeicons.stroke.Clapping01
 import me.rerere.hugeicons.stroke.Database02
-import me.rerere.hugeicons.stroke.Developer
 import me.rerere.hugeicons.stroke.GlobalSearch
 import me.rerere.hugeicons.stroke.ImageUpload
 import me.rerere.hugeicons.stroke.InLove
@@ -70,19 +58,12 @@ import me.rerere.hugeicons.stroke.LookTop
 import me.rerere.hugeicons.stroke.McpServer
 import me.rerere.hugeicons.stroke.Megaphone01
 import me.rerere.hugeicons.stroke.Package
-import me.rerere.hugeicons.stroke.Pulse01
 import me.rerere.hugeicons.stroke.ServerStack01
 import me.rerere.hugeicons.stroke.Settings03
-import me.rerere.hugeicons.stroke.Shield02
-import me.rerere.hugeicons.stroke.SmartPhone01
 import me.rerere.hugeicons.stroke.Share04
 import me.rerere.hugeicons.stroke.Sun01
 import me.rerere.hugeicons.stroke.WavingHand01
-import me.rerere.hugeicons.stroke.MessageMultiple01
-import me.rerere.hugeicons.stroke.Message01
 import me.rerere.rikkahub.R
-import me.rerere.rikkahub.ui.pages.setting.BackupDialog
-import me.rerere.hugeicons.stroke.Download01
 import me.rerere.rikkahub.Screen
 import me.rerere.rikkahub.data.datastore.isNotConfigured
 import me.rerere.rikkahub.data.files.FilesManager
@@ -145,8 +126,6 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                     BackButton()
                 },
                 scrollBehavior = scrollBehavior,
-                actions = {
-                },
                 colors = CustomColors.topBarColors
             )
         },
@@ -203,22 +182,10 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         supportingContent = { Text(selectedColorModeText) },
                     )
                     item(
-                        onClick = { navController.navigate(Screen.SettingDisplay) },
+                        onClick = { navController.navigate(Screen.SettingPreferences) },
                         leadingContent = { Icon(HugeIcons.Settings03, null) },
-                        supportingContent = { Text(stringResource(R.string.setting_page_display_setting_desc)) },
-                        headlineContent = { Text(stringResource(R.string.setting_page_display_setting)) },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.SettingPlugins) },
-                        leadingContent = { Icon(HugeIcons.Package, null) },
-                        supportingContent = { Text("管理本地插件，导入ZIP插件包") },
-                        headlineContent = { Text("插件管理") },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.SettingSecurity) },
-                        leadingContent = { Icon(HugeIcons.Shield02, null) },
-                        supportingContent = { Text("工具调用确认、自动批准、工作流拦截等安全选项") },
-                        headlineContent = { Text("安全设置") },
+                        supportingContent = { Text(stringResource(R.string.setting_page_preferences_desc)) },
+                        headlineContent = { Text(stringResource(R.string.setting_page_preferences)) },
                     )
                     item(
                         onClick = { navController.navigate(Screen.Assistant) },
@@ -276,54 +243,6 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         supportingContent = { Text(stringResource(R.string.setting_page_web_server_desc)) },
                         headlineContent = { Text(stringResource(R.string.setting_page_web_server)) },
                     )
-                    item(
-                        onClick = { navController.navigate(Screen.SettingSystemTools) },
-                        leadingContent = { Icon(HugeIcons.SmartPhone01, null) },
-                        supportingContent = { Text("位置、通知、日历、闹钟等系统工具") },
-                        headlineContent = { Text("系统工具") },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.SettingWeixinBot) },
-                        leadingContent = { Icon(HugeIcons.MessageMultiple01, null) },
-                        supportingContent = { Text("把微信号变成 AI 入口，扫码登录后用微信收发消息") },
-                        headlineContent = { Text("微信 Bot") },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.SettingRailGo) },
-                        leadingContent = { Icon(HugeIcons.Train01, null) },
-                        supportingContent = { Text("RailGo：查车站、查车次、看时刻表") },
-                        headlineContent = { Text("火车查询") },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.SettingApiExplorer) },
-                        leadingContent = { Icon(HugeIcons.Settings01, null) },
-                        supportingContent = { Text("输入网址自动发现 API 接口") },
-                        headlineContent = { Text("API 探索器") },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.SettingGomoku) },
-                        leadingContent = { Icon(HugeIcons.Grid, null) },
-                        supportingContent = { Text("15x15 棋盘，人机对战五子棋") },
-                        headlineContent = { Text("五子棋") },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.SettingToolbox) },
-                        leadingContent = { Icon(HugeIcons.Tools, null) },
-                        supportingContent = { Text("Base64/时间戳/密码/JSON/颜色/进制/正则") },
-                        headlineContent = { Text("工具箱") },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.Workflows) },
-                        leadingContent = { Icon(HugeIcons.SmartPhone01, null) },
-                        supportingContent = { Text("Tasker 风格自动化：触发器 + 条件 -> 执行动作，由 AI 编写") },
-                        headlineContent = { Text("工作流") },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.Health) },
-                        leadingContent = { Icon(HugeIcons.Pulse01, null) },
-                        supportingContent = { Text("Gadgetbridge 健康数据查看") },
-                        headlineContent = { Text("健康数据") },
-                    )
                 }
             }
 
@@ -380,15 +299,19 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
+                                var showQQGroupSheet by remember { mutableStateOf(false) }
                                 IconButton(
-                                    onClick = {
-                                        context.joinQQGroup("Qsm0whzbPsm1UyNpR683ulLyMZ2Pqrw0")
-                                    }
+                                    onClick = { showQQGroupSheet = true }
                                 ) {
                                     Icon(
                                         imageVector = TencentQQIcon,
                                         contentDescription = "QQ",
                                         tint = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+                                if (showQQGroupSheet) {
+                                    QQGroupBottomSheet(
+                                        onDismiss = { showQQGroupSheet = false }
                                     )
                                 }
                                 IconButton(
@@ -407,7 +330,14 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         headlineContent = { Text(stringResource(R.string.setting_page_about)) },
                     )
                     item(
-                        onClick = { context.openUrl("https://github.com/sue1231513/lingxi") },
+                        onClick = {
+                            val docUrl = if (java.util.Locale.getDefault().language == "zh") {
+                                "https://docs.rikka-ai.com/zh/introduction"
+                            } else {
+                                "https://docs.rikka-ai.com/introduction"
+                            }
+                            context.openUrl(docUrl)
+                        },
                         leadingContent = { Icon(HugeIcons.Book01, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_documentation_desc)) },
                         headlineContent = { Text(stringResource(R.string.setting_page_documentation)) },
@@ -417,12 +347,6 @@ fun SettingPage(vm: SettingVM = koinViewModel()) {
                         leadingContent = { Icon(HugeIcons.Bookshelf01, null) },
                         supportingContent = { Text(stringResource(R.string.setting_page_request_logs_desc)) },
                         headlineContent = { Text(stringResource(R.string.setting_page_request_logs)) },
-                    )
-                    item(
-                        onClick = { navController.navigate(Screen.SecurityAudit) },
-                        leadingContent = { Icon(HugeIcons.Alert01, null) },
-                        supportingContent = { Text("查看插件安装、工作流拦截、敏感操作等安全事件记录") },
-                        headlineContent = { Text("安全审计日志") },
                     )
                     item(
                         onClick = { navController.navigate(Screen.SettingDonate) },
@@ -488,5 +412,46 @@ private fun ProviderConfigWarningCard(navController: Navigator) {
                 Text(stringResource(R.string.setting_page_config))
             }
         }
+    }
 }
+
+private data class QQGroup(
+    val name: String,
+    val key: String,
+)
+
+private val QQ_GROUPS = listOf(
+    QQGroup("RikkaHub 一群", "4POE46u9e_zoy1TkNfWdCvueR9CKFJdk"),
+    QQGroup("RikkaHub 二群", "Qsm0whzbPsm1UyNpR683ulLyMZ2Pqrw0"),
+    QQGroup("RikkaHub 三群", "Qc9oP-9tXioZeQEvEvI2_owWtBAIx3lS"),
+)
+
+@Composable
+private fun QQGroupBottomSheet(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            QQ_GROUPS.forEach { group ->
+                ListItem(
+                    headlineContent = { Text(group.name) },
+                    leadingContent = {
+                        Icon(
+                            imageVector = TencentQQIcon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary
+                        )
+                    },
+                    modifier = Modifier.clickable {
+                        context.joinQQGroup(group.key)
+                        onDismiss()
+                    }
+                )
+            }
+        }
+    }
 }

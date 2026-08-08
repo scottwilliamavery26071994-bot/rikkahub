@@ -1172,4 +1172,53 @@
 
   <string name="plugin_security_banner">⚠ 插件可執行網路請求並存取您已授權的系統資料。請僅從可信來源安裝插件。</string>
   <string name="web_server_security_warning_no_jwt">⚠ 未啟用 JWT 鑒權或密碼為空。目前任何可存取該位址的人都能讀取您的對話記錄，強烈建議立即設定密碼並開啟 JWT。</string>
+
+  <!-- 从上游恢复的字符串 -->
+  <string name="setting_display_page_bubble_opacity_title">氣泡透明度</string>
+  <string name="setting_display_page_chat_font_family_custom">自訂</string>
+  <string name="setting_display_page_custom_font_import">匯入自訂字型</string>
+  <string name="setting_display_page_custom_font_import_failed">匯入字型失敗：%1$s</string>
+  <string name="setting_display_page_custom_font_import_success">自訂字型已匯入</string>
+  <string name="setting_display_page_custom_font_not_imported">尚未匯入自訂字型。支援 .ttf、.otf 與 .ttc 檔案。</string>
+  <string name="setting_display_page_custom_font_remove">移除自訂字型</string>
+  <string name="setting_display_page_custom_font_title">自訂字型</string>
+  <string name="setting_display_page_show_datetime_in_message_desc">在每則訊息下方顯示日期與時間</string>
+  <string name="setting_display_page_show_datetime_in_message_title">在訊息中顯示日期和時間</string>
+  <string name="setting_display_page_tts_read_outside_brackets_desc">啟用後，TTS 將不朗讀括號內的內容</string>
+  <string name="setting_display_page_tts_read_outside_brackets_title">TTS 不朗讀括號內的內容</string>
+  <string name="setting_model_page_prompt_compress">上下文壓縮</string>
+  <string name="setting_model_page_prompt_ocr">OCR 辨識</string>
+  <string name="setting_model_page_prompt_suggestion">聊天回覆建議</string>
+  <string name="setting_model_page_prompt_title">標題生成</string>
+  <string name="setting_model_page_prompt_translation">翻譯</string>
+  <string name="setting_page_preferences">偏好設定</string>
+  <string name="setting_page_preferences_general">一般</string>
+  <string name="setting_page_preferences_general_desc">互動行為、捲動、輸入設定</string>
+  <string name="setting_page_preferences_notification">通知</string>
+  <string name="setting_page_preferences_notification_desc">更新提醒、訊息產生通知</string>
+  <string name="setting_page_preferences_theme">主題</string>
+  <string name="setting_page_preferences_theme_desc">動態色彩、主題、AMOLED 深色模式</string>
+  <string name="setting_page_preferences_ui">UI 偏好設定</string>
+  <string name="setting_page_preferences_ui_desc">訊息顯示、字型、程式碼區塊</string>
+  <string name="setting_page_theme_setting_desc">自訂應用配色方案</string>
+  <string name="setting_theme_page_add_theme">新增</string>
+  <string name="setting_theme_page_create_theme">建立主題</string>
+  <string name="setting_theme_page_custom_themes">自訂主題</string>
+  <string name="setting_theme_page_delete_theme_message">確定要刪除此主題嗎？</string>
+  <string name="setting_theme_page_delete_theme_title">刪除主題</string>
+  <string name="setting_theme_page_dynamic_color_hint">動態顏色已開啟，請在偏好設定 &gt; 主題中關閉以使用自訂主題。</string>
+  <string name="setting_theme_page_edit_theme">編輯主題</string>
+  <string name="setting_theme_page_export_success">主題 JSON 已複製到剪貼簿</string>
+  <string name="setting_theme_page_import_success">主題匯入成功</string>
+  <string name="setting_theme_page_import_theme">匯入</string>
+  <string name="setting_theme_page_no_custom_themes">尚無自訂主題</string>
+  <string name="setting_theme_page_preset_themes">預設主題</string>
+  <string name="setting_theme_page_preview">預覽</string>
+  <string name="setting_theme_page_primary_color">主色</string>
+  <string name="setting_theme_page_save">儲存</string>
+  <string name="setting_theme_page_secondary_color">輔色</string>
+  <string name="setting_theme_page_tertiary_color">第三色</string>
+  <string name="setting_theme_page_theme_name">主題名稱</string>
+
+    <string name="setting_page_preferences_desc">主題、顯示、互動與通知設定</string>
 </resources>
