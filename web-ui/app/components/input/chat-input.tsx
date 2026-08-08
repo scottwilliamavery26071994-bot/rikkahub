@@ -24,6 +24,7 @@ import { ReasoningPickerButton } from "~/components/input/reasoning-picker";
 import { SearchPickerButton } from "~/components/input/search-picker";
 import { McpPickerButton } from "~/components/input/mcp-picker";
 import { ExtensionPickerButton } from "~/components/input/extension-picker";
+import { GitHubAnalyzerButton } from "~/components/input/github-analyzer-button";
 import { useSettingsStore } from "~/stores";
 import { Button } from "~/components/ui/button";
 import {
@@ -55,6 +56,7 @@ export interface ChatInputProps {
   onCancelEdit?: () => void;
   onSuggestionClick?: (suggestion: string) => void;
   onExportConversation?: (includeReasoning: boolean) => void;
+  onAnalyzeRepo?: (url: string) => void;
   className?: string;
 }
 
@@ -190,6 +192,7 @@ function ChatInputInner({
   onCancelEdit,
   onSuggestionClick,
   onExportConversation,
+  onAnalyzeRepo,
   className,
 }: ChatInputProps) {
   const { t } = useTranslation("input");
@@ -703,6 +706,23 @@ function ChatInputInner({
               <ReasoningPickerButton disabled={!canSwitchModel} />
               <McpPickerButton disabled={!canSwitchModel} />
               <ExtensionPickerButton disabled={!canSwitchModel} />
+              <GitHubAnalyzerButton
+                disabled={!canSwitchModel}
+                onAnalyze={(url) => {
+                  const prompt = `请使用 repo_quick_scan、scan_security_patterns、scan_bug_patterns、analyze_dependency_file 等工具，全面分析这个 GitHub 项目：
+
+🔗 ${url}
+
+分析步骤：
+1. 先用 repo_quick_scan 了解项目结构
+2. 读取关键的源代码文件
+3. 用 scan_security_patterns 扫描安全漏洞（密钥泄露、注入、弱加密等）
+4. 用 scan_bug_patterns 扫描 Bug 模式
+5. 用 analyze_dependency_file 检查依赖风险
+6. 最后用 create_analysis_report 生成报告，并询问我是否需要修复`;
+                  onValueChange(prompt);
+                }}
+              />
               <QuickMessageButton
                 quickMessages={quickMessages}
                 disabled={!canUseQuickMessage}

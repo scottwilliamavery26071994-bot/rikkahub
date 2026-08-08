@@ -108,5 +108,12 @@
     "send_hint_enter": "按 Enter 发送，Shift + Enter 换行",
     "send_hint_newline": "按 Shift + Enter 发送，Enter 换行",
     "long_text_as_file": "长文本已转为文件附件"
+  },
+  "github_analyzer": {
+    "title": "GitHub 项目分析",
+    "description": "输入 GitHub 仓库链接，AI 自动扫描代码安全、Bug 和依赖风险",
+    "placeholder": "https://github.com/owner/repo",
+    "scan": "开始分析",
+    "hint": "分析将自动扫描安全漏洞、Bug 模式、依赖风险，并生成修复建议"
   }
 }

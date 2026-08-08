@@ -108,5 +108,12 @@
     "send_hint_enter": "Press Enter to send, Shift + Enter for newline",
     "send_hint_newline": "Press Shift + Enter to send, Enter for newline",
     "long_text_as_file": "Long text converted to file attachment"
+  },
+  "github_analyzer": {
+    "title": "GitHub Project Analysis",
+    "description": "Enter a GitHub repo URL, AI will scan for security risks, bugs, and dependency issues",
+    "placeholder": "https://github.com/owner/repo",
+    "scan": "Start Analysis",
+    "hint": "The analysis will scan for security vulnerabilities, bug patterns, dependency risks, and suggest fixes"
   }
 }

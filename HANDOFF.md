@@ -101,6 +101,12 @@
 **安全漏洞规则库（17 条）：** Secrets(6) + Injection(4) + Crypto(3) + Config(4)
 **Bug 检测规则库（10 条）：** Kotlin(4) + Python(3) + JS(3) + 通用(2)
 
+### 十三、GitHub 分析入口按钮 ✅
+- 新增 `github-analyzer-button.tsx`（140行）— 聊天输入栏 GitHub 图标按钮
+- 修改 `chat-input.tsx` — 集成分按钮到输入栏按钮组
+- 新增 i18n（zh-CN + en-US）— `github_analyzer` 字段
+- 功能：点击 → 粘贴 GitHub URL → 自动填充分析提示词到输入框
+
 ---
 
 ## 卡住的问题
