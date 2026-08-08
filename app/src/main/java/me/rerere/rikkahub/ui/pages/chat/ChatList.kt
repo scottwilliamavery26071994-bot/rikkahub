@@ -103,7 +103,7 @@ fun ChatList(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = errors.lastOrNull()?.message ?: "发生错误",
+                        text = errors.lastOrNull()?.let { it.title ?: it.error.message } ?: "发生错误",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         maxLines = 2,
