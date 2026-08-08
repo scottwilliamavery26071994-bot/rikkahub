@@ -1,9 +1,17 @@
+﻿/*
+ * 灵犀 Lingxi
+ * 衍生自 Lingxi (https://github.com/scottwilliamavery26071994-bot/rikkahub)，原作者 RE
+ * 本项目基于 GNU AGPL v3 开源，详见根目录 LICENSE 文件
+ */
+
 package me.rerere.rikkahub.ui.pages.setting
 
 import android.content.ClipData
-import androidx.compose.foundation.Canvas
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,75 +21,50 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LargeFlexibleTopAppBar
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.ColorUtils
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.dokar.sonner.ToastType
-import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import me.rerere.hugeicons.HugeIcons
-import me.rerere.hugeicons.stroke.Copy01
-import me.rerere.hugeicons.stroke.Delete02
-import me.rerere.hugeicons.stroke.Edit02
-import me.rerere.hugeicons.stroke.FileImport
-import me.rerere.hugeicons.stroke.PlusSign
-import me.rerere.hugeicons.stroke.Tick01
-import me.rerere.rikkahub.R
 import me.rerere.rikkahub.ui.components.nav.BackButton
-import me.rerere.rikkahub.ui.components.ui.RikkaConfirmDialog
-import me.rerere.rikkahub.ui.context.LocalToaster
-import me.rerere.rikkahub.ui.pages.setting.components.PresetThemeButtonGroup
+import me.rerere.rikkahub.ui.components.ui.ColorPickerDialog
+import me.rerere.rikkahub.ui.components.ui.toComposeColor
 import me.rerere.rikkahub.ui.theme.CustomColors
 import me.rerere.rikkahub.ui.theme.CustomTheme
-import me.rerere.rikkahub.ui.theme.LocalDarkMode
+import me.rerere.rikkahub.ui.theme.PresetThemes
 import me.rerere.rikkahub.utils.plus
 import org.koin.androidx.compose.koinViewModel
-import kotlin.math.roundToInt
 import kotlin.uuid.Uuid
 
 private val themeJson = Json {
@@ -89,26 +72,22 @@ private val themeJson = Json {
     prettyPrint = true
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingThemePage(vm: SettingVM = koinViewModel()) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val clipboardManager = LocalClipboard.current
-    val toaster = LocalToaster.current
-    val scope = rememberCoroutineScope()
-    val exportSuccessMsg = stringResource(R.string.setting_theme_page_export_success)
-    val importSuccessMsg = stringResource(R.string.setting_theme_page_import_success)
+    val context = LocalContext.current
 
-    var showEditSheet by remember { mutableStateOf(false) }
     var editingTheme by remember { mutableStateOf<CustomTheme?>(null) }
     var showImportDialog by remember { mutableStateOf(false) }
-    var deletingTheme by remember { mutableStateOf<CustomTheme?>(null) }
+    var showPrimaryPicker by remember { mutableStateOf(false) }
+    var showSecondaryPicker by remember { mutableStateOf(false) }
+    var showTertiaryPicker by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             LargeFlexibleTopAppBar(
-                title = { Text(stringResource(R.string.setting_page_theme_setting)) },
+                title = { Text("自定义主题管理") },
                 navigationIcon = { BackButton() },
                 scrollBehavior = scrollBehavior,
                 colors = CustomColors.topBarColors
@@ -116,610 +95,201 @@ fun SettingThemePage(vm: SettingVM = koinViewModel()) {
         },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = CustomColors.topBarColors.containerColor
-    ) { innerPadding ->
+    ) { contentPadding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = innerPadding + PaddingValues(8.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = contentPadding + PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            if (settings.dynamicColor) {
-                item("dynamicColorHint") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.setting_theme_page_dynamic_color_hint),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    OutlinedButton(
+                        onClick = { editingTheme = CustomTheme(name = "新主题") },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        modifier = Modifier.height(32.dp),
+                    ) { Text("新建", style = MaterialTheme.typography.labelMedium) }
+                    Spacer(Modifier.width(8.dp))
+                    OutlinedButton(
+                        onClick = { showImportDialog = true },
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        modifier = Modifier.height(32.dp),
+                    ) { Text("导入", style = MaterialTheme.typography.labelMedium) }
+                }
+            }
+
+            item {
+                Text(
+                    text = "预设主题",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                )
+            }
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    PresetThemes.forEach { preset ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { vm.updateSettings(settings.copy(themeId = preset.id)) }) {
+                            Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(preset.standardLight.primary).then(if (settings.themeId == preset.id) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape) else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)))
+                            Spacer(Modifier.height(4.dp))
+                            Text(text = preset.id, style = MaterialTheme.typography.labelSmall, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+                        }
                     }
                 }
             }
 
-            if (!settings.dynamicColor) {
-                item("presetThemes") {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.setting_theme_page_preset_themes),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 8.dp)
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(20.dp))
-                                .background(MaterialTheme.colorScheme.surfaceBright)
-                        ) {
-                            PresetThemeButtonGroup(
-                                themeId = settings.themeId,
-                                modifier = Modifier.fillMaxWidth(),
-                                onChangeTheme = {
-                                    vm.updateSettings(settings.copy(themeId = it))
-                                }
-                            )
-                        }
-                    }
-                }
-
-                item("customThemesHeader") {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.setting_theme_page_custom_themes),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilledTonalButton(
-                                onClick = { showImportDialog = true }
-                            ) {
-                                Icon(HugeIcons.FileImport, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.setting_theme_page_import_theme))
-                            }
-                            FilledTonalButton(
-                                onClick = {
-                                    editingTheme = null
-                                    showEditSheet = true
-                                }
-                            ) {
-                                Icon(HugeIcons.PlusSign, null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(4.dp))
-                                Text(stringResource(R.string.setting_theme_page_add_theme))
-                            }
-                        }
-                    }
-                }
-
-                if (settings.customThemes.isEmpty()) {
-                    item("emptyCustomThemes") {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = stringResource(R.string.setting_theme_page_no_custom_themes),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                items(settings.customThemes, key = { it.id }) { theme ->
-                    CustomThemeItem(
-                        theme = theme,
-                        isSelected = settings.themeId == theme.id,
-                        onSelect = {
-                            vm.updateSettings(settings.copy(themeId = theme.id))
-                        },
-                        onExport = {
-                            val json = themeJson.encodeToString(theme)
-                            scope.launch {
-                                clipboardManager.setClipEntry(
-                                    ClipEntry(ClipData.newPlainText("theme", json))
-                                )
-                            }
-                            toaster.show(exportSuccessMsg, type = ToastType.Success)
-                        },
-                        onEdit = {
-                            editingTheme = theme
-                            showEditSheet = true
-                        },
-                        onDelete = {
-                            deletingTheme = theme
-                        }
+            if (settings.customThemes.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "自定义主题",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 20.dp, bottom = 8.dp)
                     )
+                }
+                item {
+                    Surface(shape = RoundedCornerShape(8.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
+                        Column {
+                            settings.customThemes.forEachIndexed { index, custom ->
+                                if (index > 0) { HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant) }
+                                val lightScheme = remember(custom.id, custom.primaryColorArgb, custom.secondaryColorArgb, custom.tertiaryColorArgb) { custom.generateColorScheme(dark = false) }
+                                Row(modifier = Modifier.fillMaxWidth().clickable { vm.updateSettings(settings.copy(themeId = custom.id)) }.padding(horizontal = 14.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Box {
+                                        Box(Modifier.offset(x = 0.dp).size(20.dp).clip(CircleShape).background(lightScheme.primary).border(1.dp, MaterialTheme.colorScheme.surface, CircleShape))
+                                        Box(Modifier.offset(x = 13.dp).size(20.dp).clip(CircleShape).background(lightScheme.secondary).border(1.dp, MaterialTheme.colorScheme.surface, CircleShape))
+                                        Box(Modifier.offset(x = 26.dp).size(20.dp).clip(CircleShape).background(lightScheme.tertiary).border(1.dp, MaterialTheme.colorScheme.surface, CircleShape))
+                                    }
+                                    Spacer(Modifier.width(52.dp))
+                                    Text(custom.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                                    if (settings.themeId == custom.id) {
+                                        Surface(shape = RoundedCornerShape(4.dp), border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)) {
+                                            Text("当前", style = MaterialTheme.typography.labelSmall, fontSize = 11.sp, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        }
+                                        Spacer(Modifier.width(8.dp))
+                                    }
+                                    TextButton(onClick = { editingTheme = custom }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("编辑", style = MaterialTheme.typography.labelMedium) }
+                                    TextButton(onClick = {
+                                        val json = themeJson.encodeToString(custom)
+                                        val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                        clipboard.setPrimaryClip(ClipData.newPlainText("theme", json))
+                                        Toast.makeText(context, "已复制", Toast.LENGTH_SHORT).show()
+                                    }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("导出", style = MaterialTheme.typography.labelMedium) }
+                                    TextButton(onClick = { vm.deleteCustomTheme(custom.id) }, contentPadding = PaddingValues(horizontal = 8.dp)) { Text("删除", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.error) }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    if (showEditSheet) {
-        CustomThemeEditSheet(
-            theme = editingTheme,
-            onDismiss = { showEditSheet = false },
-            onSave = { theme ->
-                val newThemes = if (editingTheme != null) {
-                    settings.customThemes.map { if (it.id == theme.id) theme else it }
-                } else {
-                    settings.customThemes + theme
-                }
-                vm.updateSettings(
-                    settings.copy(
-                        customThemes = newThemes,
-                        themeId = theme.id
+    editingTheme?.let { theme ->
+        AlertDialog(
+            onDismissRequest = { editingTheme = null },
+            title = { Text(if (settings.customThemes.any { it.id == theme.id }) "编辑主题" else "新建主题") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = theme.name,
+                        onValueChange = { editingTheme = theme.copy(name = it) },
+                        label = { Text("主题名称") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
                     )
-                )
-                showEditSheet = false
-            }
+                    Row(modifier=Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=Alignment.CenterVertically,) {
+                        Text("主色", Modifier.weight(1f))
+                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(theme.primaryColorArgb.toComposeColor()).clickable { showPrimaryPicker = true })
+                    }
+                    Row(modifier=Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=Alignment.CenterVertically,) {
+                        Text("二级色", Modifier.weight(1f))
+                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(theme.secondaryColorArgb?.toComposeColor() ?: Color.Gray.copy(alpha = 0.3f)).border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)).clickable { showSecondaryPicker = true })
+                        if (theme.secondaryColorArgb != null) {
+                            TextButton(onClick = { editingTheme = theme.copy(secondaryColorArgb = null) }) { Text("重置") }
+                        }
+                    }
+                    Row(modifier=Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),verticalAlignment=Alignment.CenterVertically,) {
+                        Text("三级色", Modifier.weight(1f))
+                        Box(Modifier.size(36.dp).clip(RoundedCornerShape(8.dp)).background(theme.tertiaryColorArgb?.toComposeColor() ?: Color.Gray.copy(alpha = 0.3f)).border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(8.dp)).clickable { showTertiaryPicker = true })
+                        if (theme.tertiaryColorArgb != null) {
+                            TextButton(onClick = { editingTheme = theme.copy(tertiaryColorArgb = null) }) { Text("重置") }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val t = editingTheme!!
+                    if (settings.customThemes.any { it.id == t.id }) vm.updateCustomTheme(t) else vm.addCustomTheme(t)
+                    editingTheme = null
+                }) { Text("保存") }
+            },
+            dismissButton = { TextButton(onClick = { editingTheme = null }) { Text("取消") } }
         )
+    }
+
+    if (showPrimaryPicker) {
+        editingTheme?.let { theme ->
+            ColorPickerDialog(
+                initialColor = theme.primaryColorArgb,
+                defaultColor = MaterialTheme.colorScheme.primary,
+                onConfirm = { color -> editingTheme = theme.copy(primaryColorArgb = color ?: 0xFF6750A4L) },
+                onDismiss = { showPrimaryPicker = false }
+            )
+        }
+    }
+    if (showSecondaryPicker) {
+        editingTheme?.let { theme ->
+            ColorPickerDialog(
+                initialColor = theme.secondaryColorArgb,
+                defaultColor = MaterialTheme.colorScheme.secondary,
+                onConfirm = { color -> editingTheme = theme.copy(secondaryColorArgb = color) },
+                onDismiss = { showSecondaryPicker = false }
+            )
+        }
+    }
+    if (showTertiaryPicker) {
+        editingTheme?.let { theme ->
+            ColorPickerDialog(
+                initialColor = theme.tertiaryColorArgb,
+                defaultColor = MaterialTheme.colorScheme.tertiary,
+                onConfirm = { color -> editingTheme = theme.copy(tertiaryColorArgb = color) },
+                onDismiss = { showTertiaryPicker = false }
+            )
+        }
     }
 
     if (showImportDialog) {
-        ImportThemeDialog(
-            onDismiss = { showImportDialog = false },
-            onImport = { theme ->
-                val importedTheme = theme.copy(id = Uuid.random().toString())
-                vm.updateSettings(
-                    settings.copy(
-                        customThemes = settings.customThemes + importedTheme,
-                        themeId = importedTheme.id
-                    )
-                )
-                showImportDialog = false
-                toaster.show(importSuccessMsg, type = ToastType.Success)
-            }
-        )
-    }
-
-    RikkaConfirmDialog(
-        show = deletingTheme != null,
-        title = stringResource(R.string.setting_theme_page_delete_theme_title),
-        confirmText = stringResource(android.R.string.ok),
-        dismissText = stringResource(android.R.string.cancel),
-        onConfirm = {
-            deletingTheme?.let { theme ->
-                val newThemes = settings.customThemes.filter { it.id != theme.id }
-                val newThemeId = if (settings.themeId == theme.id) "sakura" else settings.themeId
-                vm.updateSettings(settings.copy(customThemes = newThemes, themeId = newThemeId))
-            }
-            deletingTheme = null
-        },
-        onDismiss = { deletingTheme = null },
-        text = {
-            Text(stringResource(R.string.setting_theme_page_delete_theme_message))
-        }
-    )
-}
-
-@Composable
-private fun CustomThemeItem(
-    theme: CustomTheme,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-    onExport: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    val darkMode = LocalDarkMode.current
-    val scheme = theme.generateColorScheme(darkMode)
-
-    ListItem(
-        modifier = Modifier
-            .padding(horizontal = 8.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .clickable { onSelect() },
-        headlineContent = { Text(theme.name.ifEmpty { "Unnamed" }) },
-        leadingContent = {
-            Box(contentAlignment = Alignment.Center) {
-                Canvas(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .size(40.dp)
-                ) {
-                    drawRect(color = scheme.primaryContainer, size = size)
-                    drawRect(
-                        color = scheme.secondaryContainer,
-                        size = size,
-                        topLeft = Offset(x = size.width / 2, y = 0f)
-                    )
-                    drawRect(
-                        color = scheme.tertiaryContainer,
-                        size = size,
-                        topLeft = Offset(x = size.width / 2, y = size.height / 2)
-                    )
-                    drawCircle(
-                        color = scheme.primary,
-                        radius = if (isSelected) 10.dp.toPx() else 6.dp.toPx(),
-                        center = Offset(x = size.width / 2, y = size.height / 2)
-                    )
+        var jsonText by remember { mutableStateOf("") }
+        AlertDialog(
+            onDismissRequest = { showImportDialog = false },
+            title = { Text("导入主题") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("粘贴主题JSON（从导出的剪贴板内容粘贴）：")
+                    OutlinedTextField(value = jsonText, onValueChange = { jsonText = it }, modifier = Modifier.fillMaxWidth(), minLines = 3, maxLines = 6)
                 }
-                if (isSelected) {
-                    Icon(
-                        HugeIcons.Tick01,
-                        contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-        },
-        trailingContent = {
-            Row {
-                IconButton(onClick = onExport) {
-                    Icon(HugeIcons.Copy01, null)
-                }
-                IconButton(onClick = onEdit) {
-                    Icon(HugeIcons.Edit02, null)
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        HugeIcons.Delete02,
-                        null,
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-        },
-        colors = CustomColors.listItemColors,
-    )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CustomThemeEditSheet(
-    theme: CustomTheme?,
-    onDismiss: () -> Unit,
-    onSave: (CustomTheme) -> Unit,
-) {
-    val sheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden, enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded))
-    var currentTheme by remember {
-        mutableStateOf(theme ?: CustomTheme())
-    }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp),
-        ) {
-            Text(
-                text = if (theme == null) stringResource(R.string.setting_theme_page_create_theme)
-                else stringResource(R.string.setting_theme_page_edit_theme),
-                style = MaterialTheme.typography.titleLarge,
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            Column(
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                OutlinedTextField(
-                    value = currentTheme.name,
-                    onValueChange = { currentTheme = currentTheme.copy(name = it) },
-                    label = { Text(stringResource(R.string.setting_theme_page_theme_name)) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                )
-
-                Text(
-                    text = stringResource(R.string.setting_theme_page_primary_color),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                ColorPickerRow(
-                    color = Color(currentTheme.primaryColorArgb.toInt()),
-                    onColorChange = {
-                        currentTheme = currentTheme.copy(primaryColorArgb = it.toArgb().toLong() and 0xFFFFFFFFL)
-                    }
-                )
-
-                Text(
-                    text = stringResource(R.string.setting_theme_page_secondary_color),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                ColorPickerRow(
-                    color = if (currentTheme.secondaryColorArgb != null) {
-                        Color(currentTheme.secondaryColorArgb!!.toInt())
-                    } else {
-                        Color(currentTheme.generateColorScheme(false).secondary.toArgb())
-                    },
-                    onColorChange = {
-                        currentTheme = currentTheme.copy(secondaryColorArgb = it.toArgb().toLong() and 0xFFFFFFFFL)
-                    }
-                )
-
-                Text(
-                    text = stringResource(R.string.setting_theme_page_tertiary_color),
-                    style = MaterialTheme.typography.titleSmall,
-                )
-                ColorPickerRow(
-                    color = if (currentTheme.tertiaryColorArgb != null) {
-                        Color(currentTheme.tertiaryColorArgb!!.toInt())
-                    } else {
-                        Color(currentTheme.generateColorScheme(false).tertiary.toArgb())
-                    },
-                    onColorChange = {
-                        currentTheme = currentTheme.copy(tertiaryColorArgb = it.toArgb().toLong() and 0xFFFFFFFFL)
-                    }
-                )
-
-                ThemePreview(currentTheme)
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(android.R.string.cancel))
-                }
-                Spacer(Modifier.width(8.dp))
-                Button(
-                    onClick = { onSave(currentTheme) },
-                    enabled = currentTheme.name.isNotBlank()
-                ) {
-                    Text(stringResource(R.string.setting_theme_page_save))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ImportThemeDialog(
-    onDismiss: () -> Unit,
-    onImport: (CustomTheme) -> Unit,
-) {
-    var jsonText by remember { mutableStateOf("") }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.setting_theme_page_import_theme)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = jsonText,
-                    onValueChange = {
-                        jsonText = it
-                        errorMessage = null
-                    },
-                    label = { Text("JSON") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 4,
-                    maxLines = 8,
-                    isError = errorMessage != null,
-                    supportingText = errorMessage?.let { msg -> { Text(msg) } },
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
+            },
+            confirmButton = {
+                TextButton(onClick = {
                     try {
-                        val theme = themeJson.decodeFromString<CustomTheme>(jsonText)
-                        onImport(theme)
+                        val imported = themeJson.decodeFromString<CustomTheme>(jsonText).copy(id = Uuid.random().toString())
+                        vm.addCustomTheme(imported)
+                        Toast.makeText(context, "主题导入成功", Toast.LENGTH_SHORT).show()
+                        showImportDialog = false
                     } catch (e: Exception) {
-                        errorMessage = e.message
+                        Toast.makeText(context, "导入失败: ${e.message}", Toast.LENGTH_SHORT).show()
                     }
-                },
-                enabled = jsonText.isNotBlank()
-            ) {
-                Text(stringResource(R.string.setting_theme_page_import_theme))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(android.R.string.cancel))
-            }
-        }
-    )
-}
-
-@Composable
-private fun ColorPickerRow(
-    color: Color,
-    onColorChange: (Color) -> Unit,
-) {
-    val hsl = remember(color) {
-        FloatArray(3).also { ColorUtils.colorToHSL(color.toArgb(), it) }
-    }
-    var hue by remember(color) { mutableFloatStateOf(hsl[0]) }
-    var saturation by remember(color) { mutableFloatStateOf(hsl[1]) }
-    var lightness by remember(color) { mutableFloatStateOf(hsl[2]) }
-    var hslCode by remember(color) { mutableStateOf(formatHslCode(hsl[0], hsl[1], hsl[2])) }
-    var hslCodeError by remember(color) { mutableStateOf(false) }
-
-    fun updateColor(newHue: Float, newSaturation: Float, newLightness: Float) {
-        hue = newHue
-        saturation = newSaturation
-        lightness = newLightness
-        hslCode = formatHslCode(newHue, newSaturation, newLightness)
-        hslCodeError = false
-        onColorChange(Color(ColorUtils.HSLToColor(floatArrayOf(newHue, newSaturation, newLightness))))
-    }
-
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Canvas(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-            ) {
-                drawCircle(color = color)
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("H", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(16.dp))
-                    Slider(
-                        value = hue,
-                        onValueChange = {
-                            updateColor(it, saturation, lightness)
-                        },
-                        valueRange = 0f..360f,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("S", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(16.dp))
-                    Slider(
-                        value = saturation,
-                        onValueChange = {
-                            updateColor(hue, it, lightness)
-                        },
-                        valueRange = 0f..1f,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("L", style = MaterialTheme.typography.labelSmall, modifier = Modifier.width(16.dp))
-                    Slider(
-                        value = lightness,
-                        onValueChange = {
-                            updateColor(hue, saturation, it)
-                        },
-                        valueRange = 0f..1f,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-
-        OutlinedTextField(
-            value = hslCode,
-            onValueChange = { value ->
-                hslCode = value
-                val parsedHsl = parseHslCode(value)
-                hslCodeError = parsedHsl == null
-                if (parsedHsl != null) {
-                    hue = parsedHsl[0]
-                    saturation = parsedHsl[1]
-                    lightness = parsedHsl[2]
-                    onColorChange(Color(ColorUtils.HSLToColor(parsedHsl)))
-                }
+                }) { Text("导入") }
             },
-            label = { Text("HSL") },
-            placeholder = { Text("hsl(267 36% 48%)") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = hslCodeError,
-            supportingText = if (hslCodeError) {
-                { Text("Use hsl(267 36% 48%)") }
-            } else {
-                null
-            },
-        )
-    }
-}
-
-private val hslNumberRegex = Regex("""[-+]?\d*\.?\d+""")
-
-private fun parseHslCode(value: String): FloatArray? {
-    val values = buildList {
-        for (match in hslNumberRegex.findAll(value)) {
-            add(match.value.toFloatOrNull() ?: return null)
-            if (size == 3) break
-        }
-    }
-
-    if (values.size != 3) return null
-
-    val hue = values[0].coerceIn(0f, 360f)
-    val saturation = parseHslPercentOrFraction(values[1]) ?: return null
-    val lightness = parseHslPercentOrFraction(values[2]) ?: return null
-
-    return floatArrayOf(hue, saturation, lightness)
-}
-
-private fun parseHslPercentOrFraction(value: Float): Float? {
-    if (!value.isFinite()) return null
-    return if (value > 1f) {
-        (value / 100f).coerceIn(0f, 1f)
-    } else {
-        value.coerceIn(0f, 1f)
-    }
-}
-
-private fun formatHslCode(hue: Float, saturation: Float, lightness: Float): String {
-    return "hsl(${hue.roundToInt()} ${(saturation * 100).roundToInt()}% ${(lightness * 100).roundToInt()}%)"
-}
-
-@Composable
-private fun ThemePreview(theme: CustomTheme) {
-    val darkMode = LocalDarkMode.current
-    val scheme = theme.generateColorScheme(darkMode)
-
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.setting_theme_page_preview),
-            style = MaterialTheme.typography.titleSmall,
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(scheme.surface)
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            ColorSwatch(scheme.primary, "P")
-            ColorSwatch(scheme.secondary, "S")
-            ColorSwatch(scheme.tertiary, "T")
-            ColorSwatch(scheme.primaryContainer, "PC")
-            ColorSwatch(scheme.secondaryContainer, "SC")
-            ColorSwatch(scheme.surface, "Sf")
-        }
-    }
-}
-
-@Composable
-private fun ColorSwatch(color: Color, label: String) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-    ) {
-        Canvas(
-            modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-        ) {
-            drawCircle(color = color)
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            dismissButton = { TextButton(onClick = { showImportDialog = false }) { Text("取消") } }
         )
     }
 }

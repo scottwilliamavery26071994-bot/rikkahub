@@ -19,8 +19,8 @@ fun SettingSystemToolsPage() {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val systemTools = settings.systemToolsSetting
 
-    fun update(block: (me.rerere.rikkahub.data.datastore.SystemToolsSetting) -> me.rerere.rikkahub.data.datastore.SystemToolsSetting) {
-        vm.updateSettings(settings.copy(systemToolsSetting = block(systemTools)))
+    fun update(newValue: me.rerere.rikkahub.data.datastore.SystemToolsSetting) {
+        vm.updateSettings(settings.copy(systemToolsSetting = newValue))
     }
 
     Column(

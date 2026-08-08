@@ -725,18 +725,10 @@ private fun ColumnScope.ProviderConfigureLocalModel(
     // === 下载模型 ===
     Text("下载模型", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 8.dp))
 
-    if (AVAILABLE_MODELS.isEmpty()) {
-        Text(
-            "暂无可下载模型。请使用下方的自定义链接或浏览本地文件。\n推荐去 HuggingFace 搜索 ONNX 模型。",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
-    } else {
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.heightIn(max = 300.dp)
-        ) {
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.heightIn(max = 300.dp)
+    ) {
             // 当前已选的本地模型
             if (provider.modelFilePath.isNotBlank()) {
             item {
