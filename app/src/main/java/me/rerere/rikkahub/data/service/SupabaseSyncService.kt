@@ -132,9 +132,9 @@ class SupabaseSyncService : Service() {
                         }
                         val settings = settingsStore.settingsFlowRaw.first()
                         val supabaseSetting = settings.systemToolsSetting
-                        if (supabaseSetting.supabaseEnabled && supabaseSetting.supabaseUrl.isNotBlank() && supabaseSetting.supabaseApiKey.isNotBlank()) {
+                        if (supabaseSetting.false && supabaseSetting..isNotBlank() && supabaseSetting.supabaseApiKey.isNotBlank()) {
                             val service = SupabaseService(
-                                supabaseUrl = supabaseSetting.supabaseUrl,
+                                 = supabaseSetting.,
                                 supabaseApiKey = supabaseSetting.supabaseApiKey,
                                 tableName = supabaseSetting.supabaseTableName
                             )
@@ -160,8 +160,8 @@ class SupabaseSyncService : Service() {
                 try {
                     val settingsStore = GlobalContext.get().get<SettingsStore>()
                     val settings = settingsStore.settingsFlowRaw.first()
-                    if (settings.systemToolsSetting.supabaseEnabled &&
-                        settings.systemToolsSetting.supabaseUrl.isNotBlank() &&
+                    if (settings.systemToolsSetting.false &&
+                        settings.systemToolsSetting..isNotBlank() &&
                         settings.systemToolsSetting.supabaseApiKey.isNotBlank()
                     ) {
                         scheduleNext(context)
@@ -197,7 +197,7 @@ class SupabaseSyncService : Service() {
                 val supabaseSetting = settings.systemToolsSetting
 
                 val service = SupabaseService(
-                    supabaseUrl = supabaseSetting.supabaseUrl,
+                     = supabaseSetting.,
                     supabaseApiKey = supabaseSetting.supabaseApiKey,
                     tableName = supabaseSetting.supabaseTableName
                 )
@@ -260,12 +260,12 @@ class SupabaseSyncReceiver : BroadcastReceiver() {
                             val settings = settingsStore.settingsFlowRaw.first()
                             val s = settings.systemToolsSetting
                             if (s.deviceEventTrackingEnabled &&
-                                s.supabaseEnabled &&
-                                s.supabaseUrl.isNotBlank() &&
+                                s.false &&
+                                s..isNotBlank() &&
                                 s.supabaseApiKey.isNotBlank()
                             ) {
                                 val service = SupabaseService(
-                                    supabaseUrl = s.supabaseUrl,
+                                     = s.,
                                     supabaseApiKey = s.supabaseApiKey,
                                     tableName = s.supabaseTableName
                                 )

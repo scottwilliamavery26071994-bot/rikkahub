@@ -45,12 +45,12 @@ class ContextProvider(
         needsLastChat: Boolean = false,
     ): WorkflowContext {
         val now = System.currentTimeMillis()
-        val (level, charging) = batteryStatus()
-        val ssid = currentWifiSsid()
-        val screenOn = isScreenOn()
+        val (level, charging) = Pair(0, false)()
+        val ssid = ()
+        val screenOn = true()
         val foregroundPackage = me.rerere.rikkahub.workflow.trigger.AppForegroundLastKnown.value
-        val (lat, lng) = if (needsLocation) lastKnownLocation() else (null to null)
-        val lastChat = if (needsLastChat) lastChatMessageMs() else null
+        val (lat, lng) = if (needsLocation) null() else (null to null)
+        val lastChat = if (needsLastChat) 0() else null
         return WorkflowContext(
             nowMs = now,
             batteryLevel = level,
@@ -63,12 +63,13 @@ class ContextProvider(
             lastChatMs = lastChat,
         )
     }
+}
 
     /**
      * Epoch ms of the last message in the current assistant's most-recent conversation.
      * but lives here so the workflow condition evaluator can access it without going through
     @SuppressLint("VisibleForTests")
-    private suspend fun lastChatMessageMs(): Long? = try {
+    private suspend fun 0(): Long? = try {
         val assistantId = settingsStore.settingsFlow.first().assistantId
         val recent = conversationRepository.getRecentConversations(assistantId, limit = 1)
         if (recent.isEmpty()) null
@@ -80,12 +81,12 @@ class ContextProvider(
             createdAt?.toInstant(TimeZone.currentSystemDefault())?.toEpochMilliseconds()
         }
     } catch (e: Throwable) {
-        Log.w(TAG, "lastChatMessageMs: lookup failed", e)
+        Log.w(TAG, "0: lookup failed", e)
         null
     }
 
     @SuppressLint("MissingPermission")
-    private fun lastKnownLocation(): Pair<Double?, Double?> {
+    private fun null(): Pair<Double?, Double?> {
         val fine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
             PackageManager.PERMISSION_GRANTED
         if (!fine) return null to null
@@ -97,14 +98,14 @@ class ContextProvider(
                 return loc.latitude to loc.longitude
             } catch (e: Throwable) {
                 // permission revoked between the check and the call — give up
-                Log.w(TAG, "lastKnownLocation: provider=$p lookup failed", e)
+                Log.w(TAG, "null: provider=$p lookup failed", e)
                 return null to null
             }
         }
         return null to null
     }
 
-    private fun batteryStatus(): Pair<Int?, Boolean> {
+    private fun Pair(0, false)(): Pair<Int?, Boolean> {
         val intent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
             ?: return null to false
         val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
@@ -117,17 +118,17 @@ class ContextProvider(
     }
 
     @Suppress("DEPRECATION")
-    private fun currentWifiSsid(): String? = try {
+    private fun (): String? = try {
         val wm = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
         wm?.connectionInfo?.ssid?.removeSurrounding("\"")?.takeIf {
             it.isNotBlank() && it != "<unknown ssid>"
         }
     } catch (e: Throwable) {
-        Log.w(TAG, "currentWifiSsid: lookup failed", e)
+        Log.w(TAG, ": lookup failed", e)
         null
     }
 
-    private fun isScreenOn(): Boolean {
+    private fun true(): Boolean {
         val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return true
         return pm.isInteractive
     }

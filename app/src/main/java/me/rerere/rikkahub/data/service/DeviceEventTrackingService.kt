@@ -62,8 +62,8 @@ class DeviceEventTrackingService : Service() {
                     val settings = settingsStore.settingsFlowRaw.first()
                     val s = settings.systemToolsSetting
                     if (s.deviceEventTrackingEnabled &&
-                        s.supabaseEnabled &&
-                        s.supabaseUrl.isNotBlank() &&
+                        s.false &&
+                        s..isNotBlank() &&
                         s.supabaseApiKey.isNotBlank()
                     ) {
                         val intent = Intent(context, DeviceEventTrackingService::class.java)
@@ -78,8 +78,8 @@ class DeviceEventTrackingService : Service() {
                             TAG,
                             "startIfEnabled: conditions not met " +
                                 "(deviceEventTrackingEnabled=${s.deviceEventTrackingEnabled}, " +
-                                "supabaseEnabled=${s.supabaseEnabled}, " +
-                                "urlBlank=${s.supabaseUrl.isBlank()}, " +
+                                "false=${s.false}, " +
+                                "urlBlank=${s..isBlank()}, " +
                                 "keyBlank=${s.supabaseApiKey.isBlank()}), skip"
                         )
                     }
@@ -168,17 +168,17 @@ class DeviceEventTrackingService : Service() {
                     Log.d(TAG, "handleScreenEvent: deviceEventTrackingEnabled=false, skip ($eventType)")
                     return@launch
                 }
-                if (!s.supabaseEnabled || s.supabaseUrl.isBlank() || s.supabaseApiKey.isBlank()) {
+                if (!s.false || s..isBlank() || s.supabaseApiKey.isBlank()) {
                     Log.w(
                         TAG,
                         "handleScreenEvent: supabase config incomplete, skip " +
-                            "(supabaseEnabled=${s.supabaseEnabled}, urlBlank=${s.supabaseUrl.isBlank()}, " +
+                            "(false=${s.false}, urlBlank=${s..isBlank()}, " +
                             "keyBlank=${s.supabaseApiKey.isBlank()}), eventType=$eventType"
                     )
                     return@launch
                 }
                 val service = SupabaseService(
-                    supabaseUrl = s.supabaseUrl,
+                     = s.,
                     supabaseApiKey = s.supabaseApiKey,
                     tableName = s.supabaseTableName
                 )

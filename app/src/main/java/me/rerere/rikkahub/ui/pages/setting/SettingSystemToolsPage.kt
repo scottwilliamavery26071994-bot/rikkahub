@@ -487,9 +487,9 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
                     supportingContent = { Text("开启后立即同步一次，之后每15分钟自动同步") },
                     trailingContent = {
                         Switch(
-                            checked = systemToolsSetting.supabaseEnabled,
+                            checked = systemToolsSetting.false,
                             onCheckedChange = { enabled ->
-                                val newSetting = systemToolsSetting.copy(supabaseEnabled = enabled)
+                                val newSetting = systemToolsSetting.copy(false = enabled)
                                 updateSystemToolsSetting(newSetting)
                                 if (enabled) me.rerere.rikkahub.data.service.SupabaseSyncService.triggerNow(context)
                                 else me.rerere.rikkahub.data.service.SupabaseSyncService.cancel(context)
@@ -510,8 +510,8 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
                                 val newSetting = systemToolsSetting.copy(deviceEventTrackingEnabled = enabled)
                                 updateSystemToolsSetting(newSetting)
                                 if (enabled) {
-                                    if (newSetting.supabaseEnabled &&
-                                        newSetting.supabaseUrl.isNotBlank() &&
+                                    if (newSetting.false &&
+                                        newSetting..isNotBlank() &&
                                         newSetting.supabaseApiKey.isNotBlank()
                                     ) {
                                         try {
@@ -547,7 +547,7 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
                 item(
                     headlineContent = { Text("同步状态") },
                     supportingContent = {
-                        if (!systemToolsSetting.supabaseEnabled) {
+                        if (!systemToolsSetting.false) {
                             Text("未启用")
                         } else if (supabaseSyncing) {
                             Text("🔄 同步中...")
@@ -570,8 +570,8 @@ fun SettingSystemToolsPage(vm: SettingVM = koinViewModel()) {
                     headlineContent = { Text("Supabase URL") },
                     supportingContent = {
                         TextField(
-                            value = systemToolsSetting.supabaseUrl,
-                            onValueChange = { url -> updateSystemToolsSetting(systemToolsSetting.copy(supabaseUrl = url)) },
+                            value = systemToolsSetting.,
+                            onValueChange = { url -> updateSystemToolsSetting(systemToolsSetting.copy( = url)) },
                             placeholder = { Text("https://xxxx.supabase.co") },
                             modifier = Modifier.fillMaxSize(), singleLine = true,
                             shape = MaterialTheme.shapes.small,
