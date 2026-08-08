@@ -418,7 +418,7 @@ class ChatCompletionsAPI(
 
         return buildJsonObject {
             put("model", params.model.modelId)
-            put("messages", buildMessages(messages, params.model, providerSetting, params.tools, effectivePromptToolCalling, usePromptReasoning))
+            put("messages", buildMessages(messages, params.model, providerSetting, params.tools, effectivePromptToolCalling, usePromptReasoning, useNativeReasoning))
 
             val thinkingEnabled = useNativeReasoning
             if (isModelAllowTemperature(params.model) && !thinkingEnabled) {
@@ -654,6 +654,7 @@ class ChatCompletionsAPI(
         tools: List<Tool> = emptyList(),
         usePromptTools: Boolean = false,
         usePromptReasoning: Boolean = false,
+        useNativeReasoning: Boolean = false,
     ) = buildJsonArray {
         val supportsImage = model.inputModalities.contains(Modality.IMAGE)
         var filteredMessages = messages.filter { it.isValidToUpload() }
