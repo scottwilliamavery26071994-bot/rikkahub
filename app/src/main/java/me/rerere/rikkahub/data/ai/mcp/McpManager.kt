@@ -225,6 +225,14 @@ class McpManager(
         )
         list += me.rerere.rikkahub.data.ai.tools.buildContext7McpTools()
         list += me.rerere.rikkahub.data.ai.tools.buildPlaywrightMcpTools()
+        list += me.rerere.rikkahub.data.ai.tools.buildSupabaseMcpTools(
+            getProjectUrl = {
+                settings.externalMemories.firstOrNull { it.enabled }?.supabaseUrl
+            },
+            getApiKey = {
+                settings.externalMemories.firstOrNull { it.enabled }?.supabaseKey
+            },
+        )
         return list
     }
 
