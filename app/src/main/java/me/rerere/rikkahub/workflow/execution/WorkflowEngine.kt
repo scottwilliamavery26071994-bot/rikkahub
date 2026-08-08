@@ -22,6 +22,8 @@ import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.security.SecurityAuditRepository
 import me.rerere.rikkahub.workflow.condition.ConditionEvaluator
 import me.rerere.rikkahub.workflow.condition.ContextProvider
+
+
 import me.rerere.rikkahub.workflow.model.WorkflowAction
 import me.rerere.rikkahub.workflow.model.WorkflowDefinition
 import me.rerere.rikkahub.workflow.model.WorkflowRunStatus
@@ -62,6 +64,7 @@ import java.time.ZoneId
 class WorkflowEngine(
     private val repository: WorkflowRepository,
     private val settingsStore: SettingsStore,
+
     private val contextProvider: ContextProvider,
     private val actionRunner: WorkflowActionRunner,
     private val auditRepo: SecurityAuditRepository? = null,
@@ -180,6 +183,7 @@ class WorkflowEngine(
 
         // Conditions
         if (def.conditions.isNotEmpty()) {
+
             val ctx = contextProvider.snapshot(
                 needsLocation = ConditionEvaluator.needsLocation(def.conditions),
                 needsLastChat = ConditionEvaluator.needsLastChat(def.conditions),

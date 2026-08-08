@@ -39,6 +39,7 @@ import me.rerere.rikkahub.data.files.FilesManager
 import me.rerere.rikkahub.data.datastore.SettingsStore
 import me.rerere.rikkahub.data.service.DailySummaryService
 import me.rerere.rikkahub.data.service.DeviceEventTrackingService
+
 import me.rerere.rikkahub.data.service.SupabaseSyncService
 import me.rerere.rikkahub.service.ChatService
 import me.rerere.rikkahub.service.WebServerService
@@ -244,11 +245,13 @@ class LingxiApp : Application() {
 
 
     private fun rescheduleSupabaseSyncIfEnabled() {
+
         SupabaseSyncService.rescheduleIfEnabled(this)
     }
 
     private fun startDeviceEventTrackingIfEnabled() {
         runCatching {
+
             DeviceEventTrackingService.startIfEnabled(this)
         }.onFailure {
             Log.e(TAG, "startDeviceEventTrackingIfEnabled failed", it)

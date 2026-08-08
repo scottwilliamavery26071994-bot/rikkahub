@@ -7,31 +7,35 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ChatListNormal(
+fun ChatList(
     innerPadding: PaddingValues,
     conversation: Any,
     state: Any,
     loading: Boolean,
     processingStatus: String,
+    previewMode: Boolean,
     settings: Any,
     hazeState: Any,
-    errors: List<Throwable>,
-    onDismissError: (Throwable) -> Unit,
+    errors: List<Any>,
+    onDismissError: (Any) -> Unit,
     onClearAllErrors: () -> Unit,
-    onRegenerate: (String) -> Unit,
-    onEdit: (String) -> Unit,
-    onForkMessage: (String) -> Unit,
-    onDelete: (String) -> Unit,
-    onUpdateMessage: (Any) -> Unit,
-    onClickSuggestion: (String) -> Unit,
-    onTranslate: (String, String) -> Unit,
-    onClearTranslation: (String) -> Unit,
-    animatedVisibilityScope: Any,
-    onToolApproval: (String, Boolean, String) -> Unit,
-    onToolAnswer: (String) -> Unit,
-    onToggleFavorite: (String) -> Unit,
+    onPublishMessage: (Any) -> Unit,
+    onRegenerate: (Any) -> Unit,
+    onEdit: (Any) -> Unit,
+    onForkMessage: (Any) -> Unit,
+    onDelete: (Any) -> Unit,
+    onCompressContext: (String, Int, Boolean) -> Unit,
+    onTranslate: (Any, String) -> Unit,
+    onClearTranslation: (Any) -> Unit,
+    onToolApproval: (Any, Boolean, String) -> Unit,
+    onToolAnswer: (Any) -> Unit,
+    onToggleFavorite: (Any) -> Unit,
     onConversationSystemPromptChange: (String) -> Unit?,
-    onPublishMessage: (String) -> Unit
+    onClickSuggestion: (Any) -> Unit,
+    onUpdateMessage: (Any) -> Unit,
+    animatedVisibilityScope: Any,
+    onSuggestion: (Any) -> Unit,
+    onNewPrompt: (String) -> Unit
 ) {
     Box(
         modifier = Modifier
