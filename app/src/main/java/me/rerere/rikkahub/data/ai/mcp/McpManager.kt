@@ -203,6 +203,7 @@ class McpManager(
         )
         list += me.rerere.rikkahub.data.ai.tools.buildDouyinMcpTools(
             getCookie = {
+                kotlinx.coroutines.runBlocking {
                 // 从沙箱读取抖音Cookie文件
                 try {
                     workspaceRepository.executeCommand(
@@ -210,7 +211,7 @@ class McpManager(
                         "cat ~/.config/douyinmcp/cookies.txt 2>/dev/null || echo ''",
                         timeoutMillis = 5000
                     ).stdout.trim()
-                } catch (e: Exception) { "" }
+                } catch (e: Exception) { "" } }
             },
         )
         list += me.rerere.rikkahub.data.ai.tools.buildTicket12306McpTools()
@@ -293,7 +294,7 @@ class McpManager(
                 id = "builtin-fetch",
                 name = "Fetch MCP",
                 description = "内置 Fetch MCP：抓取网页 HTML/TXT/JSON/Markdown（移植自 Kelivo）",
-                toolCount = fetchToolCount,
+                toolCount = 0,
             ) to 1,
             me.rerere.rikkahub.data.ai.tools.BuiltinMcpServerInfo(
                 id = "builtin-files",
