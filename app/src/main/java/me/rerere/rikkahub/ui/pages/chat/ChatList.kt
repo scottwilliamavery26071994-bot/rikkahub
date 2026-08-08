@@ -262,7 +262,7 @@ private fun ChatListNormal(
     ImeLazyListAutoScroller(lazyListState = state)
 
     // 对话大小警告对话框
-    val sizeInfo = rememberConversationSizeInfo(conversation)
+    val sizeInfo = remember { rememberConversationSizeInfo(conversation) }
     var showSizeWarningDialog by rememberSaveable(conversation.id) { mutableStateOf(true) }
     if (sizeInfo.showWarning && showSizeWarningDialog) {
         ConversationSizeWarningDialog(
