@@ -87,10 +87,10 @@ fun buildSupabaseMcpTools(
             InputSchema.Obj(
                 properties = buildJsonObject {
                     put("table", buildJsonObject { put("type", "string"); put("description", "表名") })
-                    put("columns", buildJsonObject { put("type", "string"); put("description", "列名,默认*" })
+                    put("columns", buildJsonObject { put("type", "string"); put("description", "列名(默认*)"" })
                     put("filter", buildJsonObject { put("type", "string"); put("description", "过滤如 id=eq.1" })
-                    put("limit", buildJsonObject { put("type", "integer"); put("description", "返回行数默认50" })
-                    put("order", buildJsonObject { put("type", "string"); put("description", "排序如 id.desc" })
+                    put("limit", buildJsonObject { put("type", "integer"); put("description", "返回行数(默认50)" })
+                    put("order", buildJsonObject { put("type", "string"); put("description", "排序(如 id.desc)" })
                 },
                 required = listOf("table")
             )
