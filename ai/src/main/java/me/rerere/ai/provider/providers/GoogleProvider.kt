@@ -121,6 +121,10 @@ class GoogleProvider(private val client: OkHttpClient, context: Context? = null)
         }
     }
 
+    override suspend fun getBalance(providerSetting: ProviderSetting.Google): String = withContext(Dispatchers.IO) {
+        autoDetectBalance(client, providerSetting.baseUrl, providerSetting.apiKey)
+    }
+
     override suspend fun listModels(providerSetting: ProviderSetting.Google): List<Model> =
         withContext(Dispatchers.IO) {
             val url = buildUrl(providerSetting = providerSetting, path = "models?pageSize=100")
