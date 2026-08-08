@@ -88,31 +88,95 @@ class OpenAIProvider(
 
     override suspend fun getBalance(providerSetting: ProviderSetting.OpenAI): String = withContext(Dispatchers.IO) {
         val key = keyRoulette.next(providerSetting.apiKey, providerSetting.id.toString())
-        val url = if (providerSetting.balanceOption.apiPath.startsWith("http")) {
-            providerSetting.balanceOption.apiPath
-        } else {
-            "${providerSetting.baseUrl}${providerSetting.balanceOption.apiPath}"
-        }
-        val request = Request.Builder()
-            .url(url)
-            .addHeader("Authorization", "Bearer $key")
-            .get()
-            .build()
-        val response = client.newCall(request).await()
-        if (!response.isSuccessful) {
-            error("Failed to get balance: ${response.code} ${response.body?.string()}")
+
+        // 自动检测余额接口
+        val detectors = listOf(
+            // 优先使用用户配置
+            BalanceDetector(
+                path = providerSetting.balanceOption.apiPath,
+                resultPath = providerSetting.balanceOption.resultPath,
+            ),
+            // 常见余额接口自动探测
+            BalanceDetector("/v1/dashboard/billing/usage", "total_usage"),
+            BalanceDetector("/user/balance", "balance_infos[0].total_balance"),
+            BalanceDetector("/user/balance", "available_balance"),
+            BalanceDetector("/user/info", "data.totalBalance"),
+            BalanceDetector("/credits", "data.total_credits"),
+            BalanceDetector("/credits", "total_credits"),
+            BalanceDetector("/dashboard/billing/usage", "total_usage"),
+            BalanceDetector("/v1/usage", "total_usage"),
+            // 通用检测：遍历顶层数值字段
+            BalanceDetector("*", "*"),
+        )
+
+        for (detector in detectors.distinctBy { "${it.path}|${it.resultPath}" }) {
+            val result = tryDetectBalance(providerSetting, key, detector)
+            if (result != null) return@withContext result
         }
 
-        val bodyStr = response.body.string()
-        val bodyJson = json.parseToJsonElement(bodyStr).jsonObject
-        val value = bodyJson.getByKey(providerSetting.balanceOption.resultPath)
-        val digitalValue = value.toFloatOrNull()
-        if(digitalValue != null) {
-            "%.2f".format(digitalValue)
-        } else {
-            value
+        error("无法获取余额信息，所有已知接口均未返回有效数据")
+    }
+
+    private suspend fun tryDetectBalance(
+        providerSetting: ProviderSetting.OpenAI,
+        key: String,
+        detector: BalanceDetector,
+    ): String? {
+        return try {
+            val url = if (detector.path.startsWith("http")) {
+                detector.path
+            } else {
+                "${providerSetting.baseUrl}${detector.path}"
+            }
+
+            val request = Request.Builder()
+                .url(url)
+                .addHeader("Authorization", "Bearer $key")
+                .get()
+                .build()
+            val response = client.newCall(request).await()
+            if (!response.isSuccessful) return null
+
+            val bodyStr = response.body?.string() ?: return null
+            val bodyJson = json.parseToJsonElement(bodyStr)
+
+            // 先尝试精确路径
+            if (detector.resultPath != "*") {
+                val value = bodyJson.getByKey(detector.resultPath)
+                val digitalValue = value.toFloatOrNull()
+                if (digitalValue != null && digitalValue > 0) {
+                    return "%.2f".format(digitalValue)
+                }
+                if (value.isNotBlank() && value != "null") {
+                    return value
+                }
+            }
+
+            // 通用检测：寻找常见余额字段
+            val commonKeys = listOf(
+                "total_balance", "available_balance", "total_credits",
+                "total_usage", "balance", "credits", "remaining",
+                "total_granted", "total_available", "hard_limit_usd",
+            )
+            val jsonObj = bodyJson.jsonObject
+            for (ck in commonKeys) {
+                jsonObj[ck]?.let { v ->
+                    val dv = v.jsonPrimitive.contentOrNull?.toFloatOrNull()
+                    if (dv != null && dv > 0) return "%.2f".format(dv)
+                }
+                // 嵌套查找
+                val nested = bodyJson.getByKey("data.$ck")
+                val nv = nested.toFloatOrNull()
+                if (nv != null && nv > 0) return "%.2f".format(nv)
+            }
+
+            null
+        } catch (_: Exception) {
+            null
         }
     }
+
+    private data class BalanceDetector(val path: String, val resultPath: String)
 
     override suspend fun streamText(
         providerSetting: ProviderSetting.OpenAI,
