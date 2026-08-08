@@ -35,28 +35,20 @@ data class AvailableModel(
  */
 val AVAILABLE_MODELS = listOf(
     AvailableModel(
-        id = "phi3-mini",
-        name = "Phi-3 Mini (3.8B)",
-        description = "微软官方ONNX，4K上下文",
-        size = "~2.2GB",
-        downloadUrl = "https://huggingface.co/microsoft/Phi-3-mini-4k-instruct-onnx/resolve/main/cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4/phi3-mini-4k-cpu-int4.onnx",
-        filename = "phi3-mini-4k-q4.onnx",
-    ),
-    AvailableModel(
-        id = "phi3.5-mini",
-        name = "Phi-3.5 Mini (3.8B)",
-        description = "微软官方ONNX，128K上下文",
-        size = "~2.2GB",
-        downloadUrl = "https://huggingface.co/microsoft/Phi-3.5-mini-instruct-onnx/resolve/main/cpu_and_mobile/cpu-int4-rtn-block-32-acc-level-4/phi3.5-mini-instruct-cpu-int4-rtn-block-32-acc-level-4.onnx",
-        filename = "phi3.5-mini-q4.onnx",
-    ),
-    AvailableModel(
         id = "deepseek-r1-0528",
         name = "DeepSeek R1 0528 (1.5B)",
         description = "推理增强模型，逻辑能力强",
         size = "~900MB",
         downloadUrl = "https://huggingface.co/deepseek-ai/DeepSeek-R1-0528-Distill-Qwen-1.5B/resolve/main/onnx/model.onnx",
         filename = "deepseek-r1-0528-1.5b.onnx",
+    ),
+    AvailableModel(
+        id = "glm-5.2",
+        name = "GLM 5.2 (9B)",
+        description = "智谱AI通用对话模型",
+        size = "~5GB",
+        downloadUrl = "https://huggingface.co/THUDM/glm-4-9b-chat/resolve/main/onnx/model.onnx",
+        filename = "glm-5.2-9b.onnx",
     ),
 )
 
