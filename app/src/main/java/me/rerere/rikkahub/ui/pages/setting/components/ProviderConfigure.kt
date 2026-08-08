@@ -942,16 +942,4 @@ private fun ColumnScope.ProviderConfigureLocalModel(
         Text("已选: ${provider.modelFilePath.substringAfterLast("/")}",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
     }
-
-    // 远程 API 地址
-    Text("远程推理 (可选)", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 12.dp))
-    OutlinedTextField(
-        value = provider.baseUrl, onValueChange = { onEdit(provider.copy(baseUrl = it.trim())) },
-        label = { Text("服务地址") }, placeholder = { Text("http://localhost:11434/v1") },
-        modifier = Modifier.fillMaxWidth(), singleLine = true
-    )
-    OutlinedTextField(
-        value = provider.apiKey, onValueChange = { onEdit(provider.copy(apiKey = it.trim())) },
-        label = { Text("API Key (可留空)") }, modifier = Modifier.fillMaxWidth(), maxLines = 1
-    )
 }
