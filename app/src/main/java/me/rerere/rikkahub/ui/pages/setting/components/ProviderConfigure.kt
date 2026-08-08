@@ -68,7 +68,8 @@ import kotlin.reflect.KClass
 fun ProviderConfigure(
     provider: ProviderSetting,
     modifier: Modifier = Modifier,
-    onEdit: (provider: ProviderSetting) -> Unit
+    onEdit: (provider: ProviderSetting) -> Unit,
+    onInstantSave: (provider: ProviderSetting) -> Unit = {},
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -115,7 +116,7 @@ fun ProviderConfigure(
             }
 
             is ProviderSetting.LocalModel -> {
-                ProviderConfigureLocalModel(provider, onEdit)
+                ProviderConfigureLocalModel(provider, onEdit, onInstantSave)
             }
         }
     }
@@ -682,7 +683,8 @@ private fun ColumnScope.ProviderConfigureGoogle(
 @Composable
 private fun ColumnScope.ProviderConfigureLocalModel(
     provider: ProviderSetting.LocalModel,
-    onEdit: (ProviderSetting.LocalModel) -> Unit
+    onEdit: (ProviderSetting.LocalModel) -> Unit,
+    onInstantSave: (ProviderSetting) -> Unit = {},
 ) {
     val context = LocalContext.current
     val toaster = LocalToaster.current
@@ -734,7 +736,9 @@ private fun ColumnScope.ProviderConfigureLocalModel(
                                 color = MaterialTheme.colorScheme.outline)
                         }
                         OutlinedButton(onClick = {
-                            onEdit(provider.copy(modelFilePath = ""))
+                            val updated = provider.copy(modelFilePath = "")
+                            onEdit(updated)
+                            onInstantSave(updated)
                             toaster.show("已清除", type = ToastType.Success)
                         }) {
                             Text("清除", fontSize = 12.sp)
@@ -772,7 +776,9 @@ private fun ColumnScope.ProviderConfigureLocalModel(
                         if (existingPath != null) {
                             Button(
                                 onClick = {
-                                    onEdit(provider.copy(modelFilePath = existingPath))
+                                    val updated = provider.copy(modelFilePath = existingPath)
+                                    onEdit(updated)
+                                    onInstantSave(updated)
                                     toaster.show("已选择: ${model.name}", type = ToastType.Success)
                                 },
                                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
@@ -788,7 +794,9 @@ private fun ColumnScope.ProviderConfigureLocalModel(
                                             when (progress) {
                                                 is DownloadProgress.Completed -> {
                                                     downloadingId = null
-                                                    onEdit(provider.copy(modelFilePath = progress.path))
+                                                    val updated = provider.copy(modelFilePath = progress.path)
+                                                    onEdit(updated)
+                                                    onInstantSave(updated)
                                                     toaster.show("下载完成: ${model.name}", type = ToastType.Success)
                                                 }
                                                 is DownloadProgress.Error -> {
@@ -842,7 +850,9 @@ private fun ColumnScope.ProviderConfigureLocalModel(
         val existingPath = downloader.getExistingModelPath("custom")
         if (existingPath != null) {
             Button(onClick = {
-                onEdit(provider.copy(modelFilePath = existingPath))
+                val updated = provider.copy(modelFilePath = existingPath)
+                onEdit(updated)
+                onInstantSave(updated)
                 toaster.show("已选择: $customFilename", type = ToastType.Success)
             }) { Text("使用已下载的文件") }
         } else {
@@ -854,7 +864,9 @@ private fun ColumnScope.ProviderConfigureLocalModel(
                             when (progress) {
                                 is DownloadProgress.Completed -> {
                                     downloadingId = null
-                                    onEdit(provider.copy(modelFilePath = progress.path))
+                                    val updated = provider.copy(modelFilePath = progress.path)
+                                    onEdit(updated)
+                                    onInstantSave(updated)
                                     toaster.show("下载完成", type = ToastType.Success)
                                 }
                                 is DownloadProgress.Error -> {
@@ -879,7 +891,9 @@ private fun ColumnScope.ProviderConfigureLocalModel(
     ) { uri ->
         uri ?: return@rememberLauncherForActivityResult
         try {
-            onEdit(provider.copy(modelFilePath = uri.toString()))
+            val updated = provider.copy(modelFilePath = uri.toString())
+            onEdit(updated)
+            onInstantSave(updated)
             toaster.show("已选择模型文件", type = ToastType.Success)
         } catch (e: Exception) {
             toaster.show("选择失败: ${e.message}", type = ToastType.Error)

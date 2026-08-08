@@ -279,9 +279,8 @@ private fun SettingProviderConfigPage(
     ) {
         ProviderConfigure(
             provider = internalProvider,
-            onEdit = {
-                internalProvider = it
-            }
+            onEdit = { internalProvider = it },
+            onInstantSave = { onEdit(it) }  // 本地模型的选择/下载立即保存
         )
 
         if (internalProvider is ProviderSetting.OpenAI) {
