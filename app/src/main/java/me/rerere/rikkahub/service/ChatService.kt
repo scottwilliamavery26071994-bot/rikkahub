@@ -955,13 +955,27 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
                 "exceeded the maximum",
             ).any { keyword -> errorMsg.contains(keyword) }
             if (isContextOverflow) {
-                val contextOverflowText = "⚠️ 模型返回错误：发送给模型的内容超过了其上下文窗口上限。" +
-                    "建议：压缩上下文、精简历史消息、关闭已完成的工具结果，或开启新对话。"
                 Log.w(TAG, "Context overflow detected for conversation $conversationId: ${it.message}")
-                runCatching {
-                    android.widget.Toast.makeText(context, contextOverflowText, android.widget.Toast.LENGTH_LONG).show()
+                // 自动压缩上下文
+                session.processingStatus.value = "上下文超限，自动压缩中..."
+                val conversation = getConversationFlow(conversationId).value
+                val compressResult = compressConversation(
+                    conversationId = conversationId,
+                    conversation = conversation,
+                    additionalPrompt = "",
+                    targetTokens = 0,
+                    keepRecentMessages = 6
+                )
+                if (compressResult.isSuccess) {
+                    Log.i(TAG, "自动压缩成功，用户可重试")
+                    session.processingStatus.value = "上下文已自动压缩，请重新发送消息"
+                    runCatching {
+                        android.widget.Toast.makeText(context, "上下文已自动压缩，请重试", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Log.e(TAG, "自动压缩失败: ${compressResult.exceptionOrNull()?.message}")
+                    session.processingStatus.value = "⚠️ 上下文超限，请手动压缩或开启新对话"
                 }
-                session.processingStatus.value = contextOverflowText
             }
 
             // 兜底保存已生成的部分内容：报错时把内存中已有的半截回复落库，
@@ -1275,13 +1289,27 @@ addAll(localTools.getTools(assistant.localTools, me.rerere.rikkahub.data.ai.tool
                 "exceeded the maximum",
             ).any { keyword -> errorMsg.contains(keyword) }
             if (isContextOverflow) {
-                val contextOverflowText = "⚠️ 群聊生成失败：发送给模型的内容超过了其上下文窗口上限。" +
-                    "建议：压缩上下文、精简历史消息，或开启新对话。"
                 Log.w(TAG, "群聊 context overflow detected for conversation $conversationId: ${e.message}")
-                runCatching {
-                    android.widget.Toast.makeText(context, contextOverflowText, android.widget.Toast.LENGTH_LONG).show()
+                // 自动压缩上下文
+                session.processingStatus.value = "上下文超限，自动压缩中..."
+                val conversation = getConversationFlow(conversationId).value
+                val compressResult = compressConversation(
+                    conversationId = conversationId,
+                    conversation = conversation,
+                    additionalPrompt = "",
+                    targetTokens = 0,
+                    keepRecentMessages = 6
+                )
+                if (compressResult.isSuccess) {
+                    Log.i(TAG, "群聊自动压缩成功")
+                    session.processingStatus.value = "上下文已自动压缩，请重试"
+                    runCatching {
+                        android.widget.Toast.makeText(context, "上下文已自动压缩，请重试", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                } else {
+                    Log.e(TAG, "群聊自动压缩失败: ${compressResult.exceptionOrNull()?.message}")
+                    session.processingStatus.value = "⚠️ 上下文超限，请手动压缩或开启新对话"
                 }
-                session.processingStatus.value = contextOverflowText
             }
 
             // 占位节点标记失败原因，避免空白节点
