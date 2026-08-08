@@ -63,7 +63,7 @@ suspend fun autoDetectBalance(
             val bodyJson = bodyElement.jsonObject
 
             if (detector.resultPath != "*") {
-                val value = bodyElement.getByKey(detector.resultPath)
+                val value = bodyJson.getByKey(detector.resultPath)
                 value.toFloatOrNull()?.let { if (it > 0) return "%.2f".format(it) }
                 if (value.isNotBlank() && value != "null") return value
             }
@@ -73,7 +73,7 @@ suspend fun autoDetectBalance(
                 jsonObj[ck]?.jsonPrimitive?.contentOrNull?.toFloatOrNull()?.let {
                     if (it > 0) return "%.2f".format(it)
                 }
-                val nested = bodyElement.getByKey("data.$ck")
+                val nested = bodyJson.getByKey("data.$ck")
                 nested.toFloatOrNull()?.let { if (it > 0) return "%.2f".format(it) }
             }
         } catch (_: Exception) { }
