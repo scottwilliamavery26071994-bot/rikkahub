@@ -7,9 +7,10 @@ package me.rerere.rikkahub.data.localmodel
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
@@ -51,97 +52,84 @@ class LocalModelDownloader(
     private val context: Context,
     private val client: OkHttpClient = OkHttpClient()
 ) {
-    fun download(model: AvailableModel): Flow<DownloadProgress> = flow {
-        emit(DownloadProgress.Started(model))
+    fun download(model: AvailableModel): Flow<DownloadProgress> = callbackFlow {
+        trySend(DownloadProgress.Started(model))
 
         val modelsDir = File(context.filesDir, "local_models")
         if (!modelsDir.exists()) modelsDir.mkdirs()
         val outputFile = File(modelsDir, model.filename)
 
-        // 已有有效文件则跳过
         if (outputFile.exists() && outputFile.length() > 100 && isValidOnnxFile(outputFile)) {
             Log.d(TAG, "Model already exists: ${outputFile.absolutePath}")
-            emit(DownloadProgress.Completed(outputFile.absolutePath))
-            return@flow
+            trySend(DownloadProgress.Completed(outputFile.absolutePath))
+            close()
+            return@callbackFlow
         }
 
-        val request = Request.Builder()
-            .url(model.downloadUrl)
-            .header("User-Agent", "Lingxi-Android/1.0")
-            .build()
+        launch(Dispatchers.IO) {
+            try {
+                val request = Request.Builder()
+                    .url(model.downloadUrl)
+                    .header("User-Agent", "Lingxi-Android/1.0")
+                    .build()
+                val response = client.newCall(request).execute()
 
-        val response = client.newCall(request).execute()
+                val contentType = response.header("Content-Type", "")
+                if (contentType != null && (contentType.contains("text/html") || contentType.contains("text/plain"))) {
+                    trySend(DownloadProgress.Error("下载链接无效"))
+                    response.close()
+                    close()
+                    return@launch
+                }
+                if (!response.isSuccessful) {
+                    trySend(DownloadProgress.Error("HTTP ${response.code}"))
+                    response.close()
+                    close()
+                    return@launch
+                }
+                val body = response.body
+                if (body == null) {
+                    trySend(DownloadProgress.Error("响应体为空"))
+                    response.close()
+                    close()
+                    return@launch
+                }
 
-        // 检查 Content-Type，防止下载到 HTML 页面
-        val contentType = response.header("Content-Type", "")
-        if (contentType != null && (contentType.contains("text/html") || contentType.contains("text/plain"))) {
-            response.close()
-            emit(DownloadProgress.Error("下载链接无效，返回了网页而非模型文件。请到 HuggingFace 查找正确链接。"))
-            return@flow
-        }
+                val contentLength = body.contentLength()
+                if (contentLength > 0 && contentLength < 100_000) {
+                    trySend(DownloadProgress.Error("文件太小"))
+                    body.close(); response.close(); close(); return@launch
+                }
 
-        if (!response.isSuccessful) {
-            response.close()
-            emit(DownloadProgress.Error("下载失败: HTTP ${response.code}"))
-            return@flow
-        }
-
-        val body = response.body
-        if (body == null) {
-            response.close()
-            emit(DownloadProgress.Error("响应体为空"))
-            return@flow
-        }
-
-        val contentLength = body.contentLength()
-        if (contentLength > 0 && contentLength < 100_000) {
-            // 小于 100KB 不可能是有效的 LLM 模型
-            body.close()
-            response.close()
-            emit(DownloadProgress.Error("文件太小 (${contentLength} bytes)，不是有效的模型文件"))
-            return@flow
-        }
-
-        var downloadedBytes = 0L
-        val startTime = System.currentTimeMillis()
-
-        body.byteStream().use { input ->
-            FileOutputStream(outputFile).use { output ->
-                val buffer = ByteArray(8192)
-                var bytesRead: Int
-                while (input.read(buffer).also { bytesRead = it } != -1) {
-                    output.write(buffer, 0, bytesRead)
-                    downloadedBytes += bytesRead
-
-                    // 进度报告（每 5%）
-                    if (contentLength > 0 && downloadedBytes % (contentLength / 20) < 8192) {
-                        val pct = (downloadedBytes * 100 / contentLength).toInt()
-                        val elapsed = (System.currentTimeMillis() - startTime) / 1000
-                        emit(DownloadProgress.Progress(
-                            percent = pct,
-                            downloaded = downloadedBytes,
-                            total = contentLength
-                        ))
+                var downloaded = 0L
+                body.byteStream().use { input ->
+                    FileOutputStream(outputFile).use { out ->
+                        val buf = ByteArray(8192)
+                        var n: Int
+                        while (input.read(buf).also { n = it } != -1) {
+                            out.write(buf, 0, n); downloaded += n
+                            if (contentLength > 0 && downloaded % (contentLength / 20) < 8192) {
+                                trySend(DownloadProgress.Progress(
+                                    (downloaded * 100 / contentLength).toInt(), downloaded, contentLength))
+                            }
+                        }
                     }
                 }
+                body.close(); response.close()
+
+                if (!isValidOnnxFile(outputFile)) {
+                    outputFile.delete()
+                    trySend(DownloadProgress.Error("文件校验失败"))
+                } else {
+                    trySend(DownloadProgress.Completed(outputFile.absolutePath))
+                }
+            } catch (e: Exception) {
+                trySend(DownloadProgress.Error(e.message ?: "下载失败"))
             }
+            close()
         }
-
-        body.close()
-        response.close()
-
-        // 验证下载的文件
-        if (!isValidOnnxFile(outputFile)) {
-            val firstBytes = FileInputStream(outputFile).use { it.readNBytes(8) }
-            val preview = firstBytes.joinToString(" ") { "%02X".format(it) }
-            outputFile.delete()
-            emit(DownloadProgress.Error("文件校验失败，不是有效的 ONNX 模型。文件头: $preview"))
-            return@flow
-        }
-
-        Log.d(TAG, "Download complete: ${outputFile.absolutePath} (${outputFile.length()} bytes)")
-        emit(DownloadProgress.Completed(outputFile.absolutePath))
-    }.flowOn(Dispatchers.IO)
+        awaitClose()
+    }
 
     fun getExistingModelPath(modelId: String): String? {
         val model = AVAILABLE_MODELS.find { it.id == modelId } ?: return null
